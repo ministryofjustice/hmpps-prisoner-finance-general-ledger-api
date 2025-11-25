@@ -9,6 +9,8 @@ import org.springframework.boot.info.BuildProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
+const val NON_SENSITIVE_READ = "ROLE_NON_SENSITIVE__READ"
+
 @Configuration
 class OpenApiConfiguration(buildProperties: BuildProperties) {
   private val version: String = buildProperties.version

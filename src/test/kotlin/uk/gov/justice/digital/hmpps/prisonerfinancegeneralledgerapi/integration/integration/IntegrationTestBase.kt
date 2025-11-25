@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration
+package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration.integration
 
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired

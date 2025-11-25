@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration
+package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration.integration
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
