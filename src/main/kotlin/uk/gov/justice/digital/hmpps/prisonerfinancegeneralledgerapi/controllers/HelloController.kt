@@ -12,7 +12,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.NON_SENSITIVE_READ
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_GENERAL_LEDGER__RO
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 
 @Tag(name = "Hello World Controller")
@@ -44,8 +44,8 @@ class HelloController {
       ),
     ],
   )
-  @SecurityRequirement(name = "bearer-jwt", scopes = [NON_SENSITIVE_READ])
-  @PreAuthorize("hasAnyAuthority('$NON_SENSITIVE_READ')")
+  @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_GENERAL_LEDGER__RO])
+  @PreAuthorize("hasAnyAuthority('$ROLE_GENERAL_LEDGER__RO')")
   @GetMapping(path = ["/hello"], produces = [TEXT_PLAIN_VALUE])
   fun hello(): ResponseEntity<String> = ResponseEntity.ok().body("Hello World!")
 }

@@ -9,7 +9,7 @@ import org.springframework.boot.info.BuildProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
-const val NON_SENSITIVE_READ = "ROLE_GENERAL_LEDGER__READ"
+const val ROLE_GENERAL_LEDGER__RO = "ROLE_GENERAL_LEDGER__RO"
 
 @Configuration
 class OpenApiConfiguration(buildProperties: BuildProperties) {
