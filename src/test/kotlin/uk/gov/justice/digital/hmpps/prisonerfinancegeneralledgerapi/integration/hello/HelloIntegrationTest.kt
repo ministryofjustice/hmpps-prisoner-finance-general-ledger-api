@@ -1,8 +1,8 @@
-package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration.integration.hello
+package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.hello.integration
 
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_GENERAL_LEDGER__RO
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration.IntegrationTestBase
 
 class HelloIntegrationTest : IntegrationTestBase() {
 

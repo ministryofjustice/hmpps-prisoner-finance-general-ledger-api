@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration.integration
+package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration
 
 import io.swagger.v3.parser.OpenAPIV3Parser
 import net.minidev.json.JSONArray

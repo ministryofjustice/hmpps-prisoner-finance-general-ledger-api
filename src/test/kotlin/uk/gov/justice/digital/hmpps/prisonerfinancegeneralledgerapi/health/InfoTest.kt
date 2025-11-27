@@ -1,8 +1,8 @@
-package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration.health
+package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.health
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration.IntegrationTestBase
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
