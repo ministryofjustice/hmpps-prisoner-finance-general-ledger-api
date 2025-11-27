@@ -1,7 +1,7 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration.hello
 
 import org.junit.jupiter.api.Test
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_GENERAL_LEDGER__RO
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration.IntegrationTestBase
 
 class HelloIntegrationTest : IntegrationTestBase() {
@@ -10,7 +10,7 @@ class HelloIntegrationTest : IntegrationTestBase() {
   fun `should return 200 OK and 'Hello World when the correct role is provided `() {
     webTestClient.get()
       .uri("/hello")
-      .headers(setAuthorisation(roles = listOf(ROLE_GENERAL_LEDGER__RO)))
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO)))
       .exchange()
       .expectStatus().isOk
       .expectBody(String::class.java).isEqualTo("Hello World!")
