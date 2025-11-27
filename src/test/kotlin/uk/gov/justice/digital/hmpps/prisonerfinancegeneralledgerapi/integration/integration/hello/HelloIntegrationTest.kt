@@ -7,7 +7,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration.
 class HelloIntegrationTest : IntegrationTestBase() {
 
   @Test
-  fun helloEndpointTest() {
+  fun `should return 200 OK and 'Hello World when the correct role is provided `() {
     webTestClient.get()
       .uri("/hello")
       .headers(setAuthorisation(roles = listOf(ROLE_GENERAL_LEDGER__RO)))
@@ -17,7 +17,7 @@ class HelloIntegrationTest : IntegrationTestBase() {
   }
 
   @Test
-  fun unauthorisedHelloEndpointTest() {
+  fun `should return 401 Unauthorized when no role or token is provided`() {
     webTestClient.get()
       .uri("/hello")
       .exchange()
@@ -25,7 +25,7 @@ class HelloIntegrationTest : IntegrationTestBase() {
   }
 
   @Test
-  fun incorrectScopeTest() {
+  fun `should return 403 Forbidden when role is incorrect`() {
     webTestClient.get()
       .uri("/hello")
       .headers(setAuthorisation(roles = listOf("ROLE_DATA_STEALER")))
