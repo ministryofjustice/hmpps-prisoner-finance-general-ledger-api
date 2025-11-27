@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.hello.integration
+package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration.hello
 
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_GENERAL_LEDGER__RO
