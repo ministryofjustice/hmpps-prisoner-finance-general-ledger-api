@@ -72,11 +72,34 @@ make serve-environment
 will just start a docker instance of HMPPS Auth. The application should then be started with
 a `dev` active profile in Intellij.
 
+### API Documentation
+Is available on a running local server at http://localhost:8080/swagger-ui/index.html#/
+
+
+## Using local API endpoints
+
+### Generating an auth token
+- Use this command to request a local auth token:
+  ```bash
+  curl -X POST "http://localhost:8090/auth/oauth/token?grant_type=client_credentials" -H 'Content-Type: application/json' -H "Authorization: Basic $(echo -n hmpps-prisoner-finance-general-ledger:clientsecret | base64)"
+  ```
+
+- The response body will contain an access token something like this:
+
+  ```json
+  {
+    "access_token": "eyJhbGciOiJSUzI1NiIsInR5...BAtWD653XpCzn8A",
+    "token_type": "bearer",
+    "expires_in": 3599,
+    "scope": "read write",
+    "sub": "hmpps-prisoner-finance-general-ledger"        
+  }
+  ```
+- Use the value of `access_token` as a Bearer Token to authenticate when calling the local API endpoints.
+
 ### Health Checks
 - `/health`: provides information about the application health and its dependencies.
 - `/info`: provides information about the version of deployed application.
-
-
 
 
 ## Further resources
