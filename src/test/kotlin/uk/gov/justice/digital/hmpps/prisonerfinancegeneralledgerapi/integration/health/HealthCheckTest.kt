@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.health
+package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration.health
 
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration.IntegrationTestBase
