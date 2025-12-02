@@ -111,6 +111,22 @@ Our security policy is located [here](https://github.com/ministryofjustice/hmpps
 
 Documentation to create new service is located [here](https://tech-docs.hmpps.service.justice.gov.uk/creating-new-services/).
 
+### Common Kotlin patterns
+
+Many patterns have evolved for HMPPS Kotlin applications. Using these patterns provides consistency across our suite of
+Kotlin microservices and allows you to concentrate on building your business needs rather than reinventing the
+technical approach.
+
+Documentation for these patterns can be found in the [HMPPS tech docs](https://tech-docs.hmpps.service.justice.gov.uk/common-kotlin-patterns/).
+If this documentation is incorrect or needs improving please report to [#ask-prisons-digital-sre](https://moj.enterprise.slack.com/archives/C06MWP0UKDE)
+or [raise a PR](https://github.com/ministryofjustice/hmpps-tech-docs).
+
+
+
+## Documentation for future tickets
+Please remove when no longer necessary
+
+
 ### Creating a Cloud Platform namespace
 
 When deploying to a new namespace, you may wish to use the
@@ -179,7 +195,7 @@ lost within non-production issues.
 #### Production kubernetes alerts
 
 This is the severity label for production, determined by the `custom severity label`. See the above
-[Non production kubernetes alerts section](non-production-kubernetes-alerts) for more information. This is configured in `helm_deploy/values-prod.yaml`.
+[Non production kubernetes alerts section](#non-production-kubernetes-alerts) for more information. This is configured in `helm_deploy/values-prod.yaml`.
 
 #### Product ID
 
@@ -187,18 +203,5 @@ This is so that we can link a component to a product and thus provide team and p
 Portal. Refer to the developer portal at <https://developer-portal.hmpps.service.justice.gov.uk/products> to find your
 product id. This is configured in `helm_deploy/<project_name>/values.yaml`.
 
-### Manually branding from template app
 
-Run the `rename-project.bash` without any arguments. This will prompt for the six required parameters and create a PR.
-The script requires a recent version of `bash` to be installed, as well as GNU `sed` in the path.
-
-### Common Kotlin patterns
-
-Many patterns have evolved for HMPPS Kotlin applications. Using these patterns provides consistency across our suite of
-Kotlin microservices and allows you to concentrate on building your business needs rather than reinventing the
-technical approach.
-
-Documentation for these patterns can be found in the [HMPPS tech docs](https://tech-docs.hmpps.service.justice.gov.uk/common-kotlin-patterns/).
-If this documentation is incorrect or needs improving please report to [#ask-prisons-digital-sre](https://moj.enterprise.slack.com/archives/C06MWP0UKDE)
-or [raise a PR](https://github.com/ministryofjustice/hmpps-tech-docs).
 
