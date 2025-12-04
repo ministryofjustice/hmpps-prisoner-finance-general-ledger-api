@@ -81,7 +81,7 @@ Is available on a running local server at http://localhost:8080/swagger-ui/index
 ### Generating an auth token
 - Use this command to request a local auth token:
   ```bash
-  curl -X POST "http://localhost:8090/auth/oauth/token?grant_type=client_credentials" -H 'Content-Type: application/json' -H "Authorization: Basic $(echo -n hmpps-prisoner-finance-general-ledger:clientsecret | base64)"
+  curl -X POST "http://localhost:8090/auth/oauth/token?grant_type=client_credentials" -H 'Content-Type: application/json' -H "Authorization: Basic $(echo -n hmpps-prisoner-finance-general-ledger-api:clientsecret | base64)"
   ```
 
 - The response body will contain an access token something like this:
