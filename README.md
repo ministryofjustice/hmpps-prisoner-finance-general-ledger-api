@@ -47,6 +47,22 @@ To run the integration tests, use the command:
 make integration-test
 ```
 
+## Coverage
+### Show coverage in intellij
+- ```bash
+  make check
+  ```
+- Select Manage Coverage Reports
+- Add the files in build/jacoco/
+- Click OK. The coverage report will now appear in the Coverage Tool Window and the code will be highlighted in the editor.
+
+### Open Coverage report in the browser
+To visualize the reports in the browser:
+- Build the project
+- Open the `index.html` files in the folders under `build/reports/jacoco`
+
+
+
 ## Running the application locally
 
 There a `docker-compose.yml` that can be used to run a local instance in docker and also an
