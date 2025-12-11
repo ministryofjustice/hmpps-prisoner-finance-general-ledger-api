@@ -49,8 +49,9 @@ make integration-test
 
 ## Coverage
 ### Show coverage in intellij
-- Build the project
-- Go to Run in the main menu.
+- ```bash
+  make check
+  ```
 - Select Manage Coverage Reports
 - Add the files in build/jacoco/
 - Click OK. The coverage report will now appear in the Coverage Tool Window and the code will be highlighted in the editor.
