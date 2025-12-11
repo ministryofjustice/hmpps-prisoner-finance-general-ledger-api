@@ -11,7 +11,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  build:
+  jacoco-coverage-report:
     runs-on: ubuntu-latest
 
     steps:
