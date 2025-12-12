@@ -6,6 +6,15 @@ spring:
   application:
     name: hmpps-prisoner-finance-general-ledger-api
 
+  datasource:
+    url: 'jdbc:postgresql://${DB_SERVER}/${DB_NAME}?sslmode=prefer'
+    username: ${DB_USER}
+    password: ${DB_PASS}
+    driver-class-name: org.postgresql.Driver
+
+  flyway:
+    enabled: true
+
   jackson:
     date-format: "yyyy-MM-dd HH:mm:ss"
     serialization:
