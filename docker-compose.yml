@@ -1,5 +1,23 @@
 version: "3"
 services:
+  hmpps-prisoner-finance-sync-db:
+    container_name: hmpps-prisoner-finance-general-ledger-db
+    image: postgres:18
+    restart: always
+    networks:
+      - hmpps
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=general_ledger
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   hmpps-prisoner-finance-general-ledger-api:
     build:
       context: .
@@ -16,7 +34,7 @@ services:
       - SPRING_PROFILES_ACTIVE=dev
 
   hmpps-auth:
-    image: ghcr.io/ministryofjustice/hmpps-auth:latest
+    image: quay.io/hmpps/hmpps-auth:latest
     networks:
       - hmpps
     container_name: hmpps-auth
