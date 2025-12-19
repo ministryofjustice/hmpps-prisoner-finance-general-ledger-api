@@ -25,7 +25,7 @@ dependencies {
   testImplementation("io.swagger.parser.v3:swagger-parser:2.1.36") {
     exclude(group = "io.swagger.core.v3")
   }
-  runtimeOnly("com.h2database:h2")
+  testImplementation("com.h2database:h2")
 }
 
 kotlin {
