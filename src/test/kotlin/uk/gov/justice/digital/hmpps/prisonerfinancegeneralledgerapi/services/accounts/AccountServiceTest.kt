@@ -7,9 +7,12 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
-import org.mockito.Mockito.`when`
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.Account
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.AccountService
@@ -31,7 +34,9 @@ class AccountServiceTest {
   fun setupDummyAccount() {
     val testAccountReference = "01234567890"
     val testPrisonStaffID = "567"
-    dummyAccount = Account(reference = testAccountReference, createdBy = testPrisonStaffID, uuid = UUID.randomUUID(), createdAt = LocalDateTime.now())
+    val dummyUUID = UUID.fromString("00000000-0000-0000-0000-000000000000")
+    val dummyDate = LocalDateTime.of(2025, 12, 25, 0, 0, 0)
+    dummyAccount = Account(reference = testAccountReference, createdBy = testPrisonStaffID, uuid = dummyUUID, createdAt = dummyDate)
   }
 
   @Nested
@@ -39,17 +44,17 @@ class AccountServiceTest {
 
     @Test
     fun `Should call the repository to save the account and return it`() {
-      `when`(accountRepositoryMock.save(any())).thenAnswer { invocation ->
-        val account = invocation.getArgument<Account>(0)
-        account.copy(uuid = dummyAccount.uuid, createdAt = dummyAccount.createdAt)
-      }
+      whenever(accountRepositoryMock.save(any())).thenReturn(dummyAccount)
 
-      val createdAccount: Account = accountService.createAccount(reference = "prisoner001", createdBy = "gary.f")
+      val createdAccount: Account = accountService.createAccount(reference = dummyAccount.reference, createdBy = dummyAccount.createdBy)
+      assertThat(createdAccount).isEqualTo(dummyAccount)
 
-      assertThat(createdAccount.reference).isEqualTo("prisoner001")
-      assertThat(createdAccount.createdBy).isEqualTo("gary.f")
-      assertThat(createdAccount.uuid).isEqualTo(dummyAccount.uuid)
-      assertThat(createdAccount.createdAt).isEqualTo(dummyAccount.createdAt)
+      val captor = argumentCaptor<Account>()
+      verify(accountRepositoryMock).save(captor.capture())
+      assertThat(captor.firstValue.reference).isEqualTo(dummyAccount.reference)
+      assertThat(captor.firstValue.createdBy).isEqualTo(dummyAccount.createdBy)
+
+      verify(accountRepositoryMock, times(1)).save(any())
     }
   }
 }
