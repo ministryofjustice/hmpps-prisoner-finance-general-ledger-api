@@ -36,7 +36,6 @@ class OpenApiDocsTest : IntegrationTestBase() {
   }
 
   @Test
-  @Disabled("TODO Enable this test once you have an endpoint. It checks that endpoints appear on the OpenAPI spec.")
   fun `the open api json contains documentation`() {
     webTestClient.get()
       .uri("/v3/api-docs")
@@ -64,7 +63,6 @@ class OpenApiDocsTest : IntegrationTestBase() {
   }
 
   @Test
-  @Disabled("TODO Enable this test once you have added security schema to OpenApiConfiguration.OpenAPi().components()")
   fun `the open api json path security requirements are valid`() {
     val result = OpenAPIV3Parser().readLocation("http://localhost:$port/v3/api-docs", null, null)
 
