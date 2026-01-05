@@ -19,6 +19,9 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.Acc
 import java.time.LocalDateTime
 import java.util.UUID
 
+private const val TEST_ACCOUNT_REF = "TEST_ACCOUNT_REF"
+private const val TEST_USERNAME = "TEST_USERNAME"
+
 @ExtendWith(MockitoExtension::class)
 class AccountServiceTest {
 
@@ -32,11 +35,9 @@ class AccountServiceTest {
 
   @BeforeEach
   fun setupDummyAccount() {
-    val testAccountReference = "01234567890"
-    val testPrisonStaffID = "567"
     val dummyUUID = UUID.fromString("00000000-0000-0000-0000-000000000000")
     val dummyDate = LocalDateTime.of(2025, 12, 25, 0, 0, 0)
-    dummyAccount = Account(reference = testAccountReference, createdBy = testPrisonStaffID, uuid = dummyUUID, createdAt = dummyDate)
+    dummyAccount = Account(reference = TEST_ACCOUNT_REF, createdBy = TEST_USERNAME, uuid = dummyUUID, createdAt = dummyDate)
   }
 
   @Nested
@@ -45,15 +46,15 @@ class AccountServiceTest {
     @Test
     fun `Should call the repository to save the account and return it`() {
       whenever(accountRepositoryMock.save(any())).thenReturn(dummyAccount)
-      val createdAccount: Account = accountService.createAccount(reference = dummyAccount.reference, createdBy = dummyAccount.createdBy)
+      val createdAccount: Account = accountService.createAccount(reference = TEST_ACCOUNT_REF, createdBy = TEST_USERNAME)
       assertThat(createdAccount).isEqualTo(dummyAccount)
 
+      verify(accountRepositoryMock, times(1)).save(any())
       val captor = argumentCaptor<Account>()
       verify(accountRepositoryMock).save(captor.capture())
-      assertThat(captor.firstValue.reference).isEqualTo(dummyAccount.reference)
-      assertThat(captor.firstValue.createdBy).isEqualTo(dummyAccount.createdBy)
-
-      verify(accountRepositoryMock, times(1)).save(any())
+      val accountToSave = captor.firstValue
+      assertThat(accountToSave.reference).isEqualTo(TEST_ACCOUNT_REF)
+      assertThat(accountToSave.createdBy).isEqualTo(TEST_USERNAME)
     }
   }
 }
