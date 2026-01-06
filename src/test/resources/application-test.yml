@@ -11,7 +11,7 @@ spring:
 
   flyway:
     enabled: true
-    locations: classpath:/db/migrations/common,classpath:/db/migrations/h2
+    locations: classpath:/db/migrations/common
 
   datasource:
     url: 'jdbc:h2:mem:./general_ledger;MODE=PostgreSQL'

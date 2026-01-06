@@ -20,6 +20,6 @@ class AccountController(
     println(body.accountReference)
     val account = accountService.createAccount(body.accountReference, createdBy = user.name)
 
-    return ResponseEntity.ok().body<Account>(account)
+    return ResponseEntity.status(201).body<Account>(account)
   }
 }

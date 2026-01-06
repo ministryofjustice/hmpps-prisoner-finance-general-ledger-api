@@ -16,12 +16,12 @@ data class Account(
   val uuid: UUID = UUID.randomUUID(),
 
   @Column(name = "created_by", nullable = false)
-  val createdBy: String,
+  val createdBy: String = "",
 
   @Column(name = "created_at", nullable = false)
   val createdAt: LocalDateTime = LocalDateTime.now(),
 
   @Column(name = "reference", nullable = false, unique = true)
-  val reference: String,
+  val reference: String = "",
 
 )

@@ -50,7 +50,7 @@ class AccountControllerTest {
       val body = CreateAccountRequest(TEST_ACCOUNT_REF)
       val response: ResponseEntity<Account> = accountController.createAccount(body, mockPrincipal)
 
-      assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+      assertThat(response.statusCode).isEqualTo(HttpStatus.CREATED)
       assertThat(response.body).isEqualTo(dummyAccount)
     }
   }
