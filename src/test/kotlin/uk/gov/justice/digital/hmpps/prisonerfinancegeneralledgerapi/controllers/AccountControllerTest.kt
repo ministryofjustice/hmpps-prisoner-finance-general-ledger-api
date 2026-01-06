@@ -13,6 +13,7 @@ import org.mockito.kotlin.whenever
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.Account
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.CreateAccountRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.AccountService
 import java.security.Principal
 import java.time.LocalDateTime
@@ -46,8 +47,8 @@ class AccountControllerTest {
       whenever(accountServiceMock.createAccount(TEST_ACCOUNT_REF, TEST_USERNAME)).thenReturn(dummyAccount)
       val mockPrincipal = Mockito.mock<Principal>()
       whenever(mockPrincipal.name).thenReturn(TEST_USERNAME)
-
-      val response: ResponseEntity<Account> = accountController.createAccount(TEST_ACCOUNT_REF, mockPrincipal)
+      val body = CreateAccountRequest(TEST_ACCOUNT_REF)
+      val response: ResponseEntity<Account> = accountController.createAccount(body, mockPrincipal)
 
       assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
       assertThat(response.body).isEqualTo(dummyAccount)
