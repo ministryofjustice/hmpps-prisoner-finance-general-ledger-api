@@ -14,7 +14,6 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.Account
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.CreateAccountRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.AccountService
@@ -32,7 +31,7 @@ class AccountController(
       ApiResponse(
         responseCode = "201",
         description = "Created a new account",
-        content = [Content(mediaType = "application/json")],
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = Account::class))],
       ),
       ApiResponse(
         responseCode = "401",
@@ -51,8 +50,8 @@ class AccountController(
       ),
     ],
   )
-  @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW])
-  @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
+  @SecurityRequirement(name = "bearer-jwt", scopes = ["SCOPE_write"])
+  @PreAuthorize("hasAnyAuthority('SCOPE_write')")
   @PostMapping(value = ["/account"], consumes = [MediaType.APPLICATION_JSON_VALUE])
   fun createAccount(@Valid @RequestBody body: CreateAccountRequest, user: Principal): ResponseEntity<Account> {
     val account = accountService.createAccount(body.accountReference, createdBy = user.name)
