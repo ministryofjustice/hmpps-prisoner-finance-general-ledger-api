@@ -17,18 +17,7 @@ import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 @RestControllerAdvice
 class PrisonerFinanceGeneralLedgerApiExceptionHandler {
 
-  @ExceptionHandler(HttpMessageNotReadableException::class)
-  fun handleInvalidJson(e: ValidationException): ResponseEntity<ErrorResponse> = ResponseEntity
-    .status(BAD_REQUEST)
-    .body(
-      ErrorResponse(
-        status = BAD_REQUEST,
-        userMessage = "Validation failure: ${e.message}",
-        developerMessage = e.message,
-      ),
-    ).also { log.info("Validation exception: {}", e.message) }
-
-  @ExceptionHandler(ValidationException::class)
+  @ExceptionHandler(value = [ValidationException::class, HttpMessageNotReadableException::class])
   fun handleValidationException(e: ValidationException): ResponseEntity<ErrorResponse> = ResponseEntity
     .status(BAD_REQUEST)
     .body(
