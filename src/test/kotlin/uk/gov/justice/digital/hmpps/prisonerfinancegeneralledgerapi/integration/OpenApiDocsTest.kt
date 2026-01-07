@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration
 
+import io.swagger.v3.oas.models.Operation
 import io.swagger.v3.parser.OpenAPIV3Parser
 import net.minidev.json.JSONArray
 import org.assertj.core.api.Assertions.assertThat
@@ -11,6 +12,7 @@ import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.http.MediaType
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import kotlin.collections.forEach
 
 class OpenApiDocsTest : IntegrationTestBase() {
   @LocalServerPort
@@ -36,7 +38,6 @@ class OpenApiDocsTest : IntegrationTestBase() {
   }
 
   @Test
-  @Disabled("TODO Enable this test once you have an endpoint. It checks that endpoints appear on the OpenAPI spec.")
   fun `the open api json contains documentation`() {
     webTestClient.get()
       .uri("/v3/api-docs")
@@ -64,7 +65,6 @@ class OpenApiDocsTest : IntegrationTestBase() {
   }
 
   @Test
-  @Disabled("TODO Enable this test once you have added security schema to OpenApiConfiguration.OpenAPi().components()")
   fun `the open api json path security requirements are valid`() {
     val result = OpenAPIV3Parser().readLocation("http://localhost:$port/v3/api-docs", null, null)
 
@@ -72,7 +72,21 @@ class OpenApiDocsTest : IntegrationTestBase() {
     // We therefore need to grab all the valid security requirements and check that each path only contains those items
     val securityRequirements = result.openAPI.security.flatMap { it.keys }
     result.openAPI.paths.forEach { pathItem ->
-      assertThat(pathItem.value.get.security.flatMap { it.keys }).isSubsetOf(securityRequirements)
+
+      val operations: List<Operation> = listOfNotNull(
+        pathItem.value.get,
+        pathItem.value.put,
+        pathItem.value.post,
+        pathItem.value.delete,
+        pathItem.value.options,
+        pathItem.value.head,
+        pathItem.value.patch,
+        pathItem.value.trace,
+      )
+
+      operations.forEach { operation ->
+        assertThat(operation.security.flatMap { it.keys }).isSubsetOf(securityRequirements)
+      }
     }
   }
 

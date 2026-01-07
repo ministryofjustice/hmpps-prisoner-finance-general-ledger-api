@@ -13,7 +13,7 @@ class HelloIntegrationTest : IntegrationTestBase() {
       .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO)))
       .exchange()
       .expectStatus().isOk
-      .expectBody(String::class.java).isEqualTo("Hello World!")
+      .expectBody(String::class.java).isEqualTo("Hello AUTH_ADM!")
   }
 
   @Test
