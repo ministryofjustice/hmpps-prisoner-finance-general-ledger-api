@@ -5,4 +5,7 @@ import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.Account
 
 @Repository
-interface AccountRepository : JpaRepository<Account, Long>
+interface AccountRepository : JpaRepository<Account, Long> {
+
+  fun findByReference(reference: String): Account?
+}

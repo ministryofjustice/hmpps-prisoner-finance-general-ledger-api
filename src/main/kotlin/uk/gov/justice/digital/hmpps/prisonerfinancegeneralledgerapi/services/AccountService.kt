@@ -13,4 +13,9 @@ class AccountService(
     val createdAccount = accountRepository.save(Account(reference = reference, createdBy = createdBy))
     return createdAccount
   }
+
+  fun readAccount(testAccountRef: String): Account? {
+    val retrievedAccount = accountRepository.findByReference(testAccountRef)
+    return retrievedAccount
+  }
 }
