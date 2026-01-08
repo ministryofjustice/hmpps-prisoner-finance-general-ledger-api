@@ -63,5 +63,8 @@ class AccountController(
   }
 
   @GetMapping("/account/{accountReference}")
-  fun getAccount(@PathVariable accountReference: String): ResponseEntity<Account> = ResponseEntity<Account>.status(HttpStatus.OK).body(Account())
+  fun getAccount(@PathVariable accountReference: String): ResponseEntity<Account> {
+    val account = accountService.readAccount(accountReference)
+    return ResponseEntity<Account>.status(HttpStatus.OK).body(account)
+  }
 }

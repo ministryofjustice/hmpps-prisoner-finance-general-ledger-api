@@ -1,14 +1,9 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration
 
 import com.fasterxml.jackson.module.kotlin.jsonMapper
-import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
-import org.springframework.http.ResponseEntity
-import org.springframework.test.web.reactive.server.returnResult
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.Account
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.CreateAccountRequest
 import java.time.LocalDateTime
 import java.util.UUID
@@ -27,6 +22,11 @@ class AccountIntegrationTest : IntegrationTestBase() {
         .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF"))
         .exchange()
         .expectStatus().isCreated
+        .expectBody()
+        .jsonPath("$.reference").isEqualTo("TEST_ACCOUNT_REF")
+        .jsonPath("$.createdBy").isEqualTo("AUTH_ADM")
+        .jsonPath("$.createdAt").value { it: String -> LocalDateTime.parse(it) }
+        .jsonPath("$.uuid").value { it: String -> UUID.fromString(it) }
     }
 
     @Test
@@ -62,37 +62,31 @@ class AccountIntegrationTest : IntegrationTestBase() {
     }
   }
 
-//  @RepositoryTest
   @Nested
   inner class GetAccount {
-//  @Autowired constructor(
-//    val entityManager: TestEntityManager,
-//    val accountRepository: AccountRepository
-//  )
-
-    lateinit var dummyAccount: Account
-
-    @BeforeEach
-    fun seedDummyAccount() {
-      val dummyUUID = UUID.fromString("00000000-0000-0000-0000-000000000000")
-      val dummyDate = LocalDateTime.of(2025, 12, 25, 0, 0, 0)
-      dummyAccount = Account(uuid = dummyUUID, createdAt = dummyDate, reference = "TEST_ACCOUNT_REF", createdBy = "TEST_USERNAME")
-//      accountRepository.save(dummyAccount)
+    private fun seedDummyAccount(reference: String) {
+      webTestClient.post()
+        .uri("/account")
+        .headers(setAuthorisation(scopes = listOf("write")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateAccountRequest(reference))
+        .exchange()
+        .expectStatus().isCreated
     }
 
     @Test
     fun `should return 200 OK and the correct account`() {
-      val response = webTestClient.get()
+      seedDummyAccount("TEST_ACCOUNT_REF")
+      webTestClient.get()
         .uri("/account/TEST_ACCOUNT_REF")
         .headers(setAuthorisation(scopes = listOf("read")))
         .exchange()
         .expectStatus().isOk
-        .returnResult<ResponseEntity<Account>>()
-
-      assertThat(response.responseBody).isNotNull()
-      println("****************")
-      println(response.responseBody)
-//      assertThat(response.responseBody).is - need to prove the shape of the account
+        .expectBody()
+        .jsonPath("$.reference").isEqualTo("TEST_ACCOUNT_REF")
+        .jsonPath("$.createdBy").isEqualTo("AUTH_ADM")
+        .jsonPath("$.createdAt").value { it: String -> LocalDateTime.parse(it) }
+        .jsonPath("$.uuid").value { it: String -> UUID.fromString(it) }
     }
   }
 }
