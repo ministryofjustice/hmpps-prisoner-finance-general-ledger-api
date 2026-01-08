@@ -1,14 +1,27 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration
 
 import com.fasterxml.jackson.module.kotlin.jsonMapper
+import jakarta.transaction.Transactional
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.CreateAccountRequest
 import java.time.LocalDateTime
 import java.util.UUID
 
-class AccountIntegrationTest : IntegrationTestBase() {
+class AccountIntegrationTest @Autowired constructor(
+  var accountRepository: AccountRepository,
+) : IntegrationTestBase() {
+
+  @Transactional
+  @BeforeEach
+  fun resetDB() {
+    accountRepository.deleteAllInBatch()
+    accountRepository.flush()
+  }
 
   @Nested
   inner class CreateAccount {
@@ -27,6 +40,30 @@ class AccountIntegrationTest : IntegrationTestBase() {
         .jsonPath("$.createdBy").isEqualTo("AUTH_ADM")
         .jsonPath("$.createdAt").value { it: String -> LocalDateTime.parse(it) }
         .jsonPath("$.uuid").value { it: String -> UUID.fromString(it) }
+    }
+
+    @Test
+    fun `should return 400 Bad Request if the reference submitted already has an associated account`() {
+      webTestClient.post()
+        .uri("/account")
+        .headers(setAuthorisation(scopes = listOf("write")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF"))
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody()
+        .jsonPath("$.reference").isEqualTo("TEST_ACCOUNT_REF")
+        .jsonPath("$.createdBy").isEqualTo("AUTH_ADM")
+        .jsonPath("$.createdAt").value { it: String -> LocalDateTime.parse(it) }
+        .jsonPath("$.uuid").value { it: String -> UUID.fromString(it) }
+
+      webTestClient.post()
+        .uri("/account")
+        .headers(setAuthorisation(scopes = listOf("write")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF"))
+        .exchange()
+        .expectStatus().isBadRequest
     }
 
     @Test
