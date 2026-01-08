@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.Account
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.CreateAccountRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.AccountService
@@ -53,8 +55,8 @@ class AccountController(
       ),
     ],
   )
-  @SecurityRequirement(name = "bearer-jwt", scopes = ["SCOPE_write"])
-  @PreAuthorize("hasAnyAuthority('SCOPE_write')")
+  @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW])
+  @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
   @PostMapping(value = ["/account"], consumes = [MediaType.APPLICATION_JSON_VALUE])
   fun createAccount(@Valid @RequestBody body: CreateAccountRequest, user: Principal): ResponseEntity<Account> {
     val account = accountService.createAccount(body.accountReference, createdBy = user.name)
@@ -62,6 +64,8 @@ class AccountController(
     return ResponseEntity.status(201).body(account)
   }
 
+  @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO, ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW])
+  @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO', '$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
   @GetMapping("/account/{accountReference}")
   fun getAccount(@PathVariable accountReference: String): ResponseEntity<Account> {
     val account = accountService.readAccount(accountReference)

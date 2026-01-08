@@ -38,11 +38,13 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
     .components(
       Components().addSecuritySchemes(
         "bearer-jwt",
-        SecurityScheme().type(SecurityScheme.Type.HTTP).scheme("bearer").bearerFormat("JWT"),
+        SecurityScheme()
+          .addBearerJwtRequirement("ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW"),
       ),
     )
     .addSecurityItem(
-      SecurityRequirement().addList("bearer-jwt"),
+      SecurityRequirement().addList("bearer-jwt", listOf("read", "write")),
+
     )
 }
 
