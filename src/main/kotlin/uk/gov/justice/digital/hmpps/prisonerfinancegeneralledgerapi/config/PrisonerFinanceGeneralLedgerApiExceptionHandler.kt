@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config
 
 import jakarta.validation.ValidationException
 import org.slf4j.LoggerFactory
-import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.http.HttpStatus.BAD_REQUEST
 import org.springframework.http.HttpStatus.FORBIDDEN
 import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
@@ -13,21 +12,22 @@ import org.springframework.security.access.AccessDeniedException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.servlet.resource.NoResourceFoundException
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.CustomException
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 
 @RestControllerAdvice
 class PrisonerFinanceGeneralLedgerApiExceptionHandler {
 
-  @ExceptionHandler(DataIntegrityViolationException::class)
-  fun handleDataIntegrityViolation(e: DataIntegrityViolationException): ResponseEntity<ErrorResponse> = ResponseEntity
-    .status(BAD_REQUEST)
+  @ExceptionHandler(CustomException::class)
+  fun handleCustomException(e: CustomException): ResponseEntity<ErrorResponse> = ResponseEntity
+    .status(e.status)
     .body(
       ErrorResponse(
-        status = BAD_REQUEST,
-        userMessage = "Data Integrity violation: ${e.message}",
+        status = e.status.value(),
+        userMessage = e.message,
         developerMessage = e.message,
       ),
-    ).also { log.info("Data Integrity violation: {}", e.message) }
+    ).also { log.info("CustomExceptionThrown: {}", e.message) }
 
   @ExceptionHandler(value = [ValidationException::class, HttpMessageNotReadableException::class])
   fun handleValidationException(e: ValidationException): ResponseEntity<ErrorResponse> = ResponseEntity

@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.CreateAccountRequest
@@ -118,7 +117,7 @@ class AccountIntegrationTest @Autowired constructor(
       seedDummyAccount("TEST_ACCOUNT_REF")
       webTestClient.get()
         .uri("/account/TEST_ACCOUNT_REF")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO)))
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -126,6 +125,34 @@ class AccountIntegrationTest @Autowired constructor(
         .jsonPath("$.createdBy").isEqualTo("AUTH_ADM")
         .jsonPath("$.createdAt").value { it: String -> LocalDateTime.parse(it) }
         .jsonPath("$.uuid").value { it: String -> UUID.fromString(it) }
+    }
+
+    @Test
+    fun `should return 404 Not Found when the account does not exist`() {
+      webTestClient.get()
+        .uri("/account/not-this-account")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `should return 401 when requesting account without authorisation headers`() {
+      seedDummyAccount("TEST_ACCOUNT_REF")
+      webTestClient.get()
+        .uri("/account/TEST_ACCOUNT_REF")
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `should return 403 when requesting account with incorrect role`() {
+      seedDummyAccount("TEST_ACCOUNT_REF")
+      webTestClient.get()
+        .uri("/account/TEST_ACCOUNT_REF")
+        .headers(setAuthorisation(roles = listOf("ROLE__WRONG_ROLE")))
+        .exchange()
+        .expectStatus().isForbidden
     }
   }
 }
