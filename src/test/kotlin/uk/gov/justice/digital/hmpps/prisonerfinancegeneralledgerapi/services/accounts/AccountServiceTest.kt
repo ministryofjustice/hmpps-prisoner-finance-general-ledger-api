@@ -57,4 +57,23 @@ class AccountServiceTest {
       assertThat(accountToSave.createdBy).isEqualTo(TEST_USERNAME)
     }
   }
+
+  @Nested
+  inner class ReadAccount {
+
+    @Test
+    fun `Should call the repository with a valid reference and return the correct account`() {
+      whenever(accountRepositoryMock.findByReference(TEST_ACCOUNT_REF)).thenReturn(dummyAccount)
+
+      val retrievedAccount: Account? = accountService.readAccount(TEST_ACCOUNT_REF)
+      assertThat(retrievedAccount).isEqualTo(dummyAccount)
+    }
+
+    @Test
+    fun `Should return null if the account does not exist`() {
+      whenever(accountRepositoryMock.findByReference("INCORRECT_REFERENCE")).thenReturn(null)
+      val retrievedAccount = accountService.readAccount("INCORRECT_REFERENCE")
+      assertThat(retrievedAccount).isNull()
+    }
+  }
 }

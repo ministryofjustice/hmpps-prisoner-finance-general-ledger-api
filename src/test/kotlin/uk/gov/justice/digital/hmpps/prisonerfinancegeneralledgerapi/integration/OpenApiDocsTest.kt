@@ -4,7 +4,6 @@ import io.swagger.v3.oas.models.Operation
 import io.swagger.v3.parser.OpenAPIV3Parser
 import net.minidev.json.JSONArray
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
@@ -91,8 +90,7 @@ class OpenApiDocsTest : IntegrationTestBase() {
   }
 
   @ParameterizedTest
-  @Disabled("TODO Enable this test once you have added security schema to OpenApiConfiguration.OpenAPi().components(). Add the security scheme / roles to @CsvSource")
-  @CsvSource(value = ["security-scheme-name, ROLE_"])
+  @CsvSource(value = ["bearer-jwt, ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW"])
   fun `the security scheme is setup for bearer tokens`(key: String, role: String) {
     webTestClient.get()
       .uri("/v3/api-docs")
@@ -106,11 +104,15 @@ class OpenApiDocsTest : IntegrationTestBase() {
         assertThat(it).contains(role)
       }
       .jsonPath("$.components.securitySchemes.$key.bearerFormat").isEqualTo("JWT")
-      .jsonPath("$.security[0].$key").isEqualTo(JSONArray().apply { this.add("read") })
+      .jsonPath("$.security[0].$key").isEqualTo(
+        JSONArray().apply {
+          this.add("read")
+          this.add("write")
+        },
+      )
   }
 
   @Test
-  @Disabled("TODO Enable this test once you have an endpoint.")
   fun `all endpoints have a security scheme defined`() {
     webTestClient.get()
       .uri("/v3/api-docs")

@@ -12,10 +12,22 @@ import org.springframework.security.access.AccessDeniedException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.servlet.resource.NoResourceFoundException
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.CustomException
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 
 @RestControllerAdvice
 class PrisonerFinanceGeneralLedgerApiExceptionHandler {
+
+  @ExceptionHandler(CustomException::class)
+  fun handleCustomException(e: CustomException): ResponseEntity<ErrorResponse> = ResponseEntity
+    .status(e.status)
+    .body(
+      ErrorResponse(
+        status = e.status.value(),
+        userMessage = e.message,
+        developerMessage = e.message,
+      ),
+    ).also { log.info("CustomExceptionThrown: {}", e.message) }
 
   @ExceptionHandler(value = [ValidationException::class, HttpMessageNotReadableException::class])
   fun handleValidationException(e: ValidationException): ResponseEntity<ErrorResponse> = ResponseEntity
