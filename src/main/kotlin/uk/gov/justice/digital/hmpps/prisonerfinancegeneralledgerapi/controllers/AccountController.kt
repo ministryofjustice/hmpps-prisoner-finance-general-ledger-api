@@ -25,13 +25,17 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.Creat
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.AccountService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.security.Principal
+import java.util.UUID
 
 @Tag(name = "Account Controller")
 @RestController
 class AccountController(
   private val accountService: AccountService,
 ) {
-  @Operation(summary = "Create a new account")
+  @Operation(
+    summary = "Create a new account",
+    description = "Creates a new account using a case insensitive account reference",
+  )
   @ApiResponses(
     value = [
       ApiResponse(
@@ -63,23 +67,28 @@ class AccountController(
   )
   @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW])
   @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
-  @PostMapping(value = ["/account"], consumes = [MediaType.APPLICATION_JSON_VALUE])
+  @PostMapping(value = ["/accounts"], consumes = [MediaType.APPLICATION_JSON_VALUE])
   fun createAccount(@Valid @RequestBody body: CreateAccountRequest, user: Principal): ResponseEntity<Account> {
     try {
-      val account = accountService.createAccount(body.accountReference, createdBy = user.name)
+      val account = accountService.createAccount(body.accountReference.uppercase(), createdBy = user.name)
       return ResponseEntity.status(201).body(account)
     } catch (_: Exception) {
       throw CustomException(status = BAD_REQUEST, message = "Duplicate account reference: $body.accountReference")
     }
   }
 
-  @Operation(summary = "Get an account by reference")
+  @Operation(summary = "Get an account by UUID")
   @ApiResponses(
     value = [
       ApiResponse(
         responseCode = "200",
         description = "Retrieved the account",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = Account::class))],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Bad Request - Parameter is not a valid UUID",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
         responseCode = "401",
@@ -105,9 +114,9 @@ class AccountController(
   )
   @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW])
   @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
-  @GetMapping("/account/{accountReference}")
-  fun getAccount(@PathVariable accountReference: String): ResponseEntity<Account> {
-    val account = accountService.readAccount(accountReference)
+  @GetMapping("/accounts/{accountUUID}")
+  fun getAccount(@PathVariable accountUUID: UUID): ResponseEntity<Account> {
+    val account = accountService.readAccount(accountUUID)
 
     if (account == null) {
       throw CustomException(status = HttpStatus.NOT_FOUND, message = "Account not found")

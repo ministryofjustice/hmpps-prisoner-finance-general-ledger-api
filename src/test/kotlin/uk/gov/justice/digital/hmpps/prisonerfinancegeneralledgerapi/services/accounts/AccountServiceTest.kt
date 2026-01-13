@@ -32,12 +32,13 @@ class AccountServiceTest {
   lateinit var accountService: AccountService
 
   lateinit var dummyAccount: Account
+  val dummyUUID: UUID = UUID.fromString("00000000-0000-0000-0000-000000000000")
 
   @BeforeEach
   fun setupDummyAccount() {
-    val dummyUUID = UUID.fromString("00000000-0000-0000-0000-000000000000")
     val dummyDate = LocalDateTime.of(2025, 12, 25, 0, 0, 0)
-    dummyAccount = Account(reference = TEST_ACCOUNT_REF, createdBy = TEST_USERNAME, uuid = dummyUUID, createdAt = dummyDate)
+    dummyAccount =
+      Account(reference = TEST_ACCOUNT_REF, createdBy = TEST_USERNAME, uuid = dummyUUID, createdAt = dummyDate)
   }
 
   @Nested
@@ -46,7 +47,8 @@ class AccountServiceTest {
     @Test
     fun `Should call the repository to save the account and return it`() {
       whenever(accountRepositoryMock.save(any())).thenReturn(dummyAccount)
-      val createdAccount: Account = accountService.createAccount(reference = TEST_ACCOUNT_REF, createdBy = TEST_USERNAME)
+      val createdAccount: Account =
+        accountService.createAccount(reference = TEST_ACCOUNT_REF, createdBy = TEST_USERNAME)
       assertThat(createdAccount).isEqualTo(dummyAccount)
 
       verify(accountRepositoryMock, times(1)).save(any())
@@ -63,16 +65,17 @@ class AccountServiceTest {
 
     @Test
     fun `Should call the repository with a valid reference and return the correct account`() {
-      whenever(accountRepositoryMock.findByReference(TEST_ACCOUNT_REF)).thenReturn(dummyAccount)
+      whenever(accountRepositoryMock.findAccountByUuid(dummyUUID)).thenReturn(dummyAccount)
 
-      val retrievedAccount: Account? = accountService.readAccount(TEST_ACCOUNT_REF)
+      val retrievedAccount: Account? = accountService.readAccount(dummyUUID)
       assertThat(retrievedAccount).isEqualTo(dummyAccount)
     }
 
     @Test
     fun `Should return null if the account does not exist`() {
-      whenever(accountRepositoryMock.findByReference("INCORRECT_REFERENCE")).thenReturn(null)
-      val retrievedAccount = accountService.readAccount("INCORRECT_REFERENCE")
+      val incorrectUUID = UUID.fromString("00000000-0000-0000-0000-000000000001")
+      whenever(accountRepositoryMock.findAccountByUuid(incorrectUUID)).thenReturn(null)
+      val retrievedAccount = accountService.readAccount(incorrectUUID)
       assertThat(retrievedAccount).isNull()
     }
   }
