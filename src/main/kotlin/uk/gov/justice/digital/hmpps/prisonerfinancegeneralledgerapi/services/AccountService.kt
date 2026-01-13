@@ -16,7 +16,7 @@ class AccountService(
   }
 
   fun readAccount(accountUUID: UUID): Account? {
-    val retrievedAccount = accountRepository.findAccountByUuid(accountUUID)
+    val retrievedAccount = accountRepository.findAccountById(accountUUID)
     return retrievedAccount
   }
 }

@@ -42,7 +42,7 @@ class AccountIntegrationTest @Autowired constructor(
         .jsonPath("$.reference").isEqualTo("TEST_ACCOUNT_REF")
         .jsonPath("$.createdBy").isEqualTo("AUTH_ADM")
         .jsonPath("$.createdAt").value { it: String -> LocalDateTime.parse(it) }
-        .jsonPath("$.uuid").value { it: String -> UUID.fromString(it) }
+        .jsonPath("$.id").value { it: String -> UUID.fromString(it) }
     }
 
     @Test
@@ -58,7 +58,7 @@ class AccountIntegrationTest @Autowired constructor(
         .jsonPath("$.reference").isEqualTo("TEST_ACCOUNT_REF")
         .jsonPath("$.createdBy").isEqualTo("AUTH_ADM")
         .jsonPath("$.createdAt").value { it: String -> LocalDateTime.parse(it) }
-        .jsonPath("$.uuid").value { it: String -> UUID.fromString(it) }
+        .jsonPath("$.id").value { it: String -> UUID.fromString(it) }
 
       webTestClient.post()
         .uri("/accounts")
@@ -82,7 +82,7 @@ class AccountIntegrationTest @Autowired constructor(
         .jsonPath("$.reference").isEqualTo("TEST_ACCOUNT_REF")
         .jsonPath("$.createdBy").isEqualTo("AUTH_ADM")
         .jsonPath("$.createdAt").value { it: String -> LocalDateTime.parse(it) }
-        .jsonPath("$.uuid").value { it: String -> UUID.fromString(it) }
+        .jsonPath("$.id").value { it: String -> UUID.fromString(it) }
 
       webTestClient.post()
         .uri("/accounts")
@@ -138,7 +138,7 @@ class AccountIntegrationTest @Autowired constructor(
         .expectStatus().isCreated
         .expectBody<AccountResponse>()
         .returnResult()
-        .responseBody!!.uuid
+        .responseBody!!.id
 
       return uuid
     }
@@ -155,7 +155,7 @@ class AccountIntegrationTest @Autowired constructor(
         .jsonPath("$.reference").isEqualTo("TEST_ACCOUNT_REF")
         .jsonPath("$.createdBy").isEqualTo("AUTH_ADM")
         .jsonPath("$.createdAt").value { it: String -> LocalDateTime.parse(it) }
-        .jsonPath("$.uuid").isEqualTo(testUUID)
+        .jsonPath("$.id").isEqualTo(testUUID)
     }
 
     @Test

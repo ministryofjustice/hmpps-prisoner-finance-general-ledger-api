@@ -36,7 +36,7 @@ class AccountControllerTest {
   fun setupDummyAccount() {
     val dummyUUID = UUID.fromString("00000000-0000-0000-0000-000000000000")
     val dummyDate = LocalDateTime.of(2025, 12, 25, 0, 0, 0)
-    dummyAccount = Account(reference = TEST_ACCOUNT_REF, createdBy = TEST_USERNAME, uuid = dummyUUID, createdAt = dummyDate)
+    dummyAccount = Account(reference = TEST_ACCOUNT_REF, createdBy = TEST_USERNAME, id = dummyUUID, createdAt = dummyDate)
   }
 
   @Nested

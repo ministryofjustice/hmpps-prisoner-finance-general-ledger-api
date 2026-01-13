@@ -38,7 +38,7 @@ class AccountServiceTest {
   fun setupDummyAccount() {
     val dummyDate = LocalDateTime.of(2025, 12, 25, 0, 0, 0)
     dummyAccount =
-      Account(reference = TEST_ACCOUNT_REF, createdBy = TEST_USERNAME, uuid = dummyUUID, createdAt = dummyDate)
+      Account(reference = TEST_ACCOUNT_REF, createdBy = TEST_USERNAME, id = dummyUUID, createdAt = dummyDate)
   }
 
   @Nested
@@ -65,7 +65,7 @@ class AccountServiceTest {
 
     @Test
     fun `Should call the repository with a valid reference and return the correct account`() {
-      whenever(accountRepositoryMock.findAccountByUuid(dummyUUID)).thenReturn(dummyAccount)
+      whenever(accountRepositoryMock.findAccountById(dummyUUID)).thenReturn(dummyAccount)
 
       val retrievedAccount: Account? = accountService.readAccount(dummyUUID)
       assertThat(retrievedAccount).isEqualTo(dummyAccount)
@@ -74,7 +74,7 @@ class AccountServiceTest {
     @Test
     fun `Should return null if the account does not exist`() {
       val incorrectUUID = UUID.fromString("00000000-0000-0000-0000-000000000001")
-      whenever(accountRepositoryMock.findAccountByUuid(incorrectUUID)).thenReturn(null)
+      whenever(accountRepositoryMock.findAccountById(incorrectUUID)).thenReturn(null)
       val retrievedAccount = accountService.readAccount(incorrectUUID)
       assertThat(retrievedAccount).isNull()
     }

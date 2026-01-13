@@ -16,11 +16,11 @@ data class SubAccount(
 
   @Id
   @Column(name = "sub_account_id", nullable = false, unique = true)
-  val id: UUID,
+  val id: UUID = UUID.randomUUID(),
 
   @ManyToOne(optional = false, fetch = jakarta.persistence.FetchType.LAZY)
   @JoinColumn(name = "account_id", nullable = false)
-  val accountId: Account,
+  val parentAccount: Account,
 
   @Column(name = "reference", nullable = false)
   val reference: String = "",

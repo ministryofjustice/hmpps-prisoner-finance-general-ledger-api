@@ -7,5 +7,5 @@ import java.util.*
 
 @Repository
 interface AccountRepository : JpaRepository<Account, UUID> {
-  fun findAccountByUuid(uuid: UUID): Account?
+  fun findAccountById(id: UUID): Account?
 }
