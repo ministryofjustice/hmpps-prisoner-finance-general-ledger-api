@@ -23,7 +23,6 @@ class SubAccountIntegrationTest @Autowired constructor(
   var subAccountRepository: SubAccountRepository,
 ) : IntegrationTestBase() {
 
-  // - 400 Subaccount Ref already exists within the account
   // - 400 Case insensitive to subaccount uniqueness within 1 account
   // - Standard 401/403
 
@@ -76,6 +75,47 @@ class SubAccountIntegrationTest @Autowired constructor(
       assertThat(responseBody.parentAccountId).isEqualTo(dummyParentAccount.id)
     }
 
+    // - 201 is able to create two sub-accounts with same reference across two accounts
+
+    @Test
+    fun `should return 201 when creating multiple sub account with same reference in different accounts`() {
+      val dummyParentAccountTwo = webTestClient.post()
+        .uri("/accounts")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF"))
+        .exchange()
+        .expectBody<AccountResponse>()
+        .returnResult()
+        .responseBody!!
+
+      val subAccountOne = webTestClient.post()
+        .uri("/accounts/${dummyParentAccount.id}/sub-accounts")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateSubAccountRequest("TEST_SUB_ACCOUNT_REF"))
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody<SubAccountResponse>()
+        .returnResult()
+        .responseBody!!
+
+      val subAccountTwo = webTestClient.post()
+        .uri("/accounts/${dummyParentAccountTwo.id}/sub-accounts")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateSubAccountRequest("TEST_SUB_ACCOUNT_REF"))
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody<SubAccountResponse>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(subAccountTwo.id).isNotEqualTo(subAccountOne.id)
+      assertThat(subAccountTwo.reference).isEqualTo(subAccountOne.reference)
+      assertThat(subAccountTwo.parentAccountId).isEqualTo(subAccountOne.parentAccountId)
+    }
+
     @Test
     fun `should be able to create multiple sub accounts under a single account`() {
       val subAccountOne = webTestClient.post()
@@ -122,6 +162,51 @@ class SubAccountIntegrationTest @Autowired constructor(
       assertThat(parentAccount.subAccounts).hasSize(2)
       assertThat(parentAccount.subAccounts.get(0).id).isEqualTo(subAccountOne.id)
       assertThat(parentAccount.subAccounts.get(1).id).isEqualTo(subAccountTwo.id)
+    }
+
+    @Test
+    fun `should return 400 bad request if sub account reference exists`() {
+      val testSubAccountRef = "TEST_SUB_ACCOUNT_REF"
+
+      webTestClient.post()
+        .uri("/accounts/${dummyParentAccount.id}/sub-accounts")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateSubAccountRequest(testSubAccountRef))
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody<SubAccountResponse>()
+
+      webTestClient.post()
+        .uri("/accounts/${dummyParentAccount.id}/sub-accounts")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateSubAccountRequest(testSubAccountRef))
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    fun `should return 400 bad request if sub account reference is the same regardless of case within the same account`() {
+      val testSubAccountRefUpper = "TEST_SUB_ACCOUNT_REF"
+      val testSubAccountRefLower = "test_sub_account_ref"
+
+      webTestClient.post()
+        .uri("/accounts/${dummyParentAccount.id}/sub-accounts")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateSubAccountRequest(testSubAccountRefUpper))
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody<SubAccountResponse>()
+
+      webTestClient.post()
+        .uri("/accounts/${dummyParentAccount.id}/sub-accounts")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateSubAccountRequest(testSubAccountRefLower))
+        .exchange()
+        .expectStatus().isBadRequest
     }
   }
 }

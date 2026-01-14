@@ -69,10 +69,10 @@ class AccountController(
   @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW])
   @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
   @PostMapping(value = ["/accounts"], consumes = [MediaType.APPLICATION_JSON_VALUE])
-  fun createAccount(@Valid @RequestBody body: CreateAccountRequest, user: Principal): ResponseEntity<Account> {
+  fun createAccount(@Valid @RequestBody body: CreateAccountRequest, user: Principal): ResponseEntity<AccountResponse> {
     try {
       val account = accountService.createAccount(body.accountReference.uppercase(), createdBy = user.name)
-      return ResponseEntity.status(201).body(account)
+      return ResponseEntity<AccountResponse>.status(HttpStatus.CREATED).body(AccountResponse(id = account.id, reference = account.reference, createdBy = account.createdBy, createdAt = account.createdAt, subAccounts = account.subAccounts))
     } catch (_: Exception) {
       throw CustomException(status = BAD_REQUEST, message = "Duplicate account reference: $body.accountReference")
     }
