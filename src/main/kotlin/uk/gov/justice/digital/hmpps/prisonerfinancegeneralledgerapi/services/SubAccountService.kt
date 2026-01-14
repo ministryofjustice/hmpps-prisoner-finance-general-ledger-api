@@ -8,17 +8,13 @@ import java.util.UUID
 
 @Service
 class SubAccountService(private val subAccountRepository: SubAccountRepository, private val accountRepository: AccountRepository) {
-  fun createSubAccount(reference: String, createdBy: String, parentAccountId: UUID): SubAccount? {
-    val account = accountRepository.getReferenceById(parentAccountId)
+  fun createSubAccount(reference: String, createdBy: String, parentAccountId: UUID): SubAccount {
+    val parentAccount = accountRepository.getReferenceById(parentAccountId)
 
-    try {
-      val subAccount = SubAccount(parentAccount = account, reference = reference, createdBy = createdBy)
-      val createdSubAccount = subAccountRepository.save(subAccount)
-      return createdSubAccount
-    } catch (e: Exception) {
-      println(e.message)
-    }
+    val subAccount = SubAccount(parentAccount = parentAccount, reference = reference, createdBy = createdBy)
 
-    return null
+    val createdSubAccount = subAccountRepository.save(subAccount)
+
+    return createdSubAccount
   }
 }

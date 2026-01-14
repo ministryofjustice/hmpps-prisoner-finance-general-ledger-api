@@ -20,7 +20,7 @@ data class SubAccount(
 
   @ManyToOne(optional = false, fetch = jakarta.persistence.FetchType.LAZY)
   @JoinColumn(name = "account_id", nullable = false)
-  val parentAccount: Account,
+  val parentAccount: Account = Account(),
 
   @Column(name = "reference", nullable = false)
   val reference: String = "",
