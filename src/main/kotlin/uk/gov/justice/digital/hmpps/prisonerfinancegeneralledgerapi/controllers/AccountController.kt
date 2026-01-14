@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.CustomException
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.Account
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.AccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.CreateAccountRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.AccountService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
@@ -115,13 +116,13 @@ class AccountController(
   @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW])
   @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
   @GetMapping("/accounts/{accountUUID}")
-  fun getAccount(@PathVariable accountUUID: UUID): ResponseEntity<Account> {
+  fun getAccount(@PathVariable accountUUID: UUID): ResponseEntity<AccountResponse> {
     val account = accountService.readAccount(accountUUID)
 
     if (account == null) {
       throw CustomException(status = HttpStatus.NOT_FOUND, message = "Account not found")
     }
 
-    return ResponseEntity<Account>.status(HttpStatus.OK).body(account)
+    return ResponseEntity<AccountResponse>.status(HttpStatus.OK).body(AccountResponse(id = account.id, reference = account.reference, createdBy = account.createdBy, createdAt = account.createdAt, subAccounts = account.subAccounts))
   }
 }

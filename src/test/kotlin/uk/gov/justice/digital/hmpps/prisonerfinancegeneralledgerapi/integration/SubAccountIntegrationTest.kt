@@ -10,6 +10,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.AccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.CreateAccountRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.CreateSubAccountRequest
@@ -19,10 +20,9 @@ import java.util.UUID
 
 class SubAccountIntegrationTest @Autowired constructor(
   var accountRepository: AccountRepository,
+  var subAccountRepository: SubAccountRepository,
 ) : IntegrationTestBase() {
 
-  // - 201 Creates a subaccount under an account
-  // - 201 Creates 2 subaccounts with identical references across 2 accounts
   // - 400 Subaccount Ref already exists within the account
   // - 400 Case insensitive to subaccount uniqueness within 1 account
   // - Standard 401/403
@@ -32,6 +32,8 @@ class SubAccountIntegrationTest @Autowired constructor(
   @Transactional
   @BeforeEach
   fun resetDB() {
+    subAccountRepository.deleteAllInBatch()
+    subAccountRepository.flush()
     accountRepository.deleteAllInBatch()
     accountRepository.flush()
   }
@@ -72,6 +74,54 @@ class SubAccountIntegrationTest @Autowired constructor(
       assertThat(responseBody.createdBy).isEqualTo("AUTH_ADM")
       assertThat(responseBody.createdAt).isInstanceOf(LocalDateTime::class.java)
       assertThat(responseBody.parentAccountId).isEqualTo(dummyParentAccount.id)
+    }
+
+    @Test
+    fun `should be able to create multiple sub accounts under a single account`() {
+      val subAccountOne = webTestClient.post()
+        .uri("/accounts/${dummyParentAccount.id}/sub-accounts")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateSubAccountRequest("TEST_SUB_ACCOUNT_REF_1"))
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody<SubAccountResponse>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(subAccountOne.id).isInstanceOf(UUID::class.java)
+      assertThat(subAccountOne.reference).isEqualTo("TEST_SUB_ACCOUNT_REF_1")
+      assertThat(subAccountOne.createdBy).isEqualTo("AUTH_ADM")
+      assertThat(subAccountOne.createdAt).isInstanceOf(LocalDateTime::class.java)
+      assertThat(subAccountOne.parentAccountId).isEqualTo(dummyParentAccount.id)
+
+      val subAccountTwo = webTestClient.post()
+        .uri("/accounts/${dummyParentAccount.id}/sub-accounts")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateSubAccountRequest("TEST_SUB_ACCOUNT_REF_2"))
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody<SubAccountResponse>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(subAccountTwo.id).isInstanceOf(UUID::class.java)
+      assertThat(subAccountTwo.reference).isEqualTo("TEST_SUB_ACCOUNT_REF_2")
+      assertThat(subAccountTwo.createdBy).isEqualTo("AUTH_ADM")
+      assertThat(subAccountTwo.createdAt).isInstanceOf(LocalDateTime::class.java)
+      assertThat(subAccountTwo.parentAccountId).isEqualTo(dummyParentAccount.id)
+
+      val parentAccount = webTestClient.get().uri("/accounts/${dummyParentAccount.id}")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectBody<AccountResponse>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(parentAccount.subAccounts).hasSize(2)
+      assertThat(parentAccount.subAccounts.get(0).id).isEqualTo(subAccountOne.id)
+      assertThat(parentAccount.subAccounts.get(1).id).isEqualTo(subAccountTwo.id)
     }
   }
 }

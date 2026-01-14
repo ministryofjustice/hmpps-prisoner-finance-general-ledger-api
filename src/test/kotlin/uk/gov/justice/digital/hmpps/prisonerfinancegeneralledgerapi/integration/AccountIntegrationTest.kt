@@ -10,8 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.Account
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.AccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.CreateAccountRequest
 import java.time.LocalDateTime
 import java.util.*
@@ -38,7 +38,7 @@ class AccountIntegrationTest @Autowired constructor(
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF"))
         .exchange()
-        .expectBody<Account>()
+        .expectBody<AccountResponse>()
         .returnResult()
         .responseBody!!
 
@@ -57,7 +57,7 @@ class AccountIntegrationTest @Autowired constructor(
         .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF"))
         .exchange()
         .expectStatus().isCreated
-        .expectBody<Account>()
+        .expectBody<AccountResponse>()
         .returnResult()
         .responseBody!!
 
@@ -84,7 +84,7 @@ class AccountIntegrationTest @Autowired constructor(
         .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF"))
         .exchange()
         .expectStatus().isCreated
-        .expectBody<Account>()
+        .expectBody<AccountResponse>()
         .returnResult()
         .responseBody!!
 
@@ -145,7 +145,7 @@ class AccountIntegrationTest @Autowired constructor(
         .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF"))
         .exchange()
         .expectStatus().isCreated
-        .expectBody<Account>()
+        .expectBody<AccountResponse>()
         .returnResult()
         .responseBody!!.id
 
@@ -160,7 +160,7 @@ class AccountIntegrationTest @Autowired constructor(
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .exchange()
         .expectStatus().isOk
-        .expectBody<Account>()
+        .expectBody<AccountResponse>()
         .returnResult()
         .responseBody!!
 
