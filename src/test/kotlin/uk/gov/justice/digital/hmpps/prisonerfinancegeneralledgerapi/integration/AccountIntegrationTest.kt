@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration
 
 import com.fasterxml.jackson.module.kotlin.jsonMapper
 import jakarta.transaction.Transactional
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -9,8 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.Account
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.AccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.CreateAccountRequest
 import java.time.LocalDateTime
 import java.util.*
@@ -31,34 +32,39 @@ class AccountIntegrationTest @Autowired constructor(
 
     @Test
     fun `should return 201 OK and the created account when the correct role is provided`() {
-      webTestClient.post()
+      val responseBody = webTestClient.post()
         .uri("/accounts")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF"))
         .exchange()
-        .expectStatus().isCreated
-        .expectBody()
-        .jsonPath("$.reference").isEqualTo("TEST_ACCOUNT_REF")
-        .jsonPath("$.createdBy").isEqualTo("AUTH_ADM")
-        .jsonPath("$.createdAt").value { it: String -> LocalDateTime.parse(it) }
-        .jsonPath("$.id").value { it: String -> UUID.fromString(it) }
+        .expectBody<Account>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(responseBody.reference).isEqualTo("TEST_ACCOUNT_REF")
+      assertThat(responseBody.createdBy).isEqualTo("AUTH_ADM")
+      assertThat(responseBody.createdAt).isInstanceOf(LocalDateTime::class.java)
+      assertThat(responseBody.id).isInstanceOf(UUID::class.java)
     }
 
     @Test
     fun `should return 400 Bad Request if the reference submitted already has an associated account`() {
-      webTestClient.post()
+      val responseBody = webTestClient.post()
         .uri("/accounts")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF"))
         .exchange()
         .expectStatus().isCreated
-        .expectBody()
-        .jsonPath("$.reference").isEqualTo("TEST_ACCOUNT_REF")
-        .jsonPath("$.createdBy").isEqualTo("AUTH_ADM")
-        .jsonPath("$.createdAt").value { it: String -> LocalDateTime.parse(it) }
-        .jsonPath("$.id").value { it: String -> UUID.fromString(it) }
+        .expectBody<Account>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(responseBody.reference).isEqualTo("TEST_ACCOUNT_REF")
+      assertThat(responseBody.createdBy).isEqualTo("AUTH_ADM")
+      assertThat(responseBody.createdAt).isInstanceOf(LocalDateTime::class.java)
+      assertThat(responseBody.id).isInstanceOf(UUID::class.java)
 
       webTestClient.post()
         .uri("/accounts")
@@ -71,18 +77,21 @@ class AccountIntegrationTest @Autowired constructor(
 
     @Test
     fun `should return 400 Bad Request if the reference submitted already has an associated account in a different casing`() {
-      webTestClient.post()
+      val responseBody = webTestClient.post()
         .uri("/accounts")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF"))
         .exchange()
         .expectStatus().isCreated
-        .expectBody()
-        .jsonPath("$.reference").isEqualTo("TEST_ACCOUNT_REF")
-        .jsonPath("$.createdBy").isEqualTo("AUTH_ADM")
-        .jsonPath("$.createdAt").value { it: String -> LocalDateTime.parse(it) }
-        .jsonPath("$.id").value { it: String -> UUID.fromString(it) }
+        .expectBody<Account>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(responseBody.reference).isEqualTo("TEST_ACCOUNT_REF")
+      assertThat(responseBody.createdBy).isEqualTo("AUTH_ADM")
+      assertThat(responseBody.createdAt).isInstanceOf(LocalDateTime::class.java)
+      assertThat(responseBody.id).isInstanceOf(UUID::class.java)
 
       webTestClient.post()
         .uri("/accounts")
@@ -136,7 +145,7 @@ class AccountIntegrationTest @Autowired constructor(
         .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF"))
         .exchange()
         .expectStatus().isCreated
-        .expectBody<AccountResponse>()
+        .expectBody<Account>()
         .returnResult()
         .responseBody!!.id
 
@@ -146,16 +155,19 @@ class AccountIntegrationTest @Autowired constructor(
     @Test
     fun `should return 200 OK and the correct account`() {
       val testUUID = seedDummyAccount()
-      webTestClient.get()
+      val responseBody = webTestClient.get()
         .uri("/accounts/$testUUID")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .exchange()
         .expectStatus().isOk
-        .expectBody()
-        .jsonPath("$.reference").isEqualTo("TEST_ACCOUNT_REF")
-        .jsonPath("$.createdBy").isEqualTo("AUTH_ADM")
-        .jsonPath("$.createdAt").value { it: String -> LocalDateTime.parse(it) }
-        .jsonPath("$.id").isEqualTo(testUUID)
+        .expectBody<Account>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(responseBody.reference).isEqualTo("TEST_ACCOUNT_REF")
+      assertThat(responseBody.createdBy).isEqualTo("AUTH_ADM")
+      assertThat(responseBody.createdAt).isInstanceOf(LocalDateTime::class.java)
+      assertThat(responseBody.id).isEqualTo(testUUID)
     }
 
     @Test
