@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
@@ -8,6 +9,7 @@ import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.Account
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccount
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.CreateAccountRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.CreateSubAccountRequest
 import java.time.LocalDateTime
 import java.util.UUID
@@ -25,6 +27,21 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
   @Nested
   inner class CreateSubAccount {
 
+    @BeforeEach
+    fun seedParentAccount() {
+      val responseBody = webTestClient.post()
+        .uri("/accounts")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF"))
+        .exchange()
+        .expectBody<Account>()
+        .returnResult()
+        .responseBody!!
+
+      dummyParentAccount = responseBody
+    }
+
     @Test
     fun `should return 201 OK and created sub account if the account provided is valid`() {
       val responseBody = webTestClient.post()
@@ -33,6 +50,7 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(CreateSubAccountRequest("TEST_SUB_ACCOUNT_REF"))
         .exchange()
+        .expectStatus().isCreated
         .expectBody<SubAccount>()
         .returnResult()
         .responseBody!!
