@@ -6,4 +6,4 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import java.util.UUID
 
 @Repository
-interface SubAccountRepository : JpaRepository<SubAccountEntity, UUID>
+interface SubAccountDataRepository : JpaRepository<SubAccountEntity, UUID>

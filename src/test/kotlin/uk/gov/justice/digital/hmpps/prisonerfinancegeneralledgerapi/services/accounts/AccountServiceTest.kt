@@ -14,7 +14,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.AccountService
 import java.time.LocalDateTime
 import java.util.UUID
@@ -26,7 +26,7 @@ private const val TEST_USERNAME = "TEST_USERNAME"
 class AccountServiceTest {
 
   @Mock
-  lateinit var accountRepositoryMock: AccountRepository
+  lateinit var accountDataRepositoryMock: AccountDataRepository
 
   @InjectMocks
   lateinit var accountService: AccountService
@@ -46,14 +46,14 @@ class AccountServiceTest {
 
     @Test
     fun `Should call the repository to save the account and return it`() {
-      whenever(accountRepositoryMock.save(any())).thenReturn(dummyAccountEntity)
+      whenever(accountDataRepositoryMock.save(any())).thenReturn(dummyAccountEntity)
       val createdAccountEntity: AccountEntity =
         accountService.createAccount(reference = TEST_ACCOUNT_REF, createdBy = TEST_USERNAME)
       assertThat(createdAccountEntity).isEqualTo(dummyAccountEntity)
 
-      verify(accountRepositoryMock, times(1)).save(any())
+      verify(accountDataRepositoryMock, times(1)).save(any())
       val captor = argumentCaptor<AccountEntity>()
-      verify(accountRepositoryMock).save(captor.capture())
+      verify(accountDataRepositoryMock).save(captor.capture())
       val accountToSave = captor.firstValue
       assertThat(accountToSave.reference).isEqualTo(TEST_ACCOUNT_REF)
       assertThat(accountToSave.createdBy).isEqualTo(TEST_USERNAME)
@@ -65,7 +65,7 @@ class AccountServiceTest {
 
     @Test
     fun `Should call the repository with a valid reference and return the correct account`() {
-      whenever(accountRepositoryMock.findAccountById(dummyUUID)).thenReturn(dummyAccountEntity)
+      whenever(accountDataRepositoryMock.findAccountById(dummyUUID)).thenReturn(dummyAccountEntity)
 
       val retrievedAccountEntity: AccountEntity? = accountService.readAccount(dummyUUID)
       assertThat(retrievedAccountEntity).isEqualTo(dummyAccountEntity)
@@ -74,7 +74,7 @@ class AccountServiceTest {
     @Test
     fun `Should return null if the account does not exist`() {
       val incorrectUUID = UUID.fromString("00000000-0000-0000-0000-000000000001")
-      whenever(accountRepositoryMock.findAccountById(incorrectUUID)).thenReturn(null)
+      whenever(accountDataRepositoryMock.findAccountById(incorrectUUID)).thenReturn(null)
       val retrievedAccount = accountService.readAccount(incorrectUUID)
       assertThat(retrievedAccount).isNull()
     }

@@ -10,20 +10,20 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.AccountResponse
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.CreateAccountRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateAccountRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountResponse
 import java.time.LocalDateTime
 import java.util.*
 
 class AccountIntegrationTest @Autowired constructor(
-  var accountRepository: AccountRepository,
+  var accountDataRepository: AccountDataRepository,
 ) : IntegrationTestBase() {
 
   @Transactional
   @BeforeEach
   fun resetDB() {
-    accountRepository.deleteAllInBatch()
+    accountDataRepository.deleteAllInBatch()
   }
 
   @Nested

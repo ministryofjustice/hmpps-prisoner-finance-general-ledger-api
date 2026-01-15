@@ -15,8 +15,8 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.SubAccountService
 import java.time.LocalDateTime
 import java.util.UUID
@@ -29,10 +29,10 @@ private const val TEST_USERNAME = "TEST_USERNAME"
 class SubAccountServiceTest {
 
   @Mock
-  lateinit var subAccountRepositoryMock: SubAccountRepository
+  lateinit var subAccountDataRepositoryMock: SubAccountDataRepository
 
   @Mock
-  lateinit var accountRepository: AccountRepository
+  lateinit var accountDataRepository: AccountDataRepository
 
   @InjectMocks
   lateinit var subAccountService: SubAccountService
@@ -61,8 +61,8 @@ class SubAccountServiceTest {
 
     @Test
     fun `Should call the repository to save the sub account and return it`() {
-      whenever(accountRepository.getReferenceById(dummyParentAccountUUID)).thenReturn(dummyParentAccountEntity)
-      whenever(subAccountRepositoryMock.save(any())).thenReturn(dummySubAccountEntity)
+      whenever(accountDataRepository.getReferenceById(dummyParentAccountUUID)).thenReturn(dummyParentAccountEntity)
+      whenever(subAccountDataRepositoryMock.save(any())).thenReturn(dummySubAccountEntity)
       val createdSubAccount = subAccountService.createSubAccount(
         reference = TEST_SUB_ACCOUNT_REF,
         createdBy = TEST_USERNAME,
@@ -70,9 +70,9 @@ class SubAccountServiceTest {
       )
       assertThat(createdSubAccount).isEqualTo(dummySubAccountEntity)
 
-      verify(subAccountRepositoryMock, times(1)).save(any())
+      verify(subAccountDataRepositoryMock, times(1)).save(any())
       val captor = argumentCaptor<SubAccountEntity>()
-      verify(subAccountRepositoryMock).save(captor.capture())
+      verify(subAccountDataRepositoryMock).save(captor.capture())
       val subAccountToSave = captor.firstValue
       assertThat(subAccountToSave.reference).isEqualTo(TEST_SUB_ACCOUNT_REF)
       assertThat(subAccountToSave.createdBy).isEqualTo(TEST_USERNAME)

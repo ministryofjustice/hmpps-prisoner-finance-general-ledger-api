@@ -6,6 +6,6 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import java.util.*
 
 @Repository
-interface AccountRepository : JpaRepository<AccountEntity, UUID> {
+interface AccountDataRepository : JpaRepository<AccountEntity, UUID> {
   fun findAccountById(id: UUID): AccountEntity?
 }

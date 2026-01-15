@@ -2,18 +2,18 @@ package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services
 
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
 import java.util.UUID
 
 @Service
-class SubAccountService(private val subAccountRepository: SubAccountRepository, private val accountRepository: AccountRepository) {
+class SubAccountService(private val subAccountDataRepository: SubAccountDataRepository, private val accountDataRepository: AccountDataRepository) {
   fun createSubAccount(reference: String, createdBy: String, parentAccountId: UUID): SubAccountEntity {
-    val parentAccount = accountRepository.getReferenceById(parentAccountId)
+    val parentAccount = accountDataRepository.getReferenceById(parentAccountId)
 
     val subAccountEntity = SubAccountEntity(parentAccountEntity = parentAccount, reference = reference, createdBy = createdBy)
 
-    val createdSubAccount = subAccountRepository.save(subAccountEntity)
+    val createdSubAccount = subAccountDataRepository.save(subAccountEntity)
 
     return createdSubAccount
   }

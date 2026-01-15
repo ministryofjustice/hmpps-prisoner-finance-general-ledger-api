@@ -9,18 +9,18 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.AccountResponse
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.CreateAccountRequest
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.CreateSubAccountRequest
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.SubAccountResponse
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateAccountRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateSubAccountRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountResponse
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountResponse
 import java.time.LocalDateTime
 import java.util.UUID
 
 class SubAccountIntegrationTest @Autowired constructor(
-  var accountRepository: AccountRepository,
-  var subAccountRepository: SubAccountRepository,
+  var accountDataRepository: AccountDataRepository,
+  var subAccountDataRepository: SubAccountDataRepository,
 ) : IntegrationTestBase() {
 
   lateinit var dummyParentAccount: AccountResponse
@@ -28,8 +28,8 @@ class SubAccountIntegrationTest @Autowired constructor(
   @Transactional
   @BeforeEach
   fun resetDB() {
-    subAccountRepository.deleteAllInBatch()
-    accountRepository.deleteAllInBatch()
+    subAccountDataRepository.deleteAllInBatch()
+    accountDataRepository.deleteAllInBatch()
   }
 
   @Nested
