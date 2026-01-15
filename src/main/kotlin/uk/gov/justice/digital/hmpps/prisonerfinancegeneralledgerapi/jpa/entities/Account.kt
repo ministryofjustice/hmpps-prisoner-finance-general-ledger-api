@@ -1,17 +1,15 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 
-import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
-import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import java.time.LocalDateTime
 import java.util.UUID
 
 @Entity
 @Table(name = "accounts")
-data class Account(
+class Account(
 
   @Id
   @Column(name = "account_id", nullable = false, unique = true)
@@ -25,8 +23,4 @@ data class Account(
 
   @Column(name = "reference", nullable = false, unique = true)
   val reference: String = "",
-
-  @OneToMany(mappedBy = "parentAccount", orphanRemoval = true, cascade = [CascadeType.ALL], fetch = jakarta.persistence.FetchType.LAZY)
-  val subAccounts: MutableList<SubAccount> = mutableListOf(),
-
 )

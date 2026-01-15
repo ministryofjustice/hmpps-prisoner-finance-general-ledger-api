@@ -20,7 +20,6 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.CustomException
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.Account
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.AccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.CreateAccountRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.AccountService
@@ -42,7 +41,7 @@ class AccountController(
       ApiResponse(
         responseCode = "201",
         description = "Created a new account",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = Account::class))],
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = AccountResponse::class))],
       ),
       ApiResponse(
         responseCode = "400",
@@ -72,7 +71,7 @@ class AccountController(
   fun createAccount(@Valid @RequestBody body: CreateAccountRequest, user: Principal): ResponseEntity<AccountResponse> {
     try {
       val account = accountService.createAccount(body.accountReference.uppercase(), createdBy = user.name)
-      return ResponseEntity<AccountResponse>.status(HttpStatus.CREATED).body(AccountResponse(id = account.id, reference = account.reference, createdBy = account.createdBy, createdAt = account.createdAt, subAccounts = account.subAccounts))
+      return ResponseEntity<AccountResponse>.status(HttpStatus.CREATED).body(AccountResponse(id = account.id, reference = account.reference, createdBy = account.createdBy, createdAt = account.createdAt))
     } catch (_: Exception) {
       throw CustomException(status = BAD_REQUEST, message = "Duplicate account reference: $body.accountReference")
     }
@@ -84,7 +83,7 @@ class AccountController(
       ApiResponse(
         responseCode = "200",
         description = "Retrieved the account",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = Account::class))],
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = AccountResponse::class))],
       ),
       ApiResponse(
         responseCode = "400",
@@ -123,6 +122,6 @@ class AccountController(
       throw CustomException(status = HttpStatus.NOT_FOUND, message = "Account not found")
     }
 
-    return ResponseEntity<AccountResponse>.status(HttpStatus.OK).body(AccountResponse(id = account.id, reference = account.reference, createdBy = account.createdBy, createdAt = account.createdAt, subAccounts = account.subAccounts))
+    return ResponseEntity<AccountResponse>.status(HttpStatus.OK).body(AccountResponse(id = account.id, reference = account.reference, createdBy = account.createdBy, createdAt = account.createdAt))
   }
 }

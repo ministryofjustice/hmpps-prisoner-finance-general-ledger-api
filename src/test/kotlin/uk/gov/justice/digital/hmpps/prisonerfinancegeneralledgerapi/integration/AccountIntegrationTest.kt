@@ -24,7 +24,6 @@ class AccountIntegrationTest @Autowired constructor(
   @BeforeEach
   fun resetDB() {
     accountRepository.deleteAllInBatch()
-    accountRepository.flush()
   }
 
   @Nested

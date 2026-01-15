@@ -1,15 +1,16 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccount
+import jakarta.validation.constraints.NotBlank
 import java.time.LocalDateTime
 import java.util.UUID
 
 data class AccountResponse(
+  @field:NotBlank
   val id: UUID,
+  @field:NotBlank
   val reference: String,
+  @field:NotBlank
   val createdBy: String,
+  @field:NotBlank
   val createdAt: LocalDateTime,
-  @JsonIgnoreProperties("parentAccount")
-  val subAccounts: MutableList<SubAccount>,
 )
