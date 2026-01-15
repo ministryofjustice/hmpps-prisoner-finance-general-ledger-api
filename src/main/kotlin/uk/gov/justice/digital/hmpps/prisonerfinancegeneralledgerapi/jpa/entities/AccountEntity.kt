@@ -9,7 +9,7 @@ import java.util.UUID
 
 @Entity
 @Table(name = "accounts")
-class Account(
+class AccountEntity(
 
   @Id
   @Column(name = "account_id", nullable = false, unique = true)

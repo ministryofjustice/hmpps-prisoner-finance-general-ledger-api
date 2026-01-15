@@ -13,8 +13,8 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.Account
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccount
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.SubAccountService
@@ -37,8 +37,8 @@ class SubAccountServiceTest {
   @InjectMocks
   lateinit var subAccountService: SubAccountService
 
-  lateinit var dummyParentAccount: Account
-  lateinit var dummySubAccount: SubAccount
+  lateinit var dummyParentAccountEntity: AccountEntity
+  lateinit var dummySubAccountEntity: SubAccountEntity
 
   val dummySubAccountUUID: UUID = UUID.fromString("00000000-0000-0000-0000-000000000001")
   val dummyParentAccountUUID: UUID = UUID.fromString("00000000-0000-0000-0000-000000000000")
@@ -46,12 +46,12 @@ class SubAccountServiceTest {
   @BeforeEach
   fun setupDummySubAccount() {
     val dummyDate = LocalDateTime.of(2025, 12, 25, 0, 0, 0)
-    dummyParentAccount = Account(reference = TEST_ACCOUNT_REF, id = dummyParentAccountUUID)
-    dummySubAccount = SubAccount(
+    dummyParentAccountEntity = AccountEntity(reference = TEST_ACCOUNT_REF, id = dummyParentAccountUUID)
+    dummySubAccountEntity = SubAccountEntity(
       reference = TEST_SUB_ACCOUNT_REF,
       createdBy = TEST_USERNAME,
       createdAt = dummyDate,
-      parentAccount = dummyParentAccount,
+      parentAccountEntity = dummyParentAccountEntity,
       id = dummySubAccountUUID,
     )
   }
@@ -61,22 +61,22 @@ class SubAccountServiceTest {
 
     @Test
     fun `Should call the repository to save the sub account and return it`() {
-      whenever(accountRepository.getReferenceById(dummyParentAccountUUID)).thenReturn(dummyParentAccount)
-      whenever(subAccountRepositoryMock.save(any())).thenReturn(dummySubAccount)
+      whenever(accountRepository.getReferenceById(dummyParentAccountUUID)).thenReturn(dummyParentAccountEntity)
+      whenever(subAccountRepositoryMock.save(any())).thenReturn(dummySubAccountEntity)
       val createdSubAccount = subAccountService.createSubAccount(
         reference = TEST_SUB_ACCOUNT_REF,
         createdBy = TEST_USERNAME,
         parentAccountId = dummyParentAccountUUID,
       )
-      assertThat(createdSubAccount).isEqualTo(dummySubAccount)
+      assertThat(createdSubAccount).isEqualTo(dummySubAccountEntity)
 
       verify(subAccountRepositoryMock, times(1)).save(any())
-      val captor = argumentCaptor<SubAccount>()
+      val captor = argumentCaptor<SubAccountEntity>()
       verify(subAccountRepositoryMock).save(captor.capture())
       val subAccountToSave = captor.firstValue
       assertThat(subAccountToSave.reference).isEqualTo(TEST_SUB_ACCOUNT_REF)
       assertThat(subAccountToSave.createdBy).isEqualTo(TEST_USERNAME)
-      assertThat(subAccountToSave.parentAccount.id).isEqualTo(dummyParentAccountUUID)
+      assertThat(subAccountToSave.parentAccountEntity.id).isEqualTo(dummyParentAccountUUID)
     }
   }
 }

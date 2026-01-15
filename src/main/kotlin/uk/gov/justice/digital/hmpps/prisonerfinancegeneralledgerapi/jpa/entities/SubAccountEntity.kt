@@ -12,7 +12,7 @@ import java.util.UUID
 
 @Entity
 @Table(name = "sub_accounts", uniqueConstraints = [UniqueConstraint(name = "sub_account_unique_within_account", columnNames = ["account_id", "reference"])])
-class SubAccount(
+class SubAccountEntity(
 
   @Id
   @Column(name = "sub_account_id", nullable = false, unique = true)
@@ -20,7 +20,7 @@ class SubAccount(
 
   @ManyToOne(optional = false, fetch = jakarta.persistence.FetchType.LAZY)
   @JoinColumn(name = "account_id", nullable = false)
-  val parentAccount: Account = Account(),
+  val parentAccountEntity: AccountEntity = AccountEntity(),
 
   @Column(name = "reference", nullable = false)
   val reference: String = "",

@@ -13,7 +13,7 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.Account
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.AccountService
 import java.time.LocalDateTime
@@ -31,14 +31,14 @@ class AccountServiceTest {
   @InjectMocks
   lateinit var accountService: AccountService
 
-  lateinit var dummyAccount: Account
+  lateinit var dummyAccountEntity: AccountEntity
   val dummyUUID: UUID = UUID.fromString("00000000-0000-0000-0000-000000000000")
 
   @BeforeEach
   fun setupDummyAccount() {
     val dummyDate = LocalDateTime.of(2025, 12, 25, 0, 0, 0)
-    dummyAccount =
-      Account(reference = TEST_ACCOUNT_REF, createdBy = TEST_USERNAME, id = dummyUUID, createdAt = dummyDate)
+    dummyAccountEntity =
+      AccountEntity(reference = TEST_ACCOUNT_REF, createdBy = TEST_USERNAME, id = dummyUUID, createdAt = dummyDate)
   }
 
   @Nested
@@ -46,13 +46,13 @@ class AccountServiceTest {
 
     @Test
     fun `Should call the repository to save the account and return it`() {
-      whenever(accountRepositoryMock.save(any())).thenReturn(dummyAccount)
-      val createdAccount: Account =
+      whenever(accountRepositoryMock.save(any())).thenReturn(dummyAccountEntity)
+      val createdAccountEntity: AccountEntity =
         accountService.createAccount(reference = TEST_ACCOUNT_REF, createdBy = TEST_USERNAME)
-      assertThat(createdAccount).isEqualTo(dummyAccount)
+      assertThat(createdAccountEntity).isEqualTo(dummyAccountEntity)
 
       verify(accountRepositoryMock, times(1)).save(any())
-      val captor = argumentCaptor<Account>()
+      val captor = argumentCaptor<AccountEntity>()
       verify(accountRepositoryMock).save(captor.capture())
       val accountToSave = captor.firstValue
       assertThat(accountToSave.reference).isEqualTo(TEST_ACCOUNT_REF)
@@ -65,10 +65,10 @@ class AccountServiceTest {
 
     @Test
     fun `Should call the repository with a valid reference and return the correct account`() {
-      whenever(accountRepositoryMock.findAccountById(dummyUUID)).thenReturn(dummyAccount)
+      whenever(accountRepositoryMock.findAccountById(dummyUUID)).thenReturn(dummyAccountEntity)
 
-      val retrievedAccount: Account? = accountService.readAccount(dummyUUID)
-      assertThat(retrievedAccount).isEqualTo(dummyAccount)
+      val retrievedAccountEntity: AccountEntity? = accountService.readAccount(dummyUUID)
+      assertThat(retrievedAccountEntity).isEqualTo(dummyAccountEntity)
     }
 
     @Test

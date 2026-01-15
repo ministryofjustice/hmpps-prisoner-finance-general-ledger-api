@@ -92,7 +92,7 @@ class SubAccountController(
       val subAccountResponse = SubAccountResponse(
         id = createdSubAccount.id,
         reference = createdSubAccount.reference,
-        parentAccountId = createdSubAccount.parentAccount.id,
+        parentAccountId = createdSubAccount.parentAccountEntity.id,
         createdBy = createdSubAccount.createdBy,
         createdAt = createdSubAccount.createdAt,
       )

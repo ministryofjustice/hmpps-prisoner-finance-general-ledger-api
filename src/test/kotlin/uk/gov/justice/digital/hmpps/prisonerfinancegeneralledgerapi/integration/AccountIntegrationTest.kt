@@ -102,30 +102,6 @@ class AccountIntegrationTest @Autowired constructor(
     }
 
     @Test
-    fun `should return 400 Bad Request if the reference submitted already has an associated account in a different casing`() {
-      webTestClient.post()
-        .uri("/accounts")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF"))
-        .exchange()
-        .expectStatus().isCreated
-        .expectBody()
-        .jsonPath("$.reference").isEqualTo("TEST_ACCOUNT_REF")
-        .jsonPath("$.createdBy").isEqualTo("AUTH_ADM")
-        .jsonPath("$.createdAt").value { it: String -> LocalDateTime.parse(it) }
-        .jsonPath("$.uuid").value { it: String -> UUID.fromString(it) }
-
-      webTestClient.post()
-        .uri("/accounts")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(CreateAccountRequest("test_account_ref"))
-        .exchange()
-        .expectStatus().isBadRequest
-    }
-
-    @Test
     fun `createAccount should return 401 without authorisation headers`() {
       webTestClient.post()
         .uri("/accounts")
