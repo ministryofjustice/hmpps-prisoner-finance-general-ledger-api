@@ -83,7 +83,7 @@ class SubAccountIntegrationTest @Autowired constructor(
         .uri("/accounts")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF"))
+        .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF_2"))
         .exchange()
         .expectBody<AccountResponse>()
         .returnResult()
@@ -113,7 +113,7 @@ class SubAccountIntegrationTest @Autowired constructor(
 
       assertThat(subAccountTwo.id).isNotEqualTo(subAccountOne.id)
       assertThat(subAccountTwo.reference).isEqualTo(subAccountOne.reference)
-      assertThat(subAccountTwo.parentAccountId).isEqualTo(subAccountOne.parentAccountId)
+      assertThat(subAccountTwo.parentAccountId).isNotEqualTo(subAccountOne.parentAccountId)
     }
 
     @Test
