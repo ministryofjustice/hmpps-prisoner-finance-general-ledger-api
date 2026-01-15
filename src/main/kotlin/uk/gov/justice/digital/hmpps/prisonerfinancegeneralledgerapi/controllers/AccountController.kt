@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatus.BAD_REQUEST
 import org.springframework.http.MediaType
@@ -71,9 +72,19 @@ class AccountController(
   fun createAccount(@Valid @RequestBody body: CreateAccountRequest, user: Principal): ResponseEntity<AccountResponse> {
     try {
       val account = accountService.createAccount(body.accountReference.uppercase(), createdBy = user.name)
-      return ResponseEntity<AccountResponse>.status(HttpStatus.CREATED).body(AccountResponse(id = account.id, reference = account.reference, createdBy = account.createdBy, createdAt = account.createdAt))
-    } catch (_: Exception) {
-      throw CustomException(status = BAD_REQUEST, message = "Duplicate account reference: $body.accountReference")
+      return ResponseEntity<AccountResponse>.status(HttpStatus.CREATED).body(
+        AccountResponse(
+          id = account.id,
+          reference = account.reference,
+          createdBy = account.createdBy,
+          createdAt = account.createdAt,
+        ),
+      )
+    } catch (e: Exception) {
+      if (e is DataIntegrityViolationException) {
+        throw CustomException(status = BAD_REQUEST, message = "Duplicate account reference: ${body.accountReference}")
+      }
+      throw e
     }
   }
 
@@ -122,6 +133,13 @@ class AccountController(
       throw CustomException(status = HttpStatus.NOT_FOUND, message = "Account not found")
     }
 
-    return ResponseEntity<AccountResponse>.status(HttpStatus.OK).body(AccountResponse(id = account.id, reference = account.reference, createdBy = account.createdBy, createdAt = account.createdAt))
+    return ResponseEntity<AccountResponse>.status(HttpStatus.OK).body(
+      AccountResponse(
+        id = account.id,
+        reference = account.reference,
+        createdBy = account.createdBy,
+        createdAt = account.createdAt,
+      ),
+    )
   }
 }

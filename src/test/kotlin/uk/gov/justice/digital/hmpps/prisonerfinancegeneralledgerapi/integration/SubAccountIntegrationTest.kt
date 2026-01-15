@@ -105,17 +105,6 @@ class SubAccountIntegrationTest @Autowired constructor(
       assertThat(subAccountTwo.createdBy).isEqualTo("AUTH_ADM")
       assertThat(subAccountTwo.createdAt).isInstanceOf(LocalDateTime::class.java)
       assertThat(subAccountTwo.parentAccountId).isEqualTo(dummyParentAccount.id)
-
-//      val parentAccount = webTestClient.get().uri("/accounts/${dummyParentAccount.id}")
-//        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-//        .exchange()
-//        .expectBody<AccountResponse>()
-//        .returnResult()
-//        .responseBody!!
-//
-//      assertThat(parentAccount.subAccounts).hasSize(2)
-//      assertThat(parentAccount.subAccounts.get(0).id).isEqualTo(subAccountOne.id)
-//      assertThat(parentAccount.subAccounts.get(1).id).isEqualTo(subAccountTwo.id)
     }
 
     @Test
@@ -223,6 +212,17 @@ class SubAccountIntegrationTest @Autowired constructor(
         .bodyValue(CreateSubAccountRequest(testSubAccountRef))
         .exchange()
         .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `should return 404 when creating a subaccount for an account that does not exist`() {
+      webTestClient.post()
+        .uri("/accounts/00000000-0000-0000-0000-000000000001/sub-accounts")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateSubAccountRequest("TEST_SUB_ACCOUNT_REF"))
+        .exchange()
+        .expectStatus().isNotFound
     }
   }
 }

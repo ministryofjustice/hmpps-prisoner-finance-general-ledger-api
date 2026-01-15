@@ -12,6 +12,7 @@ import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.orm.jpa.JpaObjectRetrievalFailureException
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -40,7 +41,12 @@ class SubAccountController(
       ApiResponse(
         responseCode = "201",
         description = "Created a new sub-account",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = SubAccountResponse::class))],
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = SubAccountResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "400",
@@ -55,6 +61,11 @@ class SubAccountController(
       ApiResponse(
         responseCode = "403",
         description = "Forbidden - requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Resource not found - Parent account not found",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
@@ -73,7 +84,11 @@ class SubAccountController(
     user: Principal,
   ): ResponseEntity<SubAccountResponse> {
     try {
-      val createdSubAccount = subAccountService.createSubAccount(reference = request.subAccountReference.uppercase(), parentAccountId = parentAccountId, createdBy = user.name)
+      val createdSubAccount = subAccountService.createSubAccount(
+        reference = request.subAccountReference.uppercase(),
+        parentAccountId = parentAccountId,
+        createdBy = user.name,
+      )
       val subAccountResponse = SubAccountResponse(
         id = createdSubAccount.id,
         reference = createdSubAccount.reference,
@@ -82,8 +97,17 @@ class SubAccountController(
         createdAt = createdSubAccount.createdAt,
       )
       return ResponseEntity.status(201).body(subAccountResponse)
-    } catch (_: DataIntegrityViolationException) {
-      throw CustomException(message = "Sub account reference exists in account already", status = HttpStatus.BAD_REQUEST)
+    } catch (e: Exception) {
+      if (e is DataIntegrityViolationException) {
+        throw CustomException(
+          message = "Sub account reference exists in account already",
+          status = HttpStatus.BAD_REQUEST,
+        )
+      }
+      if (e is JpaObjectRetrievalFailureException) {
+        throw CustomException(message = "Parent account not found", status = HttpStatus.NOT_FOUND)
+      }
+      throw e
     }
   }
 }
