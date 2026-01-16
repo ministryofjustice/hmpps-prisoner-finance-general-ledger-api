@@ -9,11 +9,11 @@ import java.util.UUID
 
 @Entity
 @Table(name = "accounts")
-data class Account(
+class AccountEntity(
 
   @Id
   @Column(name = "account_id", nullable = false, unique = true)
-  val uuid: UUID = UUID.randomUUID(),
+  val id: UUID = UUID.randomUUID(),
 
   @Column(name = "created_by", nullable = false)
   val createdBy: String = "",
@@ -23,5 +23,4 @@ data class Account(
 
   @Column(name = "reference", nullable = false, unique = true)
   val reference: String = "",
-
 )

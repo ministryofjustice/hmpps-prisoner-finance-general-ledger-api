@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatus.BAD_REQUEST
 import org.springframework.http.MediaType
@@ -20,8 +21,8 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.CustomException
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.Account
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.CreateAccountRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateAccountRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.AccountService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.security.Principal
@@ -41,7 +42,7 @@ class AccountController(
       ApiResponse(
         responseCode = "201",
         description = "Created a new account",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = Account::class))],
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = AccountResponse::class))],
       ),
       ApiResponse(
         responseCode = "400",
@@ -68,12 +69,17 @@ class AccountController(
   @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW])
   @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
   @PostMapping(value = ["/accounts"], consumes = [MediaType.APPLICATION_JSON_VALUE])
-  fun createAccount(@Valid @RequestBody body: CreateAccountRequest, user: Principal): ResponseEntity<Account> {
+  fun createAccount(@Valid @RequestBody body: CreateAccountRequest, user: Principal): ResponseEntity<AccountResponse> {
     try {
-      val account = accountService.createAccount(body.accountReference.uppercase(), createdBy = user.name)
-      return ResponseEntity.status(201).body(account)
-    } catch (_: Exception) {
-      throw CustomException(status = BAD_REQUEST, message = "Duplicate account reference: $body.accountReference")
+      val accountEntity = accountService.createAccount(body.accountReference.uppercase(), createdBy = user.name)
+      return ResponseEntity<AccountResponse>.status(HttpStatus.CREATED).body(
+        AccountResponse.fromEntity(accountEntity = accountEntity),
+      )
+    } catch (e: Exception) {
+      if (e is DataIntegrityViolationException) {
+        throw CustomException(status = BAD_REQUEST, message = "Duplicate account reference: ${body.accountReference}")
+      }
+      throw e
     }
   }
 
@@ -83,7 +89,12 @@ class AccountController(
       ApiResponse(
         responseCode = "200",
         description = "Retrieved the account",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = Account::class))],
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = AccountResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Bad Request - Parameter is not a valid UUID",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
         responseCode = "400",
@@ -115,13 +126,15 @@ class AccountController(
   @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW])
   @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
   @GetMapping("/accounts/{accountUUID}")
-  fun getAccount(@PathVariable accountUUID: UUID): ResponseEntity<Account> {
-    val account = accountService.readAccount(accountUUID)
+  fun getAccount(@PathVariable accountUUID: UUID): ResponseEntity<AccountResponse> {
+    val accountEntity = accountService.readAccount(accountUUID)
 
-    if (account == null) {
+    if (accountEntity == null) {
       throw CustomException(status = HttpStatus.NOT_FOUND, message = "Account not found")
     }
 
-    return ResponseEntity<Account>.status(HttpStatus.OK).body(account)
+    return ResponseEntity<AccountResponse>.status(HttpStatus.OK).body(
+      AccountResponse.fromEntity(accountEntity = accountEntity),
+    )
   }
 }

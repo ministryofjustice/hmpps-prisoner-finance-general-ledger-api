@@ -2,10 +2,10 @@ package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.reposit
 
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.Account
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
 import java.util.*
 
 @Repository
-interface AccountRepository : JpaRepository<Account, UUID> {
-  fun findAccountByUuid(uuid: UUID): Account?
+interface AccountDataRepository : JpaRepository<AccountEntity, UUID> {
+  fun findAccountById(id: UUID): AccountEntity?
 }
