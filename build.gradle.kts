@@ -90,6 +90,15 @@ tasks.register<JacocoReport>("jacocoUnitTestReport") {
     xml.required.set(true)
     xml.outputLocation.set(layout.buildDirectory.file("reports/jacoco/unit/jacoco.xml"))
   }
+
+  doLast {
+    val reportFile = reports.xml.outputLocation.get().asFile
+    if (reportFile.exists()) {
+      val content = reportFile.readText()
+      val updatedContent = content.replaceFirst("name=\"${project.name}\"", "name=\"Unit Tests\"")
+      reportFile.writeText(updatedContent)
+    }
+  }
 }
 
 tasks.register<JacocoReport>("jacocoTestIntegrationReport") {
@@ -104,6 +113,15 @@ tasks.register<JacocoReport>("jacocoTestIntegrationReport") {
     html.outputLocation.set(layout.buildDirectory.dir("reports/jacoco/integration"))
     xml.required.set(true)
     xml.outputLocation.set(layout.buildDirectory.file("reports/jacoco/integration/jacoco.xml"))
+  }
+
+  doLast {
+    val reportFile = reports.xml.outputLocation.get().asFile
+    if (reportFile.exists()) {
+      val content = reportFile.readText()
+      val updatedContent = content.replaceFirst("name=\"${project.name}\"", "name=\"Integration Tests\"")
+      reportFile.writeText(updatedContent)
+    }
   }
 }
 
@@ -123,6 +141,15 @@ tasks.register<JacocoReport>("combineJacocoReports") {
     html.outputLocation.set(layout.buildDirectory.dir("reports/jacoco/combined"))
     xml.required.set(true)
     xml.outputLocation.set(layout.buildDirectory.file("reports/jacoco/combined/jacoco.xml"))
+  }
+
+  doLast {
+    val reportFile = reports.xml.outputLocation.get().asFile
+    if (reportFile.exists()) {
+      val content = reportFile.readText()
+      val updatedContent = content.replaceFirst("name=\"${project.name}\"", "name=\"Combined Tests\"")
+      reportFile.writeText(updatedContent)
+    }
   }
 }
 
