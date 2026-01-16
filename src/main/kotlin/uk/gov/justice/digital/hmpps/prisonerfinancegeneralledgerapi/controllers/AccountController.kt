@@ -71,14 +71,9 @@ class AccountController(
   @PostMapping(value = ["/accounts"], consumes = [MediaType.APPLICATION_JSON_VALUE])
   fun createAccount(@Valid @RequestBody body: CreateAccountRequest, user: Principal): ResponseEntity<AccountResponse> {
     try {
-      val account = accountService.createAccount(body.accountReference.uppercase(), createdBy = user.name)
+      val accountEntity = accountService.createAccount(body.accountReference.uppercase(), createdBy = user.name)
       return ResponseEntity<AccountResponse>.status(HttpStatus.CREATED).body(
-        AccountResponse(
-          id = account.id,
-          reference = account.reference,
-          createdBy = account.createdBy,
-          createdAt = account.createdAt,
-        ),
+        AccountResponse.fromEntity(accountEntity = accountEntity),
       )
     } catch (e: Exception) {
       if (e is DataIntegrityViolationException) {
@@ -132,19 +127,14 @@ class AccountController(
   @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
   @GetMapping("/accounts/{accountUUID}")
   fun getAccount(@PathVariable accountUUID: UUID): ResponseEntity<AccountResponse> {
-    val account = accountService.readAccount(accountUUID)
+    val accountEntity = accountService.readAccount(accountUUID)
 
-    if (account == null) {
+    if (accountEntity == null) {
       throw CustomException(status = HttpStatus.NOT_FOUND, message = "Account not found")
     }
 
     return ResponseEntity<AccountResponse>.status(HttpStatus.OK).body(
-      AccountResponse(
-        id = account.id,
-        reference = account.reference,
-        createdBy = account.createdBy,
-        createdAt = account.createdAt,
-      ),
+      AccountResponse.fromEntity(accountEntity = accountEntity),
     )
   }
 }

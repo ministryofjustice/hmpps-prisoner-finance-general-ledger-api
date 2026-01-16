@@ -1,16 +1,16 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses
 
-import jakarta.validation.constraints.NotBlank
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
 import java.time.LocalDateTime
 import java.util.UUID
-
-data class AccountResponse(
-  @field:NotBlank
+class AccountResponse(
   val id: UUID,
-  @field:NotBlank
   val reference: String,
-  @field:NotBlank
   val createdBy: String,
-  @field:NotBlank
   val createdAt: LocalDateTime,
-)
+) {
+
+  companion object {
+    fun fromEntity(accountEntity: AccountEntity): AccountResponse = AccountResponse(accountEntity.id, accountEntity.reference, accountEntity.createdBy, accountEntity.createdAt)
+  }
+}

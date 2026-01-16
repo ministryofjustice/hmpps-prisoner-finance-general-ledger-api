@@ -84,18 +84,12 @@ class SubAccountController(
     user: Principal,
   ): ResponseEntity<SubAccountResponse> {
     try {
-      val createdSubAccount = subAccountService.createSubAccount(
+      val subAccountEntity = subAccountService.createSubAccount(
         reference = request.subAccountReference.uppercase(),
         parentAccountId = parentAccountId,
         createdBy = user.name,
       )
-      val subAccountResponse = SubAccountResponse(
-        id = createdSubAccount.id,
-        reference = createdSubAccount.reference,
-        parentAccountId = createdSubAccount.parentAccountEntity.id,
-        createdBy = createdSubAccount.createdBy,
-        createdAt = createdSubAccount.createdAt,
-      )
+      val subAccountResponse = SubAccountResponse.fromEntity(subAccountEntity)
       return ResponseEntity.status(201).body(subAccountResponse)
     } catch (e: Exception) {
       if (e is DataIntegrityViolationException) {
