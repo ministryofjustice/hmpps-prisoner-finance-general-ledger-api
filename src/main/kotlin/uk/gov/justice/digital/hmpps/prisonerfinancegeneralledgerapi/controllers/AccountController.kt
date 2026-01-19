@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.CustomException
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
@@ -136,5 +137,15 @@ class AccountController(
     return ResponseEntity<AccountResponse>.status(HttpStatus.OK).body(
       AccountResponse.fromEntity(accountEntity = accountEntity),
     )
+  }
+
+  @GetMapping("/accounts")
+  fun getAccount(@RequestParam reference: String?) {
+    if (reference != null) {
+      val retrievedAccounts = accountService.findAccounts(reference)
+      // return ResponseEntity.ok(retrievedAccounts)
+    } else {
+      throw CustomException(status = HttpStatus.BAD_REQUEST, message = "Query parameters must be provided")
+    }
   }
 }

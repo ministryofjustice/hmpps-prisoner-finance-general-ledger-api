@@ -26,7 +26,11 @@ class AccountDataRepositoryTest @Autowired constructor(
 
   @BeforeEach
   fun setup() {
-    testAccountEntity = AccountEntity(reference = "TEST_ACCOUNT_REF", createdBy = "TEST_USERNAME", id = UUID.fromString("00000000-0000-0000-0000-000000000000"))
+    testAccountEntity = AccountEntity(
+      reference = "TEST_ACCOUNT_REF",
+      createdBy = "TEST_USERNAME",
+      id = UUID.fromString("00000000-0000-0000-0000-000000000000"),
+    )
     entityManager.persist(testAccountEntity)
   }
 
@@ -35,13 +39,15 @@ class AccountDataRepositoryTest @Autowired constructor(
 
     @Test
     fun `Should return an account entity matching the provided ID`() {
-      val retrievedAccount = accountDataRepository.findAccountById(UUID.fromString("00000000-0000-0000-0000-000000000000"))
+      val retrievedAccount =
+        accountDataRepository.findAccountById(UUID.fromString("00000000-0000-0000-0000-000000000000"))
       assertThat(retrievedAccount).isEqualTo(testAccountEntity)
     }
 
     @Test
     fun `Should return null if no account entity matches the provided ID`() {
-      val retrievedAccount = accountDataRepository.findAccountById(UUID.fromString("00000000-0000-0000-0000-000000000001"))
+      val retrievedAccount =
+        accountDataRepository.findAccountById(UUID.fromString("00000000-0000-0000-0000-000000000001"))
       assertThat(retrievedAccount).isNull()
     }
   }
@@ -50,15 +56,15 @@ class AccountDataRepositoryTest @Autowired constructor(
   inner class FindAccountEntityByReference {
 
     @Test
-    fun `Should return an account entity matching the provided reference`() {
-      val retrievedAccount = accountDataRepository.findAccountEntityByReference("TEST_ACCOUNT_REF")
-      assertThat(retrievedAccount).isEqualTo(testAccountEntity)
+    fun `Should return a list containing an account entity matching the provided reference`() {
+      val listOfAccounts = accountDataRepository.findAccountsByReference("TEST_ACCOUNT_REF")
+      assertThat(listOfAccounts.first()).isEqualTo(testAccountEntity)
     }
 
     @Test
-    fun `Should return null if no account entity matches the provided reference`() {
-      val retrievedAccount = accountDataRepository.findAccountEntityByReference("INVALID_ACCOUNT_REF")
-      assertThat(retrievedAccount).isNull()
+    fun `Should return an empty list if no account entity matches the provided reference`() {
+      val listOfAccounts = accountDataRepository.findAccountsByReference("INVALID_ACCOUNT_REF")
+      assertThat(listOfAccounts).isEmpty()
     }
   }
 }

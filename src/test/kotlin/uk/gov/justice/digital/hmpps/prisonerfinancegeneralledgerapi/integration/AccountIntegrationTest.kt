@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
+import org.springframework.http.ProblemDetail
 import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
@@ -24,6 +25,21 @@ class AccountIntegrationTest @Autowired constructor(
   @BeforeEach
   fun resetDB() {
     accountDataRepository.deleteAllInBatch()
+  }
+
+  private fun seedDummyAccount(): AccountResponse {
+    val responseBody = webTestClient.post()
+      .uri("/accounts")
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+      .contentType(MediaType.APPLICATION_JSON)
+      .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF"))
+      .exchange()
+      .expectStatus().isCreated
+      .expectBody<AccountResponse>()
+      .returnResult()
+      .responseBody!!
+
+    return responseBody
   }
 
   @Nested
@@ -136,26 +152,12 @@ class AccountIntegrationTest @Autowired constructor(
 
   @Nested
   inner class GetAccount {
-    private fun seedDummyAccount(): UUID {
-      val uuid = webTestClient.post()
-        .uri("/accounts")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF"))
-        .exchange()
-        .expectStatus().isCreated
-        .expectBody<AccountResponse>()
-        .returnResult()
-        .responseBody!!.id
-
-      return uuid
-    }
 
     @Test
     fun `should return 200 OK and the correct account`() {
-      val testUUID = seedDummyAccount()
+      val dummyAccount = seedDummyAccount()
       val responseBody = webTestClient.get()
-        .uri("/accounts/$testUUID")
+        .uri("/accounts/${dummyAccount.id}")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .exchange()
         .expectStatus().isOk
@@ -166,7 +168,7 @@ class AccountIntegrationTest @Autowired constructor(
       assertThat(responseBody.reference).isEqualTo("TEST_ACCOUNT_REF")
       assertThat(responseBody.createdBy).isEqualTo("AUTH_ADM")
       assertThat(responseBody.createdAt).isInstanceOf(LocalDateTime::class.java)
-      assertThat(responseBody.id).isEqualTo(testUUID)
+      assertThat(responseBody.id).isEqualTo(dummyAccount.id)
     }
 
     @Test
@@ -190,21 +192,57 @@ class AccountIntegrationTest @Autowired constructor(
 
     @Test
     fun `should return 401 when requesting account without authorisation headers`() {
-      val uuid = seedDummyAccount()
+      val dummyAccount = seedDummyAccount()
       webTestClient.get()
-        .uri("/accounts/$uuid")
+        .uri("/accounts/${dummyAccount.id}")
         .exchange()
         .expectStatus().isUnauthorized
     }
 
     @Test
     fun `should return 403 when requesting account with incorrect role`() {
-      val uuid = seedDummyAccount()
+      val dummyAccount = seedDummyAccount()
       webTestClient.get()
-        .uri("/accounts/$uuid")
+        .uri("/accounts/${dummyAccount.id}")
         .headers(setAuthorisation(roles = listOf("ROLE__WRONG_ROLE")))
         .exchange()
         .expectStatus().isForbidden
+    }
+  }
+
+  @Nested
+  inner class FindAccounts {
+
+    @Test
+    fun `should return 200 OK if reference query matches an account`() {
+      val dummyAccount = seedDummyAccount()
+      val responseBody = webTestClient.get()
+        .uri("/accounts?reference=TEST_ACCOUNT_REF")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<List<AccountResponse>>()
+        .returnResult()
+        .responseBody!!
+      assertThat(responseBody).hasSize(1)
+      assertThat(responseBody[0].reference).isEqualTo("TEST_ACCOUNT_REF")
+      assertThat(responseBody[0].createdBy).isEqualTo("AUTH_ADM")
+      assertThat(responseBody[0].createdAt).isInstanceOf(LocalDateTime::class.java)
+      assertThat(responseBody[0].id).isEqualTo(dummyAccount.id)
+    }
+
+    @Test
+    fun `should return 400 Bad request if no query parameters are provided`() {
+      val responseBody = webTestClient.get()
+        .uri("/accounts")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody<ProblemDetail>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(responseBody.properties?.get("userMessage")).isEqualTo("Query parameters must be provided")
     }
   }
 }

@@ -80,17 +80,21 @@ class AccountServiceTest {
     }
   }
 
-//  @Nested
-//  inner class FindAccounts {
-//
-//    @Test
-//    fun `Should call the repository with the reference provided and return a list of matching accounts`() {
-//      whenever(accountDataRepositoryMock.findAccountEntitiesByReference(TEST_ACCOUNT_REF)).thenReturn(listOf(dummyAccountEntity))
-//
-//      val retrievedAccounts = accountService.findAccounts(TEST_ACCOUNT_REF)
-//
-//      assertThat(retrievedAccounts.first()).isEqualTo(dummyAccountEntity)
-//      assertThat(retrievedAccounts.size).isEqualTo(1)
-//    }
-//  }
+  @Nested
+  inner class FindAccounts {
+
+    @Test
+    fun `Should call the repository with the reference provided and return a list of matching accounts`() {
+      whenever(accountDataRepositoryMock.findAccountsByReference(TEST_ACCOUNT_REF)).thenReturn(
+        listOf(
+          dummyAccountEntity,
+        ),
+      )
+
+      val retrievedAccounts = accountService.findAccounts(TEST_ACCOUNT_REF)
+
+      assertThat(retrievedAccounts.first()).isEqualTo(dummyAccountEntity)
+      assertThat(retrievedAccounts.size).isEqualTo(1)
+    }
+  }
 }

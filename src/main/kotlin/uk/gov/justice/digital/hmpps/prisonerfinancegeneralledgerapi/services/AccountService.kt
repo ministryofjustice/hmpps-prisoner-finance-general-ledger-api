@@ -20,8 +20,8 @@ class AccountService(
     return retrievedAccount
   }
 
-//  fun findAccounts(reference: String): List<AccountEntity> {
-//    val retrievedAccounts = accountDataRepository.findAccountEntituByReference(reference)
-//    return retrievedAccounts
-//  }
+  fun findAccounts(reference: String): List<AccountEntity> {
+    val retrievedAccounts = accountDataRepository.findAccountsByReference(reference)
+    return retrievedAccounts
+  }
 }
