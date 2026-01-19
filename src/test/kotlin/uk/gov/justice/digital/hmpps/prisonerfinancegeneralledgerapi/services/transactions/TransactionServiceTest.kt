@@ -69,11 +69,14 @@ class TransactionServiceTest {
     @Test
     fun `Save transaction and create postings with the created transaction ID and return it`() {
       whenever(transactionDataRepository.save(any())).thenReturn(transactionEntity)
-      whenever(postingsDataRepository.saveAll(postingEntities)).thenReturn(postingEntities)
+      whenever(postingsDataRepository.saveAll(any<Iterable<PostingEntity>>())).thenReturn(postingEntities)
+
       val createdTransaction: TransactionEntity =
         transactionService.createTransaction(TEST_TREF, TEST_USERNAME, description = transactionDescription, amount = transactionAmount, timestamp = timeStamp, postings = postingRequests)
+
       val transactionCaptor = argumentCaptor<TransactionEntity>()
       verify(transactionDataRepository, times(1)).save(transactionCaptor.capture())
+
       val transactionToSave = transactionCaptor.firstValue
       assertThat(transactionToSave.reference).isEqualTo(TEST_TREF)
       assertThat(transactionToSave.createdBy).isEqualTo(TEST_USERNAME)
@@ -83,6 +86,15 @@ class TransactionServiceTest {
 
       val postingsCaptor = argumentCaptor<List<PostingEntity>>()
       verify(postingsDataRepository, times(1)).saveAll(postingsCaptor.capture())
+
+      val postingsToSave = postingsCaptor.firstValue
+      assertThat(postingsToSave[0].createdBy).isEqualTo(TEST_USERNAME)
+      assertThat(postingsToSave[0].amount).isEqualTo(BigInteger.ONE)
+      assertThat(postingsToSave[0].type).isEqualTo(PostingType.CR)
+      assertThat(postingsToSave[0].transactionEntity.id).isEqualTo(createdTransaction.id)
+
+      // Just test the PostingType as properties are the same as 0
+      assertThat(postingsToSave[1].type).isEqualTo(PostingType.DR)
     }
   }
 }

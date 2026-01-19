@@ -18,9 +18,9 @@ class TransactionService(
 
   fun createTransaction(reference: String, createdBy: String, description: String, amount: BigInteger, timestamp: LocalDateTime, postings: List<PostingRequest>): TransactionEntity {
     val transactionEntity = TransactionEntity(reference = reference, createdBy = createdBy, description = description, amount = amount, timestamp = timestamp)
-    val savedTransactionData = transactionDataRepository.save(transactionEntity)
+    transactionDataRepository.save(transactionEntity)
 
-    val postingEntities = postings.map { PostingEntity(createdBy = createdBy, createdAt = savedTransactionData.createdAt, type = it.type, amount = it.amount, subAccountEntity = SubAccountEntity(id = it.subAccountId), transactionEntity = TransactionEntity(id = savedTransactionData.id)) }
+    val postingEntities = postings.map { PostingEntity(createdBy = createdBy, createdAt = transactionEntity.createdAt, type = it.type, amount = it.amount, subAccountEntity = SubAccountEntity(id = it.subAccountId), transactionEntity = TransactionEntity(id = transactionEntity.id)) }
     postingsDataRepository.saveAll(postingEntities)
 
     return transactionEntity
