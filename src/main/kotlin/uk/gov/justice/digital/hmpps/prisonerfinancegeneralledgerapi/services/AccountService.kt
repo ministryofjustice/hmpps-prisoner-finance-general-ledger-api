@@ -19,4 +19,9 @@ class AccountService(
     val retrievedAccount = accountDataRepository.findAccountById(accountUUID)
     return retrievedAccount
   }
+
+//  fun findAccounts(reference: String): List<AccountEntity> {
+//    val retrievedAccounts = accountDataRepository.findAccountEntituByReference(reference)
+//    return retrievedAccounts
+//  }
 }
