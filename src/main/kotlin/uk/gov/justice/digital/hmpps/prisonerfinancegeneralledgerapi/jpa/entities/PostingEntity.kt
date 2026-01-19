@@ -16,30 +16,30 @@ import java.util.UUID
 
 @Entity
 @Table(name = "postings", indexes = [Index(name = "index_postings_transactions_id", columnList = "transaction_id")])
-class PostingEntity {
+class PostingEntity(
 
   @Id
   @Column(name = "posting_id", nullable = false, unique = true)
-  val id: UUID = UUID.randomUUID()
+  val id: UUID = UUID.randomUUID(),
 
   @Column(name = "created_by", nullable = false)
-  val createdBy: String = ""
+  val createdBy: String = "",
 
   @Column(name = "created_at", nullable = false)
-  val createdAt: LocalDateTime = LocalDateTime.now()
+  val createdAt: LocalDateTime = LocalDateTime.now(),
 
   @Enumerated(EnumType.STRING)
   @Column(name = "type", nullable = false)
-  val type: PostingType = PostingType.CR
+  val type: PostingType = PostingType.CR,
 
   @Column(name = "amount", nullable = false, unique = true)
-  val amount: BigInteger = BigInteger.ZERO
+  val amount: BigInteger = BigInteger.ZERO,
 
   @ManyToOne(optional = false, fetch = jakarta.persistence.FetchType.LAZY)
   @JoinColumn(name = "sub_account_id", nullable = false)
-  val subAccountEntity: SubAccountEntity = SubAccountEntity()
+  val subAccountEntity: SubAccountEntity = SubAccountEntity(),
 
   @ManyToOne(optional = false, fetch = jakarta.persistence.FetchType.LAZY)
   @JoinColumn(name = "transaction_id", nullable = false)
-  val transactionEntity: TransactionEntity = TransactionEntity()
-}
+  val transactionEntity: TransactionEntity = TransactionEntity(),
+)
