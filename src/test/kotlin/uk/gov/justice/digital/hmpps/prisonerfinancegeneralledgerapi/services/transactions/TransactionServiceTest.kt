@@ -23,7 +23,6 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.reposito
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreatePostingRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateTransactionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.TransactionService
-import java.math.BigInteger
 import java.time.LocalDateTime
 import java.util.UUID
 
@@ -56,12 +55,6 @@ class TransactionServiceTest {
   val createPostingRequests: List<CreatePostingRequest> = listOf(
     CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000001"), type = PostingType.CR, amount = 1),
     CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000002"), type = PostingType.DR, amount = 1),
-  )
-  val createMultiplePostingRequests: List<CreatePostingRequest> = listOf(
-    CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000001"), type = PostingType.CR, amount = 3),
-    CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000002"), type = PostingType.DR, amount = 1),
-    CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000003"), type = PostingType.DR, amount = 1),
-    CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000004"), type = PostingType.DR, amount = 1),
   )
 
   @BeforeEach
