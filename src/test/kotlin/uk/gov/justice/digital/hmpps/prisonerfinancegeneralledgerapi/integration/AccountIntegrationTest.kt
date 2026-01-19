@@ -244,5 +244,52 @@ class AccountIntegrationTest @Autowired constructor(
 
       assertThat(responseBody.properties?.get("userMessage")).isEqualTo("Query parameters must be provided")
     }
+
+    @Test
+    fun `should return 400 Bad request if query parameters is an empty string`() {
+      val responseBody = webTestClient.get()
+        .uri("/accounts?reference=")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody<ProblemDetail>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(responseBody.properties?.get("userMessage")).isEqualTo("Query parameters must be provided")
+    }
+
+    @Test
+    fun `should return 401 when requesting accounts without authorisation headers`() {
+      seedDummyAccount()
+      webTestClient.get()
+        .uri("/accounts?reference=TEST_ACCOUNT_REF")
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `should return 403 when requesting account with incorrect role`() {
+      seedDummyAccount()
+      webTestClient.get()
+        .uri("/accounts?reference=TEST_ACCOUNT_REF")
+        .headers(setAuthorisation(roles = listOf("ROLE__WRONG_ROLE")))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `should return 404 Not Found if reference does not match any accounts`() {
+      seedDummyAccount()
+      val responseBody = webTestClient.get()
+        .uri("/accounts?reference=NOT_A_MATCH")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isNotFound
+        .expectBody<ProblemDetail>()
+        .returnResult()
+        .responseBody!!
+      assertThat(responseBody.properties?.get("userMessage")).isEqualTo("No accounts found for query provided")
+    }
   }
 }
