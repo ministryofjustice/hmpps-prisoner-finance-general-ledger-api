@@ -13,7 +13,9 @@ import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateAccountRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateSubAccountRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountResponse
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountResponse
 import java.time.LocalDateTime
 import java.util.*
 
@@ -172,6 +174,34 @@ class AccountIntegrationTest @Autowired constructor(
     }
 
     @Test
+    fun `should return 200 OK and any associated subaccounts`() {
+      val dummyAccount = seedDummyAccount()
+      val subAccount = webTestClient.post()
+        .uri("/accounts/${dummyAccount.id}/sub-accounts")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateSubAccountRequest("TEST_SUB_ACCOUNT_REF"))
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody<SubAccountResponse>()
+        .returnResult()
+        .responseBody!!
+
+      val responseBody = webTestClient.get()
+        .uri("/accounts/${dummyAccount.id}")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<AccountResponse>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(responseBody.subAccounts).hasSize(1)
+      assertThat(responseBody.subAccounts.first().id).isEqualTo(subAccount.id)
+      assertThat(responseBody.subAccounts.first().parentAccountId).isEqualTo(dummyAccount.id)
+    }
+
+    @Test
     fun `should return 404 Not Found when the account does not exist`() {
       val incorrectUUID = UUID.fromString("00000000-0000-0000-0000-000000000001")
       webTestClient.get()
@@ -229,6 +259,34 @@ class AccountIntegrationTest @Autowired constructor(
       assertThat(responseBody[0].createdBy).isEqualTo("AUTH_ADM")
       assertThat(responseBody[0].createdAt).isInstanceOf(LocalDateTime::class.java)
       assertThat(responseBody[0].id).isEqualTo(dummyAccount.id)
+    }
+
+    @Test
+    fun `should return 200 OK and any associated subaccounts`() {
+      val dummyAccount = seedDummyAccount()
+      val subAccount = webTestClient.post()
+        .uri("/accounts/${dummyAccount.id}/sub-accounts")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateSubAccountRequest("TEST_SUB_ACCOUNT_REF"))
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody<SubAccountResponse>()
+        .returnResult()
+        .responseBody!!
+
+      val responseBody = webTestClient.get()
+        .uri("/accounts?reference=${dummyAccount.reference}")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<List<AccountResponse>>()
+        .returnResult()
+        .responseBody!!.first()
+
+      assertThat(responseBody.subAccounts).hasSize(1)
+      assertThat(responseBody.subAccounts.first().id).isEqualTo(subAccount.id)
+      assertThat(responseBody.subAccounts.first().parentAccountId).isEqualTo(dummyAccount.id)
     }
 
     @Test

@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entitie
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
+import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import java.time.LocalDateTime
 import java.util.UUID
@@ -23,4 +24,9 @@ class AccountEntity(
 
   @Column(name = "reference", nullable = false, unique = true)
   val reference: String = "",
-)
+
+) {
+  //  @JsonIgnoreProperties("parentAccountEntity")
+  @OneToMany(mappedBy = "parentAccountEntity")
+  val subAccounts: MutableList<SubAccountEntity> = mutableListOf()
+}

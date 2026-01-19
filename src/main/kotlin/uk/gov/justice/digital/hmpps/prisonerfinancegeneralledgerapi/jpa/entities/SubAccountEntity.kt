@@ -11,7 +11,15 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 @Entity
-@Table(name = "sub_accounts", uniqueConstraints = [UniqueConstraint(name = "sub_account_unique_within_account", columnNames = ["account_id", "reference"])])
+@Table(
+  name = "sub_accounts",
+  uniqueConstraints = [
+    UniqueConstraint(
+      name = "sub_account_unique_within_account",
+      columnNames = ["account_id", "reference"],
+    ),
+  ],
+)
 class SubAccountEntity(
 
   @Id
@@ -30,4 +38,5 @@ class SubAccountEntity(
 
   @Column(name = "created_at", nullable = false)
   val createdAt: LocalDateTime = LocalDateTime.now(),
+
 )
