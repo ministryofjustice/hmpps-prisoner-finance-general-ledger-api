@@ -10,27 +10,27 @@ import java.util.UUID
 
 @Entity
 @Table(name = "transactions")
-class TransactionEntity {
+class TransactionEntity(
 
   @Id
   @Column(name = "transaction_id", nullable = false, unique = true)
-  val id: UUID = UUID.randomUUID()
+  val id: UUID = UUID.randomUUID(),
 
   @Column(name = "created_by", nullable = false)
-  val createdBy: String = ""
+  val createdBy: String = "",
 
   @Column(name = "created_at", nullable = false)
-  val createdAt: LocalDateTime = LocalDateTime.now()
+  val createdAt: LocalDateTime = LocalDateTime.now(),
 
   @Column(name = "reference", nullable = false)
-  val reference: String = ""
+  val reference: String = "",
 
   @Column(name = "description")
-  val description: String = ""
+  val description: String = "",
 
   @Column(name = "timestamp", nullable = false)
-  val timestamp: LocalDateTime = LocalDateTime.now()
+  val timestamp: LocalDateTime = LocalDateTime.now(),
 
   @Column(name = "amount", nullable = false, unique = true)
-  val amount: BigInteger = BigInteger.ZERO
-}
+  val amount: BigInteger = BigInteger.ZERO,
+)

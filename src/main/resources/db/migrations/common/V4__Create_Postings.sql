@@ -1,12 +1,12 @@
 CREATE TABLE postings
 (
-    posting_id     UUID         NOT NULL,
-    created_by     VARCHAR(255) NOT NULL,
+    posting_id     UUID                        NOT NULL,
+    created_by     VARCHAR(255)                NOT NULL,
     created_at     TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-    type           VARCHAR(255) NOT NULL,
-    amount         DECIMAL      NOT NULL,
-    sub_account_id UUID         NOT NULL,
-    transaction_id UUID         NOT NULL,
+    type           VARCHAR(255)                NOT NULL,
+    amount         DECIMAL                     NOT NULL,
+    sub_account_id UUID                        NOT NULL,
+    transaction_id UUID                        NOT NULL,
     CONSTRAINT pk_postings PRIMARY KEY (posting_id)
 );
 
@@ -18,3 +18,5 @@ ALTER TABLE postings
 
 ALTER TABLE postings
     ADD CONSTRAINT FK_POSTINGS_ON_TRANSACTION FOREIGN KEY (transaction_id) REFERENCES transactions (transaction_id);
+
+CREATE INDEX index_postings_transactions_id ON postings (transaction_id);
