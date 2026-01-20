@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.reposito
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.TransactionDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreatePostingRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateTransactionRequest
 import java.math.BigInteger
 import java.time.LocalDateTime
 
@@ -18,12 +19,12 @@ class TransactionService(
   private val subAccountDataRepository: SubAccountDataRepository,
 ) {
   @Transactional()
-  fun createTransaction(reference: String, createdBy: String, description: String, amount: BigInteger, timestamp: LocalDateTime, postings: List<CreatePostingRequest>): TransactionEntity {
+  fun createTransaction(createTxReq: CreateTransactionRequest, createdBy : String ): TransactionEntity {
 
-    val transactionEntity = TransactionEntity(reference = reference, createdBy = createdBy, description = description, amount = amount, timestamp = timestamp)
+    val transactionEntity = TransactionEntity(reference = createTxReq.reference, createdBy = createdBy, description = createTxReq.description, amount = createTxReq.amount, timestamp = createTxReq.timestamp)
     transactionDataRepository.save(transactionEntity)
 
-    val postingEntities = postings.map { PostingEntity(createdBy = createdBy, createdAt = transactionEntity.createdAt, type = it.type, amount = it.amount, subAccountEntity = subAccountDataRepository.getReferenceById(it.subAccountId),
+    val postingEntities = createTxReq.postings.map { PostingEntity(createdBy = createdBy, createdAt = transactionEntity.createdAt, type = it.type, amount = it.amount, subAccountEntity = subAccountDataRepository.getReferenceById(it.subAccountId),
       transactionEntity = TransactionEntity(id = transactionEntity.id)) }
     postingsDataRepository.saveAll(postingEntities)
 

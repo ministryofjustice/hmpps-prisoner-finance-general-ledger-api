@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses
-
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.TransactionEntity
 import java.math.BigInteger
 import java.time.LocalDateTime
 import java.util.UUID
@@ -14,4 +13,8 @@ class TransactionResponse (
   val timestamp: LocalDateTime,
   val amount: BigInteger,
   val postings : List<PostingResponse> = emptyList()
-  )
+  ){
+  companion object {
+    fun fromEntity(transactionEntity: TransactionEntity): TransactionResponse = TransactionResponse(transactionEntity.id, transactionEntity.createdBy, transactionEntity.createdAt, transactionEntity.reference, transactionEntity.description, transactionEntity.timestamp, transactionEntity.amount, postings = transactionEntity.postings.map { PostingResponse.fromEntity(it) })
+  }
+}

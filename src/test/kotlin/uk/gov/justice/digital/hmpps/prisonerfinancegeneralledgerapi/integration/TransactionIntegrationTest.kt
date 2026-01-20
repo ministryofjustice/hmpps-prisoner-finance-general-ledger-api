@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.reque
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateTransactionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountResponse
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.TransactionResponse
 import java.math.BigInteger
 import java.time.LocalDateTime
 import java.util.UUID
@@ -85,7 +86,9 @@ class TransactionIntegrationTest @Autowired constructor(
     fun `return a 201 with posted transaction with postings when sent a valid transaction`() {
       // createTransaction(reference: String, createdBy: String, description: String, amount: BigInteger, timestamp: LocalDateTime, postings: List<PostingRequest>): TransactionEntity
 
-      val createPostingRequests: List<CreatePostingRequest> = listOf(CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000001"), type = PostingType.CR, amount = BigInteger.ONE), CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000002"), type = PostingType.DR, amount = BigInteger.ONE))
+      val createPostingRequests: List<CreatePostingRequest> = listOf(
+        CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000001"), type = PostingType.CR, amount = BigInteger.ONE),
+        CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000002"), type = PostingType.DR, amount = BigInteger.ONE))
 
       val transactionResponseBody = webTestClient.post()
         .uri("/transaction")
@@ -93,10 +96,10 @@ class TransactionIntegrationTest @Autowired constructor(
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(CreateTransactionRequest(reference = "TX", description = "DESCRIPTION", amount = BigInteger.ONE, timestamp = LocalDateTime.now(), postings = createPostingRequests))
         .exchange()
-        .expectBody<SubAccountResponse>()
+        .expectStatus().isCreated
+        .expectBody<TransactionResponse>()
         .returnResult()
         .responseBody!!
-
     }
   }
 }
