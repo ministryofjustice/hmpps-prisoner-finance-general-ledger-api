@@ -3,12 +3,19 @@ package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entitie
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
+import jakarta.persistence.Index
+import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import java.time.LocalDateTime
 import java.util.UUID
 
 @Entity
-@Table(name = "accounts")
+@Table(
+  name = "accounts",
+  indexes = [
+    Index(name = "idx_reference", columnList = "reference"),
+  ],
+)
 class AccountEntity(
 
   @Id
@@ -23,4 +30,8 @@ class AccountEntity(
 
   @Column(name = "reference", nullable = false, unique = true)
   val reference: String = "",
-)
+
+) {
+  @OneToMany(mappedBy = "parentAccountEntity")
+  val subAccounts: MutableList<SubAccountEntity> = mutableListOf()
+}

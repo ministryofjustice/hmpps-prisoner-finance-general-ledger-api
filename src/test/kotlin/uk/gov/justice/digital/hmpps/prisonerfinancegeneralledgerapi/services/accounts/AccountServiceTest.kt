@@ -64,7 +64,7 @@ class AccountServiceTest {
   inner class ReadAccount {
 
     @Test
-    fun `Should call the repository with a valid reference and return the correct account`() {
+    fun `Should call the repository with a valid ID and return the correct account`() {
       whenever(accountDataRepositoryMock.findAccountById(dummyUUID)).thenReturn(dummyAccountEntity)
 
       val retrievedAccountEntity: AccountEntity? = accountService.readAccount(dummyUUID)
@@ -77,6 +77,20 @@ class AccountServiceTest {
       whenever(accountDataRepositoryMock.findAccountById(incorrectUUID)).thenReturn(null)
       val retrievedAccount = accountService.readAccount(incorrectUUID)
       assertThat(retrievedAccount).isNull()
+    }
+  }
+
+  @Nested
+  inner class FindAccounts {
+
+    @Test
+    fun `Should call the repository with the reference provided and return a list of matching accounts`() {
+      whenever(accountDataRepositoryMock.findAccountByReference(TEST_ACCOUNT_REF)).thenReturn(dummyAccountEntity)
+
+      val retrievedAccounts = accountService.findAccounts(TEST_ACCOUNT_REF)
+
+      assertThat(retrievedAccounts.first()).isEqualTo(dummyAccountEntity)
+      assertThat(retrievedAccounts.size).isEqualTo(1)
     }
   }
 }

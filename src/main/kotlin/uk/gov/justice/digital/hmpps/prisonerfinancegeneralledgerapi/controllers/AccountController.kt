@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.controllers
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.CustomException
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
@@ -136,5 +138,57 @@ class AccountController(
     return ResponseEntity<AccountResponse>.status(HttpStatus.OK).body(
       AccountResponse.fromEntity(accountEntity = accountEntity),
     )
+  }
+
+  @Operation(
+    summary = "Find accounts using query parameters",
+    description = "At least one query parameter is required for this endpoint.",
+    parameters = [Parameter(name = "reference", description = "Account reference")],
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Retrieved the account",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = AccountResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Bad Request - Invalid query parameters",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized - requires a valid OAuth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden - requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "500",
+        description = "Internal Server Error - An unexpected error occurred.",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW])
+  @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
+  @GetMapping("/accounts")
+  fun getAccount(@RequestParam reference: String?): ResponseEntity<List<AccountResponse>> {
+//    If no params are provided, return 400. In future updates, this needs to account for all params (&&).
+    if (reference.isNullOrEmpty()) {
+      throw CustomException(
+        status = BAD_REQUEST,
+        message = "Query parameters must be provided",
+      )
+    }
+
+    val retrievedAccounts = accountService.findAccounts(reference.uppercase())
+
+    val listOfAccountResponses = retrievedAccounts.map { AccountResponse.fromEntity(it) }
+    return ResponseEntity<List<AccountResponse>>.status(HttpStatus.OK).body(listOfAccountResponses)
   }
 }

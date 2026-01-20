@@ -19,4 +19,10 @@ class AccountService(
     val retrievedAccount = accountDataRepository.findAccountById(accountUUID)
     return retrievedAccount
   }
+
+  fun findAccounts(reference: String): List<AccountEntity> {
+    val retrievedAccount = accountDataRepository.findAccountByReference(reference)
+    val listOfAccounts: List<AccountEntity> = if (retrievedAccount != null) listOf(retrievedAccount) else emptyList()
+    return listOfAccounts
+  }
 }

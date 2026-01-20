@@ -105,6 +105,11 @@ class SubAccountIntegrationTest @Autowired constructor(
       assertThat(subAccountTwo.createdBy).isEqualTo("AUTH_ADM")
       assertThat(subAccountTwo.createdAt).isInstanceOf(LocalDateTime::class.java)
       assertThat(subAccountTwo.parentAccountId).isEqualTo(dummyParentAccount.id)
+
+      webTestClient.get()
+        .uri("/accounts/${dummyParentAccount.id}")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
     }
 
     @Test
