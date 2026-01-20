@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.TransactionEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.TransactionDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.PostingRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.TransactionService
@@ -37,6 +38,9 @@ class TransactionServiceTest {
   @Mock
   lateinit var postingsDataRepository: PostingsDataRepository
 
+  @Mock
+  lateinit var subAccountDataRepository: SubAccountDataRepository
+
   @InjectMocks
   lateinit var transactionService: TransactionService
 
@@ -49,6 +53,7 @@ class TransactionServiceTest {
   val transactionDescription = "TX"
   val transactionAmount = BigInteger.ONE
   val postingRequests: List<PostingRequest> = listOf(PostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000001"), type = PostingType.CR, amount = BigInteger.ONE), PostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000002"), type = PostingType.DR, amount = BigInteger.ONE))
+
 
   @BeforeEach
   fun setupTransaction() {
@@ -70,6 +75,7 @@ class TransactionServiceTest {
     fun `Save transaction and create postings with the created transaction ID and return it`() {
       whenever(transactionDataRepository.save(any())).thenReturn(transactionEntity)
       whenever(postingsDataRepository.saveAll(any<Iterable<PostingEntity>>())).thenReturn(postingEntities)
+      whenever(subAccountDataRepository.getReferenceById(any<UUID>())).thenAnswer { SubAccountEntity(id = it.getArgument(0)) }
 
       val createdTransaction: TransactionEntity =
         transactionService.createTransaction(TEST_TREF, TEST_USERNAME, description = transactionDescription, amount = transactionAmount, timestamp = timeStamp, postings = postingRequests)
@@ -95,6 +101,17 @@ class TransactionServiceTest {
 
       // Just test the PostingType as properties are the same as 0
       assertThat(postingsToSave[1].type).isEqualTo(PostingType.DR)
+
+      assertThat(createdTransaction.postings.size).isEqualTo(2)
+
+      assertThat(createdTransaction.postings[0].id).isEqualTo(postingsToSave[0].id)
+      assertThat(createdTransaction.postings[0].amount).isEqualTo(postingsToSave[0].amount)
+      assertThat(createdTransaction.postings[0].type).isEqualTo(postingsToSave[0].type)
+      assertThat(createdTransaction.postings[0].createdBy).isEqualTo(postingsToSave[0].createdBy)
+      assertThat(createdTransaction.postings[0].transactionEntity.id).isEqualTo(postingsToSave[0].transactionEntity.id)
+
+      assertThat(createdTransaction.postings[1].id).isEqualTo(postingsToSave[1].id)
+      assertThat(createdTransaction.postings[1].type).isEqualTo(postingsToSave[1].type)
     }
   }
 }
