@@ -267,6 +267,22 @@ class AccountIntegrationTest @Autowired constructor(
     }
 
     @Test
+    fun `should return 200 OK and empty list if reference does not match any accounts`() {
+      seedDummyAccount()
+      val responseBody = webTestClient.get()
+        .uri("/accounts?reference=NOT_A_MATCH")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<List<AccountResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(responseBody).hasSize(0)
+      assertThat(responseBody).isInstanceOf(List::class.java)
+    }
+
+    @Test
     fun `should return 200 OK and any associated subaccounts`() {
       val dummyAccount = seedDummyAccount()
       val subAccount = webTestClient.post()
@@ -355,20 +371,6 @@ class AccountIntegrationTest @Autowired constructor(
         .headers(setAuthorisation(roles = listOf("ROLE__WRONG_ROLE")))
         .exchange()
         .expectStatus().isForbidden
-    }
-
-    @Test
-    fun `should return 404 Not Found if reference does not match any accounts`() {
-      seedDummyAccount()
-      val responseBody = webTestClient.get()
-        .uri("/accounts?reference=NOT_A_MATCH")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .exchange()
-        .expectStatus().isNotFound
-        .expectBody<ProblemDetail>()
-        .returnResult()
-        .responseBody!!
-      assertThat(responseBody.properties?.get("userMessage")).isEqualTo("No accounts found for query provided")
     }
   }
 }

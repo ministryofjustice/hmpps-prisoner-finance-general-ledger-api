@@ -167,11 +167,6 @@ class AccountController(
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
-        responseCode = "404",
-        description = "No accounts found for query provided",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-      ApiResponse(
         responseCode = "500",
         description = "Internal Server Error - An unexpected error occurred.",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
@@ -191,9 +186,6 @@ class AccountController(
     }
 
     val retrievedAccounts = accountService.findAccounts(reference.uppercase())
-    if (retrievedAccounts.isEmpty()) {
-      throw CustomException(status = HttpStatus.NOT_FOUND, message = "No accounts found for query provided")
-    }
 
     val listOfAccountResponses = retrievedAccounts.map { AccountResponse.fromEntity(it) }
     return ResponseEntity<List<AccountResponse>>.status(HttpStatus.OK).body(listOfAccountResponses)
