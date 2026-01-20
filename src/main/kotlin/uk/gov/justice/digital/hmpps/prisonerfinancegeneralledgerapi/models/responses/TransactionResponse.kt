@@ -4,16 +4,16 @@ import java.math.BigInteger
 import java.time.LocalDateTime
 import java.util.UUID
 
-class TransactionResponse (
+class TransactionResponse(
   val id: UUID,
   val createdBy: String,
   val createdAt: LocalDateTime,
-  val reference : String,
-  val description : String,
+  val reference: String,
+  val description: String,
   val timestamp: LocalDateTime,
-  val amount: BigInteger,
-  val postings : List<PostingResponse> = emptyList()
-  ){
+  val amount: Long,
+  val postings: List<PostingResponse> = emptyList(),
+) {
   companion object {
     fun fromEntity(transactionEntity: TransactionEntity): TransactionResponse = TransactionResponse(transactionEntity.id, transactionEntity.createdBy, transactionEntity.createdAt, transactionEntity.reference, transactionEntity.description, transactionEntity.timestamp, transactionEntity.amount, postings = transactionEntity.postings.map { PostingResponse.fromEntity(it) })
   }

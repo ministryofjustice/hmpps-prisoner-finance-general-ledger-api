@@ -12,7 +12,7 @@ class PostingResponse(
   val createdBy: String,
   val createdAt: LocalDateTime,
   val type: PostingType,
-  val amount: BigInteger,
+  val amount: Long,
   val subAccountID: UUID,
 ) {
   companion object {

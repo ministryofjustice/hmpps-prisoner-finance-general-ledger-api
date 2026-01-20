@@ -19,13 +19,20 @@ class TransactionService(
   private val subAccountDataRepository: SubAccountDataRepository,
 ) {
   @Transactional()
-  fun createTransaction(createTxReq: CreateTransactionRequest, createdBy : String ): TransactionEntity {
-
+  fun createTransaction(createTxReq: CreateTransactionRequest, createdBy: String): TransactionEntity {
     val transactionEntity = TransactionEntity(reference = createTxReq.reference, createdBy = createdBy, description = createTxReq.description, amount = createTxReq.amount, timestamp = createTxReq.timestamp)
     transactionDataRepository.save(transactionEntity)
 
-    val postingEntities = createTxReq.postings.map { PostingEntity(createdBy = createdBy, createdAt = transactionEntity.createdAt, type = it.type, amount = it.amount, subAccountEntity = subAccountDataRepository.getReferenceById(it.subAccountId),
-      transactionEntity = TransactionEntity(id = transactionEntity.id)) }
+    val postingEntities = createTxReq.postings.map {
+      PostingEntity(
+        createdBy = createdBy,
+        createdAt = transactionEntity.createdAt,
+        type = it.type,
+        amount = it.amount,
+        subAccountEntity = subAccountDataRepository.getReferenceById(it.subAccountId),
+        transactionEntity = transactionEntity,
+      )
+    }
     postingsDataRepository.saveAll(postingEntities)
 
     transactionEntity.postings.addAll(postingEntities)

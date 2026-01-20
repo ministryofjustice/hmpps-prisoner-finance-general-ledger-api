@@ -6,6 +6,6 @@ data class CreateTransactionRequest(
   val reference: String,
   val description: String,
   val timestamp: LocalDateTime,
-  val amount: BigInteger,
+  val amount: Long,
   val postings: List<CreatePostingRequest>,
 )

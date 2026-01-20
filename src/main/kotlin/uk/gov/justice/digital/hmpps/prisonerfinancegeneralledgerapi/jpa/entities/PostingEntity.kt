@@ -32,8 +32,8 @@ class PostingEntity(
   @Column(name = "type", nullable = false)
   val type: PostingType = PostingType.CR,
 
-  @Column(name = "amount", nullable = false, unique = true)
-  val amount: BigInteger = BigInteger.ZERO,
+  @Column(name = "amount", nullable = false)
+  val amount: Long = 0,
 
   @ManyToOne(optional = false, fetch = jakarta.persistence.FetchType.LAZY)
   @JoinColumn(name = "sub_account_id", nullable = false)

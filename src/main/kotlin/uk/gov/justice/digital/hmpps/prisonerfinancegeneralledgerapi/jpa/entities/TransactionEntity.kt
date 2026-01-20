@@ -34,9 +34,9 @@ class TransactionEntity(
   @Column(name = "timestamp", nullable = false)
   val timestamp: LocalDateTime = LocalDateTime.now(),
 
-  @Column(name = "amount", nullable = false, unique = true)
-  val amount: BigInteger = BigInteger.ZERO,
-){
+  @Column(name = "amount", nullable = false)
+  val amount: Long = 0,
+) {
   @OneToMany(mappedBy = "transactionEntity")
   val postings = mutableListOf<PostingEntity>()
 }

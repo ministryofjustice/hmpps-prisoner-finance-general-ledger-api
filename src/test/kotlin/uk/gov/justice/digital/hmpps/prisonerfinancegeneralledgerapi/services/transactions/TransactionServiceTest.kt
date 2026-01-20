@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.reposito
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.TransactionDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreatePostingRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateTransactionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.TransactionService
 import java.math.BigInteger
 import java.time.LocalDateTime
@@ -51,9 +52,8 @@ class TransactionServiceTest {
   val date = LocalDateTime.of(2025, 1, 1, 0, 0, 0)
   val timeStamp = LocalDateTime.of(2025, 12, 24, 0, 0, 0)
   val transactionDescription = "TX"
-  val transactionAmount = BigInteger.ONE
-  val createPostingRequests: List<CreatePostingRequest> = listOf(CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000001"), type = PostingType.CR, amount = BigInteger.ONE), CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000002"), type = PostingType.DR, amount = BigInteger.ONE))
-
+  val transactionAmount: Long = 1
+  val createPostingRequests: List<CreatePostingRequest> = listOf(CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000001"), type = PostingType.CR, amount = 1), CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000002"), type = PostingType.DR, amount = 1))
 
   @BeforeEach
   fun setupTransaction() {
@@ -77,8 +77,10 @@ class TransactionServiceTest {
       whenever(postingsDataRepository.saveAll(any<Iterable<PostingEntity>>())).thenReturn(postingEntities)
       whenever(subAccountDataRepository.getReferenceById(any<UUID>())).thenAnswer { SubAccountEntity(id = it.getArgument(0)) }
 
+      val txnReq = CreateTransactionRequest(reference = TEST_TREF, description = transactionDescription, amount = transactionAmount, timestamp = timeStamp, postings = createPostingRequests)
+
       val createdTransaction: TransactionEntity =
-        transactionService.createTransaction(TEST_TREF, TEST_USERNAME, description = transactionDescription, amount = transactionAmount, timestamp = timeStamp, postings = createPostingRequests)
+        transactionService.createTransaction(txnReq, createdBy = TEST_USERNAME)
 
       val transactionCaptor = argumentCaptor<TransactionEntity>()
       verify(transactionDataRepository, times(1)).save(transactionCaptor.capture())

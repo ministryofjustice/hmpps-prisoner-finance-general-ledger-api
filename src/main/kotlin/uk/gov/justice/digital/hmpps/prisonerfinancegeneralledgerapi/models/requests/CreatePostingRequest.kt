@@ -7,5 +7,5 @@ import java.util.UUID
 data class CreatePostingRequest(
   val subAccountId: UUID,
   val type: PostingType,
-  val amount: BigInteger,
+  val amount: Long,
 )
