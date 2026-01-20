@@ -20,7 +20,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.TransactionDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.PostingRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreatePostingRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.TransactionService
 import java.math.BigInteger
 import java.time.LocalDateTime
@@ -52,7 +52,7 @@ class TransactionServiceTest {
   val timeStamp = LocalDateTime.of(2025, 12, 24, 0, 0, 0)
   val transactionDescription = "TX"
   val transactionAmount = BigInteger.ONE
-  val postingRequests: List<PostingRequest> = listOf(PostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000001"), type = PostingType.CR, amount = BigInteger.ONE), PostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000002"), type = PostingType.DR, amount = BigInteger.ONE))
+  val createPostingRequests: List<CreatePostingRequest> = listOf(CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000001"), type = PostingType.CR, amount = BigInteger.ONE), CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000002"), type = PostingType.DR, amount = BigInteger.ONE))
 
 
   @BeforeEach
@@ -66,7 +66,7 @@ class TransactionServiceTest {
       timestamp = timeStamp,
       amount = transactionAmount,
     )
-    postingEntities = postingRequests.map { PostingEntity(createdBy = TEST_USERNAME, createdAt = date, type = it.type, amount = it.amount, subAccountEntity = SubAccountEntity(), transactionEntity = transactionEntity) }.toMutableList()
+    postingEntities = createPostingRequests.map { PostingEntity(createdBy = TEST_USERNAME, createdAt = date, type = it.type, amount = it.amount, subAccountEntity = SubAccountEntity(), transactionEntity = transactionEntity) }.toMutableList()
   }
 
   @Nested
@@ -78,7 +78,7 @@ class TransactionServiceTest {
       whenever(subAccountDataRepository.getReferenceById(any<UUID>())).thenAnswer { SubAccountEntity(id = it.getArgument(0)) }
 
       val createdTransaction: TransactionEntity =
-        transactionService.createTransaction(TEST_TREF, TEST_USERNAME, description = transactionDescription, amount = transactionAmount, timestamp = timeStamp, postings = postingRequests)
+        transactionService.createTransaction(TEST_TREF, TEST_USERNAME, description = transactionDescription, amount = transactionAmount, timestamp = timeStamp, postings = createPostingRequests)
 
       val transactionCaptor = argumentCaptor<TransactionEntity>()
       verify(transactionDataRepository, times(1)).save(transactionCaptor.capture())

@@ -4,7 +4,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import java.math.BigInteger
 import java.util.UUID
 
-data class PostingRequest(
+data class CreatePostingRequest(
   val subAccountId: UUID,
   val type: PostingType,
   val amount: BigInteger,

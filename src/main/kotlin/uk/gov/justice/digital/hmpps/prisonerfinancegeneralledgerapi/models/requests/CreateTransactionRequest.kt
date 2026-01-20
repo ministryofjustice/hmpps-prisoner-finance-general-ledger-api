@@ -7,5 +7,5 @@ data class CreateTransactionRequest(
   val description: String,
   val timestamp: LocalDateTime,
   val amount: BigInteger,
-  val postings: List<PostingRequest>,
+  val postings: List<CreatePostingRequest>,
 )
