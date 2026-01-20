@@ -182,6 +182,7 @@ class AccountController(
   @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
   @GetMapping("/accounts")
   fun getAccount(@RequestParam reference: String?): ResponseEntity<List<AccountResponse>> {
+//    If no params are provided, return 400. In future updates, this needs to account for all params (&&).
     if (reference.isNullOrEmpty()) {
       throw CustomException(
         status = BAD_REQUEST,

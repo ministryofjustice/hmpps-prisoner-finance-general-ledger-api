@@ -1,0 +1,1 @@
+CREATE INDEX idx_reference ON accounts (reference);
