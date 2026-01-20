@@ -11,7 +11,6 @@ class AccountResponse(
   val createdAt: LocalDateTime,
   val subAccounts: List<SubAccountResponse> = emptyList(),
 ) {
-
   companion object {
     fun fromEntity(accountEntity: AccountEntity): AccountResponse = AccountResponse(
       accountEntity.id,

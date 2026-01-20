@@ -53,7 +53,15 @@ class TransactionServiceTest {
   val timeStamp = LocalDateTime.of(2025, 12, 24, 0, 0, 0)
   val transactionDescription = "TX"
   val transactionAmount: Long = 1
-  val createPostingRequests: List<CreatePostingRequest> = listOf(CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000001"), type = PostingType.CR, amount = 1), CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000002"), type = PostingType.DR, amount = 1))
+  val createPostingRequests: List<CreatePostingRequest> = listOf(
+    CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000001"), type = PostingType.CR, amount = 1),
+    CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000002"), type = PostingType.DR, amount = 1))
+  val createMultiplePostingRequests: List<CreatePostingRequest> = listOf(
+    CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000001"), type = PostingType.CR, amount = 3),
+    CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000002"), type = PostingType.DR, amount = 1),
+    CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000003"), type = PostingType.DR, amount = 1),
+    CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000004"), type = PostingType.DR, amount = 1)
+  )
 
   @BeforeEach
   fun setupTransaction() {
@@ -71,6 +79,12 @@ class TransactionServiceTest {
 
   @Nested
   inner class CreateTransaction {
+
+    @Test
+    fun `Save transaction with multiple posting with the created transaction ID and return it`() {
+
+    }
+
     @Test
     fun `Save transaction and create postings with the created transaction ID and return it`() {
       whenever(transactionDataRepository.save(any())).thenReturn(transactionEntity)

@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
@@ -21,7 +20,6 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.reque
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.TransactionResponse
-import java.math.BigInteger
 import java.time.LocalDateTime
 import java.util.UUID
 
@@ -44,11 +42,12 @@ class TransactionIntegrationTest @Autowired constructor(
   @Nested
   inner class CreateTransaction {
 
-    var accounts: MutableList<AccountResponse> = mutableListOf()
-    var subAccounts: MutableList<SubAccountResponse> = mutableListOf()
+    var accounts : MutableList<AccountResponse> = mutableListOf()
+    var subAccounts : MutableList<SubAccountResponse> = mutableListOf()
 
     @BeforeEach
     fun seedParentAccounts() {
+
       for (i in 1 downTo 0 step 1) {
         val accountResponseBody = webTestClient.post()
           .uri("/accounts")
@@ -62,7 +61,7 @@ class TransactionIntegrationTest @Autowired constructor(
         accounts.add(accountResponseBody)
       }
 
-      for (account in accounts) {
+      for(account in accounts) {
         val subAccountResponseBody = webTestClient.post()
           .uri("/accounts/${account.id}/sub-accounts")
           .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
@@ -78,6 +77,7 @@ class TransactionIntegrationTest @Autowired constructor(
       println(accounts.size)
       assert(accounts.size == 2)
       assert(subAccounts.size == 2)
+
     }
 
     @Test
@@ -85,15 +85,14 @@ class TransactionIntegrationTest @Autowired constructor(
       // createTransaction(reference: String, createdBy: String, description: String, amount: BigInteger, timestamp: LocalDateTime, postings: List<PostingRequest>): TransactionEntity
 
       val createPostingRequests: List<CreatePostingRequest> = listOf(
-        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 1),
-        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = 1),
-      )
+        CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000001"), type = PostingType.CR, amount = 0L),
+        CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000002"), type = PostingType.DR, amount = 0L))
 
       val transactionResponseBody = webTestClient.post()
-        .uri("/transactions")
+        .uri("/transaction")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(CreateTransactionRequest(reference = "TX", description = "DESCRIPTION", amount = 1, timestamp = LocalDateTime.now(), postings = createPostingRequests))
+        .bodyValue(CreateTransactionRequest(reference = "TX", description = "DESCRIPTION", amount = 0L, timestamp = LocalDateTime.now(), postings = createPostingRequests))
         .exchange()
         .expectStatus().isCreated
         .expectBody<TransactionResponse>()
