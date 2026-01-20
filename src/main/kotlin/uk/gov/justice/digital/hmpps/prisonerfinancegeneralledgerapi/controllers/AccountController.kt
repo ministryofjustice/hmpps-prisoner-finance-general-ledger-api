@@ -142,6 +142,7 @@ class AccountController(
 
   @Operation(
     summary = "Find accounts using query parameters",
+    description = "At least one query parameter is required for this endpoint.",
     parameters = [Parameter(name = "reference", description = "Account reference")],
   )
   @ApiResponses(
