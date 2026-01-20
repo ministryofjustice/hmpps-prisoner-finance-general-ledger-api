@@ -12,6 +12,7 @@ import org.springframework.http.ProblemDetail
 import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateAccountRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateSubAccountRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountResponse
@@ -20,12 +21,14 @@ import java.time.LocalDateTime
 import java.util.*
 
 class AccountIntegrationTest @Autowired constructor(
-  var accountDataRepository: AccountDataRepository,
+  private val accountDataRepository: AccountDataRepository,
+  private val subAccountDataRepository: SubAccountDataRepository,
 ) : IntegrationTestBase() {
 
   @Transactional
   @BeforeEach
   fun resetDB() {
+    subAccountDataRepository.deleteAllInBatch()
     accountDataRepository.deleteAllInBatch()
   }
 
@@ -63,6 +66,8 @@ class AccountIntegrationTest @Autowired constructor(
       assertThat(responseBody.createdBy).isEqualTo("AUTH_ADM")
       assertThat(responseBody.createdAt).isInstanceOf(LocalDateTime::class.java)
       assertThat(responseBody.id).isInstanceOf(UUID::class.java)
+      assertThat(responseBody.subAccounts).isInstanceOf(List::class.java)
+      assertThat(responseBody.subAccounts).isEmpty()
     }
 
     @Test
@@ -287,6 +292,22 @@ class AccountIntegrationTest @Autowired constructor(
       assertThat(responseBody.subAccounts).hasSize(1)
       assertThat(responseBody.subAccounts.first().id).isEqualTo(subAccount.id)
       assertThat(responseBody.subAccounts.first().parentAccountId).isEqualTo(dummyAccount.id)
+    }
+
+    @Test
+    fun `should return 200 OK if the reference submitted has an associated account in a different casing`() {
+      val dummyAccount = seedDummyAccount()
+      val responseBody = webTestClient.get()
+        .uri("/accounts?reference=${dummyAccount.reference.lowercase()}")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<List<AccountResponse>>()
+        .returnResult()
+        .responseBody!!
+      assertThat(responseBody).hasSize(1)
+      assertThat(responseBody[0].reference).isEqualTo(dummyAccount.reference)
+      assertThat(responseBody[0].id).isEqualTo(dummyAccount.id)
     }
 
     @Test

@@ -189,7 +189,7 @@ class AccountController(
       )
     }
 
-    val retrievedAccounts = accountService.findAccounts(reference)
+    val retrievedAccounts = accountService.findAccounts(reference.uppercase())
     if (retrievedAccounts.isEmpty()) {
       throw CustomException(status = HttpStatus.NOT_FOUND, message = "No accounts found for query provided")
     }

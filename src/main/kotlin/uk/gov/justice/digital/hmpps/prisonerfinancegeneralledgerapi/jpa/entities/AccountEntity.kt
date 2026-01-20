@@ -26,7 +26,6 @@ class AccountEntity(
   val reference: String = "",
 
 ) {
-  //  @JsonIgnoreProperties("parentAccountEntity")
   @OneToMany(mappedBy = "parentAccountEntity")
   val subAccounts: MutableList<SubAccountEntity> = mutableListOf()
 }
