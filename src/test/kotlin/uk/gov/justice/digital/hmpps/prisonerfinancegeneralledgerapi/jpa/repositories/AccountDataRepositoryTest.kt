@@ -57,14 +57,14 @@ class AccountDataRepositoryTest @Autowired constructor(
 
     @Test
     fun `Should return a list containing an account entity matching the provided reference`() {
-      val listOfAccounts = accountDataRepository.findAccountsByReference("TEST_ACCOUNT_REF")
-      assertThat(listOfAccounts.first()).isEqualTo(testAccountEntity)
+      val retrievedEntity = accountDataRepository.findAccountByReference("TEST_ACCOUNT_REF")
+      assertThat(retrievedEntity).isEqualTo(testAccountEntity)
     }
 
     @Test
-    fun `Should return an empty list if no account entity matches the provided reference`() {
-      val listOfAccounts = accountDataRepository.findAccountsByReference("INVALID_ACCOUNT_REF")
-      assertThat(listOfAccounts).isEmpty()
+    fun `Should return a null if no account entity matches the provided reference`() {
+      val retrievedEntity = accountDataRepository.findAccountByReference("INVALID_ACCOUNT_REF")
+      assertThat(retrievedEntity).isNull()
     }
   }
 }

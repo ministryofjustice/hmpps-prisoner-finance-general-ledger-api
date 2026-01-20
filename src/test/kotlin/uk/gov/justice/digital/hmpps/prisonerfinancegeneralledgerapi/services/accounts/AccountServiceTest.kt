@@ -85,21 +85,12 @@ class AccountServiceTest {
 
     @Test
     fun `Should call the repository with the reference provided and return a list of matching accounts`() {
-      whenever(accountDataRepositoryMock.findAccountsByReference(TEST_ACCOUNT_REF)).thenReturn(
-        listOf(
-          dummyAccountEntity,
-        ),
-      )
+      whenever(accountDataRepositoryMock.findAccountByReference(TEST_ACCOUNT_REF)).thenReturn(dummyAccountEntity)
 
       val retrievedAccounts = accountService.findAccounts(TEST_ACCOUNT_REF)
 
       assertThat(retrievedAccounts.first()).isEqualTo(dummyAccountEntity)
       assertThat(retrievedAccounts.size).isEqualTo(1)
-    }
-
-    //    Account returned includes a list of sub-accounts when retrieved by both reference and ID
-    @Test
-    fun `Should return`() {
     }
   }
 }

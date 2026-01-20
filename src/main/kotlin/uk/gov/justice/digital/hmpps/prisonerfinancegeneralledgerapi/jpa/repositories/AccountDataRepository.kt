@@ -8,7 +8,7 @@ import java.util.*
 @Repository
 interface AccountDataRepository : JpaRepository<AccountEntity, UUID> {
   fun findAccountById(id: UUID): AccountEntity?
-  fun findAccountsByReference(
+  fun findAccountByReference(
     reference: String,
-  ): List<AccountEntity>
+  ): AccountEntity?
 }
