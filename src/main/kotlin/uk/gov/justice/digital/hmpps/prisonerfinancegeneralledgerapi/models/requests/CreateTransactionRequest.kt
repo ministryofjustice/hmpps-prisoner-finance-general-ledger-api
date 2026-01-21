@@ -9,6 +9,4 @@ data class CreateTransactionRequest(
   val timestamp: LocalDateTime,
   val amount: Long,
   val postings: List<CreatePostingRequest>,
-){
-
-}
+)

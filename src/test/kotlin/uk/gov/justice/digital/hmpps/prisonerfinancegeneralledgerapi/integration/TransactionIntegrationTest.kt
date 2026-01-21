@@ -42,17 +42,12 @@ class TransactionIntegrationTest @Autowired constructor(
   @Nested
   inner class CreateTransaction {
 
-    var accounts : MutableList<AccountResponse> = mutableListOf()
-    var subAccounts : MutableList<SubAccountResponse> = mutableListOf()
+    var accounts: MutableList<AccountResponse> = mutableListOf()
+    var subAccounts: MutableList<SubAccountResponse> = mutableListOf()
 
     @BeforeEach
     fun seedParentAccounts() {
-<<<<<<< HEAD
       for (i in 3 downTo 0 step 1) {
-=======
-
-      for (i in 1 downTo 0 step 1) {
->>>>>>> 5afc937 (WIP)
         val accountResponseBody = webTestClient.post()
           .uri("/accounts")
           .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
@@ -65,7 +60,7 @@ class TransactionIntegrationTest @Autowired constructor(
         accounts.add(accountResponseBody)
       }
 
-      for(account in accounts) {
+      for (account in accounts) {
         val subAccountResponseBody = webTestClient.post()
           .uri("/accounts/${account.id}/sub-accounts")
           .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
@@ -77,46 +72,28 @@ class TransactionIntegrationTest @Autowired constructor(
           .responseBody!!
         subAccounts.add(subAccountResponseBody)
       }
-<<<<<<< HEAD
-=======
-
-      println(accounts.size)
-      assert(accounts.size == 2)
-      assert(subAccounts.size == 2)
-
->>>>>>> 5afc937 (WIP)
     }
 
     @Test
     fun `return a 201 when sent a valid transaction with one to one postings`() {
-
       val createPostingRequests: List<CreatePostingRequest> = listOf(
-<<<<<<< HEAD
         CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 1L),
         CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = 1L),
       )
-=======
-        CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000001"), type = PostingType.CR, amount = 0L),
-        CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000002"), type = PostingType.DR, amount = 0L))
->>>>>>> 5afc937 (WIP)
 
       val transactionResponseBody = webTestClient.post()
-        .uri("/transaction")
+        .uri("/transactions")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .contentType(MediaType.APPLICATION_JSON)
-<<<<<<< HEAD
         .bodyValue(
           CreateTransactionRequest(
             reference = "TX",
             description = "DESCRIPTION",
             amount = 1L,
             timestamp = LocalDateTime.now(),
-            postings = createPostingRequests
-          )
+            postings = createPostingRequests,
+          ),
         )
-=======
-        .bodyValue(CreateTransactionRequest(reference = "TX", description = "DESCRIPTION", amount = 0L, timestamp = LocalDateTime.now(), postings = createPostingRequests))
->>>>>>> 5afc937 (WIP)
         .exchange()
         .expectStatus().isCreated
         .expectBody<TransactionResponse>()
@@ -154,8 +131,8 @@ class TransactionIntegrationTest @Autowired constructor(
             description = "DESCRIPTION",
             amount = 2L,
             timestamp = LocalDateTime.now(),
-            postings = createPostingRequests
-          )
+            postings = createPostingRequests,
+          ),
         )
         .exchange()
         .expectStatus().isCreated
@@ -169,12 +146,10 @@ class TransactionIntegrationTest @Autowired constructor(
       assertThat(transactionResponseBody.postings[0].amount).isEqualTo(2L)
       assertThat(transactionResponseBody.postings[1].amount).isEqualTo(1L)
       assertThat(transactionResponseBody.postings[2].amount).isEqualTo(1L)
-
     }
 
     @Test
     fun `return a 201 when sent a valid transaction with many to many postings`() {
-
       val createPostingRequests: List<CreatePostingRequest> = listOf(
         CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.DR, amount = 1L),
         CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.CR, amount = 1L),
@@ -192,8 +167,8 @@ class TransactionIntegrationTest @Autowired constructor(
             description = "DESCRIPTION",
             amount = 2L,
             timestamp = LocalDateTime.now(),
-            postings = createPostingRequests
-          )
+            postings = createPostingRequests,
+          ),
         )
         .exchange()
         .expectStatus().isCreated
@@ -214,9 +189,8 @@ class TransactionIntegrationTest @Autowired constructor(
 
     @Test
     fun `should return 400 when sent a transaction with fewer than two postings`() {
-
       val createPostingRequests: List<CreatePostingRequest> = listOf(
-        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.DR, amount = 1L)
+        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.DR, amount = 1L),
       )
 
       webTestClient.post()
@@ -229,8 +203,8 @@ class TransactionIntegrationTest @Autowired constructor(
             description = "DESCRIPTION",
             amount = 1L,
             timestamp = LocalDateTime.now(),
-            postings = createPostingRequests
-          )
+            postings = createPostingRequests,
+          ),
         )
         .exchange()
         .expectStatus().isBadRequest
@@ -238,7 +212,6 @@ class TransactionIntegrationTest @Autowired constructor(
 
     @Test
     fun `should return 400 when transaction posting credits do not match transaction amount`() {
-
       val createPostingRequests: List<CreatePostingRequest> = listOf(
         CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 100L),
         CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = 100L),
@@ -254,8 +227,8 @@ class TransactionIntegrationTest @Autowired constructor(
             description = "DESCRIPTION",
             amount = 1L,
             timestamp = LocalDateTime.now(),
-            postings = createPostingRequests
-          )
+            postings = createPostingRequests,
+          ),
         )
         .exchange()
         .expectStatus().isBadRequest
@@ -278,8 +251,8 @@ class TransactionIntegrationTest @Autowired constructor(
             description = "DESCRIPTION",
             amount = 1L,
             timestamp = LocalDateTime.now(),
-            postings = createPostingRequests
-          )
+            postings = createPostingRequests,
+          ),
         )
         .exchange()
         .expectStatus().isBadRequest
@@ -295,7 +268,6 @@ class TransactionIntegrationTest @Autowired constructor(
 
     @Test
     fun `should return 403 when requesting account with incorrect role`() {
-
       val createPostingRequests: List<CreatePostingRequest> = listOf(
         CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 1L),
         CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = 1L),
@@ -311,8 +283,8 @@ class TransactionIntegrationTest @Autowired constructor(
             description = "DESCRIPTION",
             amount = 1L,
             timestamp = LocalDateTime.now(),
-            postings = createPostingRequests
-          )
+            postings = createPostingRequests,
+          ),
         )
         .exchange()
         .expectStatus().isForbidden

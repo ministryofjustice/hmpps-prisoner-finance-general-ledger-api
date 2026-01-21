@@ -8,8 +8,8 @@ import kotlin.reflect.KClass
 @Retention(AnnotationRetention.RUNTIME)
 @MustBeDocumented
 @Constraint(validatedBy = [TransactionValidator::class])
-annotation class ValidTransactionRequest (
-  val message : String = "invalid transaction",
+annotation class ValidTransactionRequest(
+  val message: String = "invalid transaction",
   val groups: Array<KClass<*>> = [],
-  val payload: Array<KClass<out Payload>> = []
+  val payload: Array<KClass<out Payload>> = [],
 )

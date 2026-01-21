@@ -47,7 +47,7 @@ class TransactionController(
         responseCode = "400",
         description = "Bad Request",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-        ),
+      ),
       ApiResponse(
         responseCode = "401",
         description = "Unauthorized",

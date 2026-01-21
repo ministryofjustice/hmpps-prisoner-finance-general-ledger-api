@@ -21,7 +21,8 @@ class TransactionValidatorTest {
   @Test
   fun `should fail when transaction has less than two postings`() {
     val createPostingRequests: List<CreatePostingRequest> = listOf(
-      CreatePostingRequest(subAccountId = UUID.randomUUID(), type = PostingType.CR, amount = 0L))
+      CreatePostingRequest(subAccountId = UUID.randomUUID(), type = PostingType.CR, amount = 0L),
+    )
 
     val request = CreateTransactionRequest(reference = "TX", description = "DESCRIPTION", amount = 0L, timestamp = LocalDateTime.now(), postings = createPostingRequests)
     val ok = validator.isValid(request, null)
@@ -33,7 +34,8 @@ class TransactionValidatorTest {
     val createPostingRequests: List<CreatePostingRequest> = listOf(
       CreatePostingRequest(subAccountId = UUID.randomUUID(), type = PostingType.CR, amount = 1L),
       CreatePostingRequest(subAccountId = UUID.randomUUID(), type = PostingType.CR, amount = 2L),
-      CreatePostingRequest(subAccountId = UUID.randomUUID(), type = PostingType.DR, amount = 3L))
+      CreatePostingRequest(subAccountId = UUID.randomUUID(), type = PostingType.DR, amount = 3L),
+    )
 
     val request = CreateTransactionRequest(reference = "TX", description = "DESCRIPTION", amount = 100L, timestamp = LocalDateTime.now(), postings = createPostingRequests)
 
@@ -46,7 +48,8 @@ class TransactionValidatorTest {
     val createPostingRequests: List<CreatePostingRequest> = listOf(
       CreatePostingRequest(subAccountId = UUID.randomUUID(), type = PostingType.CR, amount = 1L),
       CreatePostingRequest(subAccountId = UUID.randomUUID(), type = PostingType.CR, amount = 2L),
-      CreatePostingRequest(subAccountId = UUID.randomUUID(), type = PostingType.DR, amount = 100L))
+      CreatePostingRequest(subAccountId = UUID.randomUUID(), type = PostingType.DR, amount = 100L),
+    )
 
     val request = CreateTransactionRequest(reference = "TX", description = "DESCRIPTION", amount = 3L, timestamp = LocalDateTime.now(), postings = createPostingRequests)
 
@@ -59,12 +62,12 @@ class TransactionValidatorTest {
     val createPostingRequests: List<CreatePostingRequest> = listOf(
       CreatePostingRequest(subAccountId = UUID.randomUUID(), type = PostingType.CR, amount = 1L),
       CreatePostingRequest(subAccountId = UUID.randomUUID(), type = PostingType.CR, amount = 2L),
-      CreatePostingRequest(subAccountId = UUID.randomUUID(), type = PostingType.DR, amount = 3L))
+      CreatePostingRequest(subAccountId = UUID.randomUUID(), type = PostingType.DR, amount = 3L),
+    )
 
     val request = CreateTransactionRequest(reference = "TX", description = "DESCRIPTION", amount = 3L, timestamp = LocalDateTime.now(), postings = createPostingRequests)
 
     val ok = validator.isValid(request, null)
     assertThat(ok).isTrue()
   }
-
 }
