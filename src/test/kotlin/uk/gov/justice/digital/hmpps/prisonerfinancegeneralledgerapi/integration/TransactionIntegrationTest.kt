@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration
 
 import jakarta.transaction.Transactional
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -21,7 +22,6 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.respo
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.TransactionResponse
 import java.time.LocalDateTime
-import java.util.UUID
 
 class TransactionIntegrationTest @Autowired constructor(
   var transactionDataRepository: TransactionDataRepository,
@@ -47,7 +47,7 @@ class TransactionIntegrationTest @Autowired constructor(
 
     @BeforeEach
     fun seedParentAccounts() {
-      for (i in 1 downTo 0 step 1) {
+      for (i in 3 downTo 0 step 1) {
         val accountResponseBody = webTestClient.post()
           .uri("/accounts")
           .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
@@ -72,31 +72,147 @@ class TransactionIntegrationTest @Autowired constructor(
           .responseBody!!
         subAccounts.add(subAccountResponseBody)
       }
-
-      println(accounts.size)
-      assert(accounts.size == 2)
-      assert(subAccounts.size == 2)
     }
 
     @Test
-    fun `return a 201 with posted transaction with postings when sent a valid transaction`() {
-      // createTransaction(reference: String, createdBy: String, description: String, amount: BigInteger, timestamp: LocalDateTime, postings: List<PostingRequest>): TransactionEntity
+    fun `return a 201 when sent a valid transaction with one to one postings`() {
 
       val createPostingRequests: List<CreatePostingRequest> = listOf(
-        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 0L),
-        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = 0L),
+        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 1L),
+        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = 1L),
       )
 
       val transactionResponseBody = webTestClient.post()
         .uri("/transactions")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(CreateTransactionRequest(reference = "TX", description = "DESCRIPTION", amount = 0L, timestamp = LocalDateTime.now(), postings = createPostingRequests))
+        .bodyValue(
+          CreateTransactionRequest(
+            reference = "TX",
+            description = "DESCRIPTION",
+            amount = 1L,
+            timestamp = LocalDateTime.now(),
+            postings = createPostingRequests
+          )
+        )
         .exchange()
         .expectStatus().isCreated
         .expectBody<TransactionResponse>()
         .returnResult()
         .responseBody!!
+
+      assertThat(transactionResponseBody.amount).isEqualTo(1L)
+      assertThat(transactionResponseBody.reference).isEqualTo("TX")
+      assertThat(transactionResponseBody.description).isEqualTo("DESCRIPTION")
+      assertThat(transactionResponseBody.postings.size).isEqualTo(2)
+      assertThat(transactionResponseBody.createdAt).isEqualTo(transactionResponseBody.postings[0].createdAt)
+      assertThat(transactionResponseBody.postings[0].type).isEqualTo(PostingType.CR)
+      assertThat(transactionResponseBody.postings[1].type).isEqualTo(PostingType.DR)
+      assertThat(transactionResponseBody.postings[0].amount).isEqualTo(1L)
+      assertThat(transactionResponseBody.postings[1].amount).isEqualTo(1L)
     }
+
+    @Test
+    fun `return a 201 when sent a valid transaction with many to one postings`() {
+      // createTransaction(reference: String, createdBy: String, description: String, amount: BigInteger, timestamp: LocalDateTime, postings: List<PostingRequest>): TransactionEntity
+
+      val createPostingRequests: List<CreatePostingRequest> = listOf(
+        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.DR, amount = 2L),
+        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.CR, amount = 1L),
+        CreatePostingRequest(subAccountId = subAccounts[2].id, type = PostingType.CR, amount = 1L),
+      )
+
+      val transactionResponseBody = webTestClient.post()
+        .uri("/transactions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(
+          CreateTransactionRequest(
+            reference = "TX",
+            description = "DESCRIPTION",
+            amount = 2L,
+            timestamp = LocalDateTime.now(),
+            postings = createPostingRequests
+          )
+        )
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody<TransactionResponse>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(transactionResponseBody.postings[0].type).isEqualTo(PostingType.DR)
+      assertThat(transactionResponseBody.postings[1].type).isEqualTo(PostingType.CR)
+      assertThat(transactionResponseBody.postings[2].type).isEqualTo(PostingType.CR)
+      assertThat(transactionResponseBody.postings[0].amount).isEqualTo(2L)
+      assertThat(transactionResponseBody.postings[1].amount).isEqualTo(1L)
+      assertThat(transactionResponseBody.postings[2].amount).isEqualTo(1L)
+
+    }
+
+    @Test
+    fun `return a 201 when sent a valid transaction with many to many postings`() {
+
+      val createPostingRequests: List<CreatePostingRequest> = listOf(
+        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.DR, amount = 1L),
+        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.CR, amount = 1L),
+        CreatePostingRequest(subAccountId = subAccounts[2].id, type = PostingType.DR, amount = 1L),
+        CreatePostingRequest(subAccountId = subAccounts[3].id, type = PostingType.CR, amount = 1L),
+      )
+
+      val transactionResponseBody = webTestClient.post()
+        .uri("/transactions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(
+          CreateTransactionRequest(
+            reference = "TX",
+            description = "DESCRIPTION",
+            amount = 2L,
+            timestamp = LocalDateTime.now(),
+            postings = createPostingRequests
+          )
+        )
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody<TransactionResponse>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(transactionResponseBody.postings[0].type).isEqualTo(PostingType.DR)
+      assertThat(transactionResponseBody.postings[1].type).isEqualTo(PostingType.CR)
+      assertThat(transactionResponseBody.postings[2].type).isEqualTo(PostingType.DR)
+      assertThat(transactionResponseBody.postings[3].type).isEqualTo(PostingType.CR)
+      assertThat(transactionResponseBody.postings[0].amount).isEqualTo(1L)
+      assertThat(transactionResponseBody.postings[1].amount).isEqualTo(1L)
+      assertThat(transactionResponseBody.postings[2].amount).isEqualTo(1L)
+      assertThat(transactionResponseBody.postings[3].amount).isEqualTo(1L)
+      assertThat(transactionResponseBody.amount).isEqualTo(2L)
+    }
+
+    @Test
+    fun `should return 400 when sent a transaction with fewer than two postings`() {
+
+      val createPostingRequests: List<CreatePostingRequest> = listOf(
+        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.DR, amount = 1L)
+      )
+
+      webTestClient.post()
+        .uri("/transactions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(
+          CreateTransactionRequest(
+            reference = "TX",
+            description = "DESCRIPTION",
+            amount = 1L,
+            timestamp = LocalDateTime.now(),
+            postings = createPostingRequests
+          )
+        )
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
   }
 }
