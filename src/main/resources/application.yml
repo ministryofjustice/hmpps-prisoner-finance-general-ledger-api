@@ -15,6 +15,7 @@ spring:
   flyway:
     enabled: true
     locations: classpath:/db/migrations/common
+    out-of-order: true
 
   jackson:
     date-format: "yyyy-MM-dd HH:mm:ss"
