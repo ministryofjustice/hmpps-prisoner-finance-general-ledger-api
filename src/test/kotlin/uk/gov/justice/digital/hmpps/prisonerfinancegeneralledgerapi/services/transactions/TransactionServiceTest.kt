@@ -55,12 +55,13 @@ class TransactionServiceTest {
   val transactionAmount: Long = 1
   val createPostingRequests: List<CreatePostingRequest> = listOf(
     CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000001"), type = PostingType.CR, amount = 1),
-    CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000002"), type = PostingType.DR, amount = 1))
+    CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000002"), type = PostingType.DR, amount = 1),
+  )
   val createMultiplePostingRequests: List<CreatePostingRequest> = listOf(
     CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000001"), type = PostingType.CR, amount = 3),
     CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000002"), type = PostingType.DR, amount = 1),
     CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000003"), type = PostingType.DR, amount = 1),
-    CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000004"), type = PostingType.DR, amount = 1)
+    CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000004"), type = PostingType.DR, amount = 1),
   )
 
   @BeforeEach
@@ -82,7 +83,6 @@ class TransactionServiceTest {
 
     @Test
     fun `Save transaction with multiple posting with the created transaction ID and return it`() {
-
     }
 
     @Test
@@ -111,7 +111,7 @@ class TransactionServiceTest {
 
       val postingsToSave = postingsCaptor.firstValue
       assertThat(postingsToSave[0].createdBy).isEqualTo(TEST_USERNAME)
-      assertThat(postingsToSave[0].amount).isEqualTo(BigInteger.ONE)
+      assertThat(postingsToSave[0].amount).isEqualTo(1L)
       assertThat(postingsToSave[0].type).isEqualTo(PostingType.CR)
       assertThat(postingsToSave[0].transactionEntity.id).isEqualTo(createdTransaction.id)
 

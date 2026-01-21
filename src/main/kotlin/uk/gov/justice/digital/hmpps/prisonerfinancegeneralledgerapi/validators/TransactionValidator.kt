@@ -7,18 +7,13 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.reque
 
 class TransactionValidator : ConstraintValidator<ValidTransactionRequest, CreateTransactionRequest> {
   override fun isValid(txn: CreateTransactionRequest?, p1: ConstraintValidatorContext?): Boolean {
-    if(txn != null && txn.postings.size > 1) {
+    if (txn == null) return false
+    if (txn.postings.size < 2) return false
 
-      val totalPostingCredits = txn.postings.filter { it.type == PostingType.CR }.fold(0L,{acc, it -> acc+it.amount})
-      val totalPostingDebits = txn.postings.filter { it.type == PostingType.DR }.fold(0L,{acc, it -> acc+it.amount})
+    val totalPostingCredits = txn.postings.filter { it.type == PostingType.CR }.fold(0L, { acc, it -> acc + it.amount })
+    val totalPostingDebits = txn.postings.filter { it.type == PostingType.DR }.fold(0L, { acc, it -> acc + it.amount })
 
-      if(totalPostingCredits != txn.amount || totalPostingCredits != totalPostingDebits) {
-        return false
-      }
-      return true
-    }
-
-
-     return false
-    }
+    if (totalPostingCredits != txn.amount) return false
+    return totalPostingCredits == totalPostingDebits
+  }
 }

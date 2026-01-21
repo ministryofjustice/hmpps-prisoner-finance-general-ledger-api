@@ -42,12 +42,11 @@ class TransactionIntegrationTest @Autowired constructor(
   @Nested
   inner class CreateTransaction {
 
-    var accounts : MutableList<AccountResponse> = mutableListOf()
-    var subAccounts : MutableList<SubAccountResponse> = mutableListOf()
+    var accounts: MutableList<AccountResponse> = mutableListOf()
+    var subAccounts: MutableList<SubAccountResponse> = mutableListOf()
 
     @BeforeEach
     fun seedParentAccounts() {
-
       for (i in 1 downTo 0 step 1) {
         val accountResponseBody = webTestClient.post()
           .uri("/accounts")
@@ -61,7 +60,7 @@ class TransactionIntegrationTest @Autowired constructor(
         accounts.add(accountResponseBody)
       }
 
-      for(account in accounts) {
+      for (account in accounts) {
         val subAccountResponseBody = webTestClient.post()
           .uri("/accounts/${account.id}/sub-accounts")
           .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
@@ -77,7 +76,6 @@ class TransactionIntegrationTest @Autowired constructor(
       println(accounts.size)
       assert(accounts.size == 2)
       assert(subAccounts.size == 2)
-
     }
 
     @Test
@@ -85,11 +83,12 @@ class TransactionIntegrationTest @Autowired constructor(
       // createTransaction(reference: String, createdBy: String, description: String, amount: BigInteger, timestamp: LocalDateTime, postings: List<PostingRequest>): TransactionEntity
 
       val createPostingRequests: List<CreatePostingRequest> = listOf(
-        CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000001"), type = PostingType.CR, amount = 0L),
-        CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000002"), type = PostingType.DR, amount = 0L))
+        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 0L),
+        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = 0L),
+      )
 
       val transactionResponseBody = webTestClient.post()
-        .uri("/transaction")
+        .uri("/transactions")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(CreateTransactionRequest(reference = "TX", description = "DESCRIPTION", amount = 0L, timestamp = LocalDateTime.now(), postings = createPostingRequests))
