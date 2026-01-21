@@ -16,7 +16,6 @@ spring:
     enabled: true
     locations: classpath:/db/migrations/common
 
-
   jackson:
     date-format: "yyyy-MM-dd HH:mm:ss"
     serialization:
