@@ -58,6 +58,19 @@ class TransactionValidatorTest {
   }
 
   @Test
+  fun `should fail if transaction amount is negative`() {
+    val createPostingRequests: List<CreatePostingRequest> = listOf(
+      CreatePostingRequest(subAccountId = UUID.randomUUID(), type = PostingType.CR, amount = -1L),
+      CreatePostingRequest(subAccountId = UUID.randomUUID(), type = PostingType.DR, amount = -1L),
+    )
+
+    val request = CreateTransactionRequest(reference = "TX", description = "DESCRIPTION", amount = -1L, timestamp = LocalDateTime.now(), postings = createPostingRequests)
+
+    val ok = validator.isValid(request, null)
+    assertThat(ok).isFalse()
+  }
+
+  @Test
   fun `should pass when given a valid transaction`() {
     val createPostingRequests: List<CreatePostingRequest> = listOf(
       CreatePostingRequest(subAccountId = UUID.randomUUID(), type = PostingType.CR, amount = 1L),
