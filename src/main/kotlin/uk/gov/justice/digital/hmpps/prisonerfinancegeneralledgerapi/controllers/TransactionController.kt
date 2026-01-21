@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateTransactionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.TransactionResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.TransactionService
+import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.security.Principal
 
 @Tag(name = "Transaction Controller")
@@ -41,6 +42,26 @@ class TransactionController(
             schema = Schema(implementation = TransactionResponse::class),
           ),
         ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Bad Request",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+        ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden - requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "500",
+        description = "Internal Server Error - An unexpected error occurred.",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
   )

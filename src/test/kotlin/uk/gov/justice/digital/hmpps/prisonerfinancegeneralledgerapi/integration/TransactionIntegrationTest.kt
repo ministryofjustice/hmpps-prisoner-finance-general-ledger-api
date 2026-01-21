@@ -214,5 +214,86 @@ class TransactionIntegrationTest @Autowired constructor(
         .expectStatus().isBadRequest
     }
 
+    @Test
+    fun `should return 400 when transaction posting credits do not match transaction amount`() {
+
+      val createPostingRequests: List<CreatePostingRequest> = listOf(
+        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 100L),
+        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = 100L),
+      )
+
+      webTestClient.post()
+        .uri("/transactions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(
+          CreateTransactionRequest(
+            reference = "TX",
+            description = "DESCRIPTION",
+            amount = 1L,
+            timestamp = LocalDateTime.now(),
+            postings = createPostingRequests
+          )
+        )
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    fun `should return 400 when transaction posting credits and posting debits do not balance`() {
+      val createPostingRequests: List<CreatePostingRequest> = listOf(
+        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 1L),
+        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = 100L),
+      )
+
+      webTestClient.post()
+        .uri("/transactions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(
+          CreateTransactionRequest(
+            reference = "TX",
+            description = "DESCRIPTION",
+            amount = 1L,
+            timestamp = LocalDateTime.now(),
+            postings = createPostingRequests
+          )
+        )
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    fun `should return 401 when requesting account without authorisation headers`() {
+      webTestClient.post()
+        .uri("/transactions")
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `should return 403 when requesting account with incorrect role`() {
+
+      val createPostingRequests: List<CreatePostingRequest> = listOf(
+        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 1L),
+        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = 1L),
+      )
+
+      webTestClient.post()
+        .uri("/transactions")
+        .headers(setAuthorisation(roles = listOf("ROLE__WRONG_ROLE")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(
+          CreateTransactionRequest(
+            reference = "TX",
+            description = "DESCRIPTION",
+            amount = 1L,
+            timestamp = LocalDateTime.now(),
+            postings = createPostingRequests
+          )
+        )
+        .exchange()
+        .expectStatus().isForbidden
+    }
   }
 }
