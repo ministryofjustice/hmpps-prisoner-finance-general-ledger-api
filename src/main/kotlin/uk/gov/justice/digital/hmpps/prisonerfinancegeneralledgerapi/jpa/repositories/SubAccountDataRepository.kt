@@ -6,4 +6,9 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import java.util.UUID
 
 @Repository
-interface SubAccountDataRepository : JpaRepository<SubAccountEntity, UUID>
+interface SubAccountDataRepository : JpaRepository<SubAccountEntity, UUID> {
+  fun findByParentAccountEntityReferenceAndReference(
+    accountReference: String,
+    subAccountReference: String,
+  ): SubAccountEntity?
+}
