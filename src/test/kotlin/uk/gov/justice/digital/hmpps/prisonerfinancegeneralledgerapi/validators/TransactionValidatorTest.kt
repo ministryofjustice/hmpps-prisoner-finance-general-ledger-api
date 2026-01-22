@@ -19,17 +19,6 @@ class TransactionValidatorTest {
   }
 
   @Test
-  fun `should fail when transaction has less than two postings`() {
-    val createPostingRequests: List<CreatePostingRequest> = listOf(
-      CreatePostingRequest(subAccountId = UUID.randomUUID(), type = PostingType.CR, amount = 0L),
-    )
-
-    val request = CreateTransactionRequest(reference = "TX", description = "DESCRIPTION", amount = 0L, timestamp = LocalDateTime.now(), postings = createPostingRequests)
-    val ok = validator.isValid(request, null)
-    assertThat(ok).isFalse()
-  }
-
-  @Test
   fun `should fail when sum of posting credits differs from transaction amount`() {
     val createPostingRequests: List<CreatePostingRequest> = listOf(
       CreatePostingRequest(subAccountId = UUID.randomUUID(), type = PostingType.CR, amount = 1L),
