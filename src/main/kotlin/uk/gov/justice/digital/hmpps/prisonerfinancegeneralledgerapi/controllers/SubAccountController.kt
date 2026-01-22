@@ -107,8 +107,9 @@ class SubAccountController(
     }
   }
 
+  @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
   @GetMapping("/sub-accounts")
-  fun findSubAccounts(@RequestParam reference: String, @RequestParam accountReference: String): ResponseEntity<List<SubAccountResponse>> {
+  fun findSubAccounts(@RequestParam reference: String?, @RequestParam accountReference: String?): ResponseEntity<List<SubAccountResponse>> {
     val subAccounts = subAccountService.findSubAccounts(accountReference, reference)
     return ResponseEntity.ok(subAccounts.map { SubAccountResponse.fromEntity(it) })
   }

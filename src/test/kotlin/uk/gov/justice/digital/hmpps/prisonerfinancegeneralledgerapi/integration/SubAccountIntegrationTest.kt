@@ -306,5 +306,77 @@ class SubAccountIntegrationTest @Autowired constructor(
       assertThat(responseBody.first().reference).isEqualTo(dummySubAccountOne.reference)
       assertThat(responseBody.first().parentAccountId).isEqualTo(dummySubAccountOne.parentAccountId)
     }
+
+    @Test
+    fun `Should return 200 and an empty list if no subAccounts match the references provided`() {
+      val responseBody = webTestClient.get()
+        .uri("/sub-accounts?reference=NOT_A_MATCH&accountReference=${dummyParentAccountOne.reference}")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<List<SubAccountResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assert(responseBody.isEmpty())
+    }
+
+    @Test
+    fun `Should return 200 and an empty list if the parent account reference does not match an existing account`() {
+      val responseBody = webTestClient.get()
+        .uri("/sub-accounts?reference=${dummySubAccountOne.reference}&accountReference=NOT_A_MATCH")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<List<SubAccountResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assert(responseBody.isEmpty())
+    }
+
+    @Test
+    fun `Should return 400 Bad Request if no query parameters are provided`() {
+      webTestClient.get()
+        .uri("/sub-accounts")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    fun `Should return 400 if only the subAccount reference is provided`() {
+      webTestClient.get()
+        .uri("/sub-accounts?reference=${dummySubAccountOne.reference}")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    fun `Should return 400 if only the account reference is provided`() {
+      webTestClient.get()
+        .uri("/sub-accounts?accountReference=${dummySubAccountOne.reference}")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    fun `Should return 401 if no authorisation headers are provided`() {
+      webTestClient.get()
+        .uri("/sub-accounts?reference=${dummySubAccountOne.reference}&accountReference=${dummyParentAccountOne.reference}")
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `Should return 403 if the user does not have the correct role`() {
+      webTestClient.get()
+        .uri("/sub-accounts?reference=${dummySubAccountOne.reference}&accountReference=${dummyParentAccountOne.reference}")
+        .headers(setAuthorisation(roles = listOf("ROLE__WRONG_ROLE")))
+        .exchange()
+        .expectStatus().isForbidden
+    }
   }
 }
