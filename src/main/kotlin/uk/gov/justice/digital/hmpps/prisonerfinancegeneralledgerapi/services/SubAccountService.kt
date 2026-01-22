@@ -23,7 +23,7 @@ class SubAccountService(private val subAccountDataRepository: SubAccountDataRepo
   fun findSubAccounts(accountReference: String?, subAccountReference: String?): List<SubAccountEntity> {
     if (subAccountReference == null || accountReference == null) {
       throw CustomException(
-        message = "Both reference and subAccount reference must be provided",
+        message = "Both reference and accountReference query parameters must be provided",
         status = HttpStatus.BAD_REQUEST,
       )
     }
