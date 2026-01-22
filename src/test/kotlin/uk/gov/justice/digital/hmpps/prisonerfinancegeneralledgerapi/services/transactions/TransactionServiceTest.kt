@@ -75,10 +75,6 @@ class TransactionServiceTest {
   inner class CreateTransaction {
 
     @Test
-    fun `Save transaction with multiple posting with the created transaction ID and return it`() {
-    }
-
-    @Test
     fun `Save transaction and create postings with the created transaction ID and return it`() {
       whenever(transactionDataRepository.save(any())).thenReturn(transactionEntity)
       whenever(postingsDataRepository.saveAll(any<Iterable<PostingEntity>>())).thenReturn(postingEntities)
@@ -122,5 +118,25 @@ class TransactionServiceTest {
       assertThat(createdTransaction.postings[1].id).isEqualTo(postingsToSave[1].id)
       assertThat(createdTransaction.postings[1].type).isEqualTo(postingsToSave[1].type)
     }
+  }
+
+  @Nested
+  inner class ReadTransaction {
+
+    @Test
+    fun `Should call the data repository to read and return transaction`() {
+      whenever(transactionDataRepository.findTransactionById(transactionUUID)).thenReturn(transactionEntity)
+      val txn = transactionService.readTransaction(transactionUUID)!!
+      assertThat(txn.id).isEqualTo(transactionEntity.id)
+      assertThat(txn.amount).isEqualTo(transactionEntity.amount)
+    }
+  }
+
+  @Test
+  fun `Should call the data repository to read and return transaction`() {
+    val incorrectUUID = UUID.fromString("00000000-0000-0000-0000-000000000001")
+    whenever(transactionDataRepository.findTransactionById(incorrectUUID)).thenReturn(null)
+    val retrievedTransaction = transactionService.readTransaction(incorrectUUID)
+    assertThat(retrievedTransaction).isNull()
   }
 }

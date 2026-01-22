@@ -6,4 +6,6 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import java.util.UUID
 
 @Repository
-interface TransactionDataRepository : JpaRepository<TransactionEntity, UUID>
+interface TransactionDataRepository : JpaRepository<TransactionEntity, UUID> {
+  fun findTransactionById(id: UUID): TransactionEntity?
+}

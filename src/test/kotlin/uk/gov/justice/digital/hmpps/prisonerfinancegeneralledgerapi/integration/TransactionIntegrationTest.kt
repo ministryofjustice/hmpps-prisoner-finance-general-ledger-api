@@ -22,6 +22,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.respo
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.TransactionResponse
 import java.time.LocalDateTime
+import java.util.UUID
 
 class TransactionIntegrationTest @Autowired constructor(
   var transactionDataRepository: TransactionDataRepository,
@@ -40,13 +41,14 @@ class TransactionIntegrationTest @Autowired constructor(
   }
 
   @Nested
-  inner class CreateTransaction {
+  inner class PostTransaction {
 
     var accounts: MutableList<AccountResponse> = mutableListOf()
     var subAccounts: MutableList<SubAccountResponse> = mutableListOf()
 
     @BeforeEach
-    fun seedParentAccounts() {
+    fun setup() {
+
       for (i in 3 downTo 0 step 1) {
         val accountResponseBody = webTestClient.post()
           .uri("/accounts")
@@ -338,5 +340,128 @@ class TransactionIntegrationTest @Autowired constructor(
         .exchange()
         .expectStatus().isForbidden
     }
+  }
+
+  @Nested
+  inner class GetTransaction {
+
+    var accounts : MutableList<AccountResponse> = mutableListOf()
+    var subAccounts : MutableList<SubAccountResponse> = mutableListOf()
+    lateinit var transaction : TransactionResponse
+
+    @BeforeEach
+    fun setUp() {
+      for (i in 2 downTo 0 step 1) {
+        val accountResponseBody = webTestClient.post()
+          .uri("/accounts")
+          .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(CreateAccountRequest("$i"))
+          .exchange()
+          .expectBody<AccountResponse>()
+          .returnResult()
+          .responseBody!!
+        accounts.add(accountResponseBody)
+      }
+
+      for (account in accounts) {
+        val subAccountResponseBody = webTestClient.post()
+          .uri("/accounts/${account.id}/sub-accounts")
+          .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(CreateSubAccountRequest(account.reference))
+          .exchange()
+          .expectBody<SubAccountResponse>()
+          .returnResult()
+          .responseBody!!
+        subAccounts.add(subAccountResponseBody)
+      }
+
+      val createPostingRequests: List<CreatePostingRequest> = listOf(
+        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 1L),
+        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = 1L),
+      )
+
+      transaction = webTestClient.post()
+        .uri("/transactions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(
+          CreateTransactionRequest(
+            reference = "TX",
+            description = "DESCRIPTION",
+            amount = 1L,
+            timestamp = LocalDateTime.now(),
+            postings = createPostingRequests,
+          ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody<TransactionResponse>()
+        .returnResult()
+        .responseBody!!
+    }
+
+    @Test
+    fun `should return 200 transaction with postings when sent a valid id`() {
+     val transactionResponse = webTestClient.get()
+      .uri("/transactions/${transaction.id}")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk
+      .expectBody<TransactionResponse>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(transactionResponse.amount).isEqualTo(1L)
+      assertThat(transactionResponse.description).isEqualTo("DESCRIPTION")
+      assertThat(transactionResponse.reference).isEqualTo("TX")
+      assertThat(transactionResponse.postings).hasSize(2)
+      assertThat(transactionResponse.postings[0].amount).isEqualTo(1L)
+      assertThat(transactionResponse.postings[0].subAccountID).isEqualTo(subAccounts[0].id)
+      assertThat(transactionResponse.postings[0].type).isEqualTo(PostingType.CR)
+
+      assertThat(transactionResponse.postings[1].amount).isEqualTo(1L)
+      assertThat(transactionResponse.postings[1].subAccountID).isEqualTo(subAccounts[1].id)
+      assertThat(transactionResponse.postings[1].type).isEqualTo(PostingType.DR)
+
+    }
+
+    @Test
+    fun `should return 400 when invalid UUID is provided`() {
+      webTestClient.get()
+        .uri("/transactions/NOT_A_VALID_UUID")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    fun `should return 404 when sent a valid UUID that doesn't exist`() {
+      val uuid = UUID.randomUUID()
+      webTestClient.get()
+        .uri("/transactions/${uuid}")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `should return 401 when requesting transaction without authorisation headers`() {
+      webTestClient.get()
+        .uri("/transactions/${transaction.id}")
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `should return 403 when requesting transaction with incorrect role`() {
+      webTestClient.get()
+        .uri("/transactions/${transaction.id}")
+        .headers(setAuthorisation(roles = listOf("ROLE__WRONG_ROLE")))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
   }
 }

@@ -12,15 +12,19 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateTransactionRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.TransactionResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.TransactionService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.security.Principal
+import java.util.UUID
 
 @Tag(name = "Transaction Controller")
 @RestController
@@ -69,13 +73,67 @@ class TransactionController(
   @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW])
   @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
   @PostMapping(value = ["/transactions"], consumes = [MediaType.APPLICATION_JSON_VALUE])
-  fun createTransaction(
+  fun postTransaction(
     @Valid @RequestBody body: CreateTransactionRequest,
     user: Principal,
   ): ResponseEntity<TransactionResponse> {
     try {
       val transactionEntity = transactionService.createTransaction(body, createdBy = user.name)
       return ResponseEntity<TransactionResponse>.status(HttpStatus.CREATED).body(
+        TransactionResponse.fromEntity(transactionEntity = transactionEntity),
+      )
+    } catch (ex: Exception) {
+      throw ex
+    }
+  }
+
+  @Operation(summary = "Get an transaction by UUID")
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Retrieved the transaction",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = TransactionResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Bad Request - Parameter is not a valid UUID",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized - requires a valid OAuth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden - requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Resource not found",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "500",
+        description = "Internal Server Error - An unexpected error occurred.",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW])
+  @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
+  @GetMapping(value = ["/transactions/{transactionUUID}"])
+  fun getTransactionById(@PathVariable transactionUUID: UUID): ResponseEntity<TransactionResponse> {
+    try {
+      val transactionEntity = transactionService.readTransaction(transactionUUID)
+
+      if(transactionEntity == null) {
+        return ResponseEntity<TransactionResponse>(HttpStatus.NOT_FOUND)
+      }
+
+      return ResponseEntity<TransactionResponse>.status(HttpStatus.OK).body(
         TransactionResponse.fromEntity(transactionEntity = transactionEntity),
       )
     } catch (ex: Exception) {
