@@ -34,4 +34,10 @@ class SubAccountService(private val subAccountDataRepository: SubAccountDataRepo
 
     return listOf(retrievedSubAccount)
   }
+
+  fun getSubAccountByID(subAccountID: UUID): SubAccountEntity? {
+    val retrievedAccount = subAccountDataRepository.findSubAccountEntityById(subAccountID)
+
+    return retrievedAccount
+  }
 }

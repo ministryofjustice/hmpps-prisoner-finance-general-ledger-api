@@ -99,4 +99,17 @@ class SubAccountServiceTest {
       )
     }
   }
+
+  @Nested
+  inner class GetSubAccountById {
+
+    @Test
+    fun `Should call the repo method for finding by id if id is present`() {
+      whenever(subAccountDataRepositoryMock.findSubAccountEntityById(dummySubAccountUUID)).thenReturn(dummySubAccountEntity)
+
+      val retrievedAccount = subAccountService.getSubAccountByID(dummySubAccountUUID)
+
+      assertThat(retrievedAccount).isEqualTo(dummySubAccountEntity)
+    }
+  }
 }
