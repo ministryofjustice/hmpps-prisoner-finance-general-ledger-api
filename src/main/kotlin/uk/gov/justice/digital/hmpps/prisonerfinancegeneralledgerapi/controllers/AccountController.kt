@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.controllers
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -150,7 +151,7 @@ class AccountController(
       ApiResponse(
         responseCode = "200",
         description = "Retrieved the account",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = AccountResponse::class))],
+        content = [Content(mediaType = "application/json", array = ArraySchema(schema = Schema(AccountResponse::class)))],
       ),
       ApiResponse(
         responseCode = "400",
