@@ -260,8 +260,6 @@ class TransactionIntegrationTest @Autowired constructor(
 
     @Test
     fun `should return 400 when transaction amount is negative`() {
-      // This test and the previous guarantees postings cannot be negative
-      // It is impossible to prove postings cannot be negative in isolation
       val createPostingRequests: List<CreatePostingRequest> = listOf(
         CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = -1L),
         CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = -1L),
@@ -276,6 +274,31 @@ class TransactionIntegrationTest @Autowired constructor(
             reference = "TX",
             description = "DESCRIPTION",
             amount = -1L,
+            timestamp = LocalDateTime.now(),
+            postings = createPostingRequests,
+          ),
+        )
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    fun `should return 400 when transaction postings contain a negative amount`() {
+      val createPostingRequests: List<CreatePostingRequest> = listOf(
+        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 2L),
+        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.CR, amount = -1L),
+        CreatePostingRequest(subAccountId = subAccounts[2].id, type = PostingType.DR, amount = 1L),
+      )
+
+      webTestClient.post()
+        .uri("/transactions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(
+          CreateTransactionRequest(
+            reference = "TX",
+            description = "DESCRIPTION",
+            amount = 1L,
             timestamp = LocalDateTime.now(),
             postings = createPostingRequests,
           ),
