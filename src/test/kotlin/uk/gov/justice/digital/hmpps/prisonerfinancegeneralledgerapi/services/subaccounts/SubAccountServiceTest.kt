@@ -79,4 +79,24 @@ class SubAccountServiceTest {
       assertThat(subAccountToSave.parentAccountEntity.id).isEqualTo(dummyParentAccountUUID)
     }
   }
+
+  @Nested
+  inner class FindSubAccounts {
+
+    @Test
+    fun `Should call the repo method for finding by parent account ref and sub account ref if both are present`() {
+      whenever(
+        subAccountDataRepositoryMock.findByParentAccountEntityReferenceAndReference(
+          TEST_ACCOUNT_REF,
+          TEST_SUB_ACCOUNT_REF,
+        ),
+      ).thenReturn(dummySubAccountEntity)
+
+      val retrievedSubAccounts = subAccountService.findSubAccounts(TEST_ACCOUNT_REF, TEST_SUB_ACCOUNT_REF)
+      assert(retrievedSubAccounts.size == 1)
+      assertThat(retrievedSubAccounts.first()).isEqualTo(
+        dummySubAccountEntity,
+      )
+    }
+  }
 }

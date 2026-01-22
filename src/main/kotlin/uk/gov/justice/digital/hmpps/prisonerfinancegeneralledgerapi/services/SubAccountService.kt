@@ -17,4 +17,11 @@ class SubAccountService(private val subAccountDataRepository: SubAccountDataRepo
 
     return createdSubAccount
   }
+
+  fun findSubAccounts(accountReference: String, subAccountReference: String): List<SubAccountEntity> {
+    val retrievedSubAccount = subAccountDataRepository.findByParentAccountEntityReferenceAndReference(accountReference, subAccountReference)
+    if (retrievedSubAccount == null) return emptyList()
+
+    return listOf(retrievedSubAccount)
+  }
 }
