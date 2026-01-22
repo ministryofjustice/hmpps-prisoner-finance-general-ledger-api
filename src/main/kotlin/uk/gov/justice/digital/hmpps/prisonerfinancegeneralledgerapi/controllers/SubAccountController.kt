@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.controllers
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -112,6 +113,10 @@ class SubAccountController(
     summary = "Finds a sub-account",
     description = "Finds a sub-account using a case insensitive account reference and sub-account reference. \n " +
       "Account reference and sub-account reference are both required.",
+    parameters = [
+      Parameter(name = "reference", description = "Sub-account reference", required = true),
+      Parameter(name = "accountReference", description = "Account reference", required = true),
+    ],
   )
   @ApiResponses(
     value = [
