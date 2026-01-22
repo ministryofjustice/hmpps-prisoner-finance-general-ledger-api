@@ -159,4 +159,49 @@ class SubAccountController(
     val subAccounts = subAccountService.findSubAccounts(accountReference?.uppercase(), reference?.uppercase())
     return ResponseEntity.ok(subAccounts.map { SubAccountResponse.fromEntity(it) })
   }
+
+  @Operation(
+    summary = "Get Sub Account by ID",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Returns the requested sub-account",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = SubAccountResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized - requires a valid OAuth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden - requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Resource not found - Sub account not found",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "500",
+        description = "Internal Server Error - An unexpected error occurred.",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW])
+  @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
+  @GetMapping("/sub-accounts/{subAccountId}")
+  fun getSubAccountByID(@PathVariable subAccountId: UUID): ResponseEntity<SubAccountResponse> {
+    val subAccount = subAccountService.getSubAccountByID(subAccountId)
+    return ResponseEntity.ok(SubAccountResponse.fromEntity(subAccount))
+  }
 }
