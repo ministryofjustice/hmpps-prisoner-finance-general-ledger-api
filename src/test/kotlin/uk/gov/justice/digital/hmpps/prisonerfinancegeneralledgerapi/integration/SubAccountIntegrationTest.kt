@@ -336,6 +336,23 @@ class SubAccountIntegrationTest @Autowired constructor(
     }
 
     @Test
+    fun `Should return 200 and the requested subaccount if the account reference and sub account reference provided are in a different casing`() {
+      val responseBody = webTestClient.get()
+        .uri("/sub-accounts?reference=${dummySubAccountOne.reference.lowercase()}&accountReference=${dummyParentAccountOne.reference.lowercase()}")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<List<SubAccountResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(responseBody).hasSize(1)
+      assertThat(responseBody.first().id).isEqualTo(dummySubAccountOne.id)
+      assertThat(responseBody.first().reference).isEqualTo(dummySubAccountOne.reference)
+      assertThat(responseBody.first().parentAccountId).isEqualTo(dummySubAccountOne.parentAccountId)
+    }
+
+    @Test
     fun `Should return 400 Bad Request if no query parameters are provided`() {
       webTestClient.get()
         .uri("/sub-accounts")
