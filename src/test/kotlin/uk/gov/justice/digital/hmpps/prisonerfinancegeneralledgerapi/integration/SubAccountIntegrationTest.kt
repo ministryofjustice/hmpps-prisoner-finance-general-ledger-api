@@ -23,7 +23,7 @@ class SubAccountIntegrationTest @Autowired constructor(
   var subAccountDataRepository: SubAccountDataRepository,
 ) : IntegrationTestBase() {
 
-  lateinit var dummyParentAccount: AccountResponse
+  lateinit var dummyParentAccountOne: AccountResponse
 
   @Transactional
   @BeforeEach
@@ -47,13 +47,13 @@ class SubAccountIntegrationTest @Autowired constructor(
         .returnResult()
         .responseBody!!
 
-      dummyParentAccount = responseBody
+      dummyParentAccountOne = responseBody
     }
 
     @Test
     fun `should return 201 OK and created sub account if the account provided is valid`() {
       val responseBody = webTestClient.post()
-        .uri("/accounts/${dummyParentAccount.id}/sub-accounts")
+        .uri("/accounts/${dummyParentAccountOne.id}/sub-accounts")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(CreateSubAccountRequest("TEST_SUB_ACCOUNT_REF"))
@@ -67,13 +67,13 @@ class SubAccountIntegrationTest @Autowired constructor(
       assertThat(responseBody.reference).isEqualTo("TEST_SUB_ACCOUNT_REF")
       assertThat(responseBody.createdBy).isEqualTo("AUTH_ADM")
       assertThat(responseBody.createdAt).isInstanceOf(LocalDateTime::class.java)
-      assertThat(responseBody.parentAccountId).isEqualTo(dummyParentAccount.id)
+      assertThat(responseBody.parentAccountId).isEqualTo(dummyParentAccountOne.id)
     }
 
     @Test
     fun `should return 201 and be able to create multiple sub accounts under a single account`() {
       val subAccountOne = webTestClient.post()
-        .uri("/accounts/${dummyParentAccount.id}/sub-accounts")
+        .uri("/accounts/${dummyParentAccountOne.id}/sub-accounts")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(CreateSubAccountRequest("TEST_SUB_ACCOUNT_REF_1"))
@@ -87,10 +87,10 @@ class SubAccountIntegrationTest @Autowired constructor(
       assertThat(subAccountOne.reference).isEqualTo("TEST_SUB_ACCOUNT_REF_1")
       assertThat(subAccountOne.createdBy).isEqualTo("AUTH_ADM")
       assertThat(subAccountOne.createdAt).isInstanceOf(LocalDateTime::class.java)
-      assertThat(subAccountOne.parentAccountId).isEqualTo(dummyParentAccount.id)
+      assertThat(subAccountOne.parentAccountId).isEqualTo(dummyParentAccountOne.id)
 
       val subAccountTwo = webTestClient.post()
-        .uri("/accounts/${dummyParentAccount.id}/sub-accounts")
+        .uri("/accounts/${dummyParentAccountOne.id}/sub-accounts")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(CreateSubAccountRequest("TEST_SUB_ACCOUNT_REF_2"))
@@ -104,10 +104,10 @@ class SubAccountIntegrationTest @Autowired constructor(
       assertThat(subAccountTwo.reference).isEqualTo("TEST_SUB_ACCOUNT_REF_2")
       assertThat(subAccountTwo.createdBy).isEqualTo("AUTH_ADM")
       assertThat(subAccountTwo.createdAt).isInstanceOf(LocalDateTime::class.java)
-      assertThat(subAccountTwo.parentAccountId).isEqualTo(dummyParentAccount.id)
+      assertThat(subAccountTwo.parentAccountId).isEqualTo(dummyParentAccountOne.id)
 
       webTestClient.get()
-        .uri("/accounts/${dummyParentAccount.id}")
+        .uri("/accounts/${dummyParentAccountOne.id}")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .exchange()
     }
@@ -125,7 +125,7 @@ class SubAccountIntegrationTest @Autowired constructor(
         .responseBody!!
 
       val subAccountOne = webTestClient.post()
-        .uri("/accounts/${dummyParentAccount.id}/sub-accounts")
+        .uri("/accounts/${dummyParentAccountOne.id}/sub-accounts")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(CreateSubAccountRequest("TEST_SUB_ACCOUNT_REF"))
@@ -156,7 +156,7 @@ class SubAccountIntegrationTest @Autowired constructor(
       val testSubAccountRef = "TEST_SUB_ACCOUNT_REF"
 
       webTestClient.post()
-        .uri("/accounts/${dummyParentAccount.id}/sub-accounts")
+        .uri("/accounts/${dummyParentAccountOne.id}/sub-accounts")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(CreateSubAccountRequest(testSubAccountRef))
@@ -165,7 +165,7 @@ class SubAccountIntegrationTest @Autowired constructor(
         .expectBody<SubAccountResponse>()
 
       webTestClient.post()
-        .uri("/accounts/${dummyParentAccount.id}/sub-accounts")
+        .uri("/accounts/${dummyParentAccountOne.id}/sub-accounts")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(CreateSubAccountRequest(testSubAccountRef))
@@ -179,7 +179,7 @@ class SubAccountIntegrationTest @Autowired constructor(
       val testSubAccountRefLower = "test_sub_account_ref"
 
       webTestClient.post()
-        .uri("/accounts/${dummyParentAccount.id}/sub-accounts")
+        .uri("/accounts/${dummyParentAccountOne.id}/sub-accounts")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(CreateSubAccountRequest(testSubAccountRefUpper))
@@ -188,7 +188,7 @@ class SubAccountIntegrationTest @Autowired constructor(
         .expectBody<SubAccountResponse>()
 
       webTestClient.post()
-        .uri("/accounts/${dummyParentAccount.id}/sub-accounts")
+        .uri("/accounts/${dummyParentAccountOne.id}/sub-accounts")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(CreateSubAccountRequest(testSubAccountRefLower))
@@ -200,7 +200,7 @@ class SubAccountIntegrationTest @Autowired constructor(
     fun `should return 401 when requesting account without authorisation headers`() {
       val testSubAccountRef = "TEST_SUB_ACCOUNT_REF"
       webTestClient.post()
-        .uri("/accounts/${dummyParentAccount.id}/sub-accounts")
+        .uri("/accounts/${dummyParentAccountOne.id}/sub-accounts")
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(CreateSubAccountRequest(testSubAccountRef))
         .exchange()
@@ -211,7 +211,7 @@ class SubAccountIntegrationTest @Autowired constructor(
     fun `should return 403 when requesting account with incorrect role`() {
       val testSubAccountRef = "TEST_SUB_ACCOUNT_REF"
       webTestClient.post()
-        .uri("/accounts/${dummyParentAccount.id}/sub-accounts")
+        .uri("/accounts/${dummyParentAccountOne.id}/sub-accounts")
         .headers(setAuthorisation(roles = listOf("ROLE__WRONG_ROLE")))
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(CreateSubAccountRequest(testSubAccountRef))
@@ -228,6 +228,83 @@ class SubAccountIntegrationTest @Autowired constructor(
         .bodyValue(CreateSubAccountRequest("TEST_SUB_ACCOUNT_REF"))
         .exchange()
         .expectStatus().isNotFound
+    }
+  }
+
+  @Nested
+  inner class FindSubAccounts {
+
+    lateinit var dummySubAccountOne: SubAccountResponse
+
+    lateinit var dummyParentAccountTwo: AccountResponse
+    lateinit var dummySubAccountTwo: SubAccountResponse
+
+    @BeforeEach
+    fun seedParentAccountAndSubAccounts() {
+      val dummyParentAccountOneResponseBody = webTestClient.post()
+        .uri("/accounts")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF"))
+        .exchange()
+        .expectBody<AccountResponse>()
+        .returnResult()
+        .responseBody!!
+
+      dummyParentAccountOne = dummyParentAccountOneResponseBody
+
+      val subAccountOneResponseBody = webTestClient.post()
+        .uri("/accounts/${dummyParentAccountOne.id}/sub-accounts")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateSubAccountRequest("TEST_SUB_ACCOUNT_REF_1"))
+        .exchange()
+        .expectBody<SubAccountResponse>()
+        .returnResult()
+        .responseBody!!
+
+      dummySubAccountOne = subAccountOneResponseBody
+
+      val dummyParentAccountTwoResponseBody = webTestClient.post()
+        .uri("/accounts")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF_2"))
+        .exchange()
+        .expectBody<AccountResponse>()
+        .returnResult()
+        .responseBody!!
+
+      dummyParentAccountTwo = dummyParentAccountTwoResponseBody
+
+      val dummySubAccountTwoResponseBody = webTestClient.post()
+        .uri("/accounts/${dummyParentAccountTwo.id}/sub-accounts")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateSubAccountRequest("TEST_SUB_ACCOUNT_REF_1"))
+        .exchange()
+        .expectBody<SubAccountResponse>()
+        .returnResult()
+        .responseBody!!
+
+      dummySubAccountTwo = dummySubAccountTwoResponseBody
+    }
+
+    @Test
+    fun `Should return 200 and a list with only one subAccount matching the references provided`() {
+      val responseBody = webTestClient.get()
+        .uri("/sub-accounts?reference=${dummySubAccountOne.reference}&accountReference=${dummyParentAccountOne.reference}")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<List<SubAccountResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(responseBody).hasSize(1)
+      assertThat(responseBody.first().id).isEqualTo(dummySubAccountOne.id)
+      assertThat(responseBody.first().reference).isEqualTo(dummySubAccountOne.reference)
+      assertThat(responseBody.first().parentAccountId).isEqualTo(dummySubAccountOne.parentAccountId)
     }
   }
 }
