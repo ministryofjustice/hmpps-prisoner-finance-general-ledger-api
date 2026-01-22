@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.subaccounts
 
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -13,6 +14,8 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.http.HttpStatus
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.CustomException
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
@@ -110,6 +113,20 @@ class SubAccountServiceTest {
       val retrievedAccount = subAccountService.getSubAccountByID(dummySubAccountUUID)
 
       assertThat(retrievedAccount).isEqualTo(dummySubAccountEntity)
+    }
+
+    @Test
+    fun `Should throw a custom exception if the id is not provided`() {
+      whenever(subAccountDataRepositoryMock.getSubAccountEntityById(any())).thenReturn(null)
+
+      val exception = assertThrows(CustomException::class.java) {
+        subAccountService.getSubAccountByID(UUID.randomUUID())
+      }
+
+      assertThat(exception.message).isEqualTo(
+        "Sub account not found",
+      )
+      assertThat(exception.status).isEqualTo(HttpStatus.NOT_FOUND)
     }
   }
 }
