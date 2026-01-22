@@ -105,7 +105,7 @@ class SubAccountServiceTest {
 
     @Test
     fun `Should call the repo method for finding by id if id is present`() {
-      whenever(subAccountDataRepositoryMock.findSubAccountEntityById(dummySubAccountUUID)).thenReturn(dummySubAccountEntity)
+      whenever(subAccountDataRepositoryMock.getSubAccountEntityById(dummySubAccountUUID)).thenReturn(dummySubAccountEntity)
 
       val retrievedAccount = subAccountService.getSubAccountByID(dummySubAccountUUID)
 

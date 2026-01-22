@@ -36,7 +36,7 @@ class SubAccountService(private val subAccountDataRepository: SubAccountDataRepo
   }
 
   fun getSubAccountByID(subAccountID: UUID): SubAccountEntity {
-    val retrievedAccount = subAccountDataRepository.findSubAccountEntityById(subAccountID)
+    val retrievedAccount = subAccountDataRepository.getSubAccountEntityById(subAccountID)
 
     if (retrievedAccount == null) throw CustomException(message = "Sub account not found", status = HttpStatus.NOT_FOUND)
 
