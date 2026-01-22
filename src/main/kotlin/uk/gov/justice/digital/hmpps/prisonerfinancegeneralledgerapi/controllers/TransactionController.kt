@@ -29,7 +29,8 @@ class TransactionController(
 ) {
   @Operation(
     summary = "Create a new transaction",
-    description = "Creates a new transaction with associated postings. ",
+    description = "Creates a new transaction with associated postings.</br>\n" +
+      "<table border=\"1\" cellpadding=\"5\" cellspacing=\"0\"> <thead> <tr> <th>Postings</th> <th>Expected Response Time (ms)</th> </tr> </thead> <tbody> <tr> <td>2</td> <td>37</td> </tr> <tr> <td>1,000</td> <td>2,443</td> </tr> <tr> <td>2,000</td> <td>2,966</td> </tr> <tr> <td>3,000</td> <td>4,693</td> </tr> <tr> <td>4,000</td> <td>5,676</td> </tr> <tr> <td>8,000</td> <td>8,840</td> </tr> <tr> <td>16,000</td> <td>16,183</td> </tr> <tr> <td>32,000</td> <td>33,696</td> </tr> </tbody> </table>",
   )
   @ApiResponses(
     value = [
