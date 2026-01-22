@@ -107,7 +107,7 @@ class SubAccountServiceTest {
   inner class GetSubAccountById {
 
     @Test
-    fun `Should call the repo method for finding by id if id is present`() {
+    fun `Should call the repo method to get the sub account and return it if a matching sub account is found`() {
       whenever(subAccountDataRepositoryMock.getSubAccountEntityById(dummySubAccountUUID)).thenReturn(dummySubAccountEntity)
 
       val retrievedAccount = subAccountService.getSubAccountByID(dummySubAccountUUID)
@@ -116,7 +116,7 @@ class SubAccountServiceTest {
     }
 
     @Test
-    fun `Should throw a custom exception if the id is not provided`() {
+    fun `Should throw a custom exception if the repository method returns null`() {
       whenever(subAccountDataRepositoryMock.getSubAccountEntityById(any())).thenReturn(null)
 
       val exception = assertThrows(CustomException::class.java) {
