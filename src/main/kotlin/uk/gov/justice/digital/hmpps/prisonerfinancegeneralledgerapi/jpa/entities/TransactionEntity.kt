@@ -3,13 +3,14 @@ package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entitie
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
+import jakarta.persistence.Index
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import java.time.LocalDateTime
 import java.util.UUID
 
 @Entity
-@Table(name = "transactions")
+@Table(name = "transactions", indexes = [Index(name = "index_transaction_ref", columnList = "reference", unique = true)])
 class TransactionEntity(
 
   @Id
@@ -22,7 +23,7 @@ class TransactionEntity(
   @Column(name = "created_at", nullable = false)
   val createdAt: LocalDateTime = LocalDateTime.now(),
 
-  @Column(name = "reference", nullable = false)
+  @Column(name = "reference", nullable = false, unique = true)
   val reference: String = "",
 
   @Column(name = "description")
