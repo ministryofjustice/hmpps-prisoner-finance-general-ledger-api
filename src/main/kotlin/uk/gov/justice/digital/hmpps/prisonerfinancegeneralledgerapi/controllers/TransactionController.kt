@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateTransactionRequest
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.TransactionResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.TransactionService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
@@ -129,7 +128,7 @@ class TransactionController(
     try {
       val transactionEntity = transactionService.readTransaction(transactionUUID)
 
-      if(transactionEntity == null) {
+      if (transactionEntity == null) {
         return ResponseEntity<TransactionResponse>(HttpStatus.NOT_FOUND)
       }
 

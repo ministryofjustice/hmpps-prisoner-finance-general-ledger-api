@@ -133,7 +133,7 @@ class TransactionServiceTest {
   }
 
   @Test
-  fun `Should call the data repository to read and return transaction`() {
+  fun `Should call the data repository and return null if transaction is not found`() {
     val incorrectUUID = UUID.fromString("00000000-0000-0000-0000-000000000001")
     whenever(transactionDataRepository.findTransactionById(incorrectUUID)).thenReturn(null)
     val retrievedTransaction = transactionService.readTransaction(incorrectUUID)

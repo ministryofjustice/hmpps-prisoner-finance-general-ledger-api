@@ -48,7 +48,6 @@ class TransactionIntegrationTest @Autowired constructor(
 
     @BeforeEach
     fun setup() {
-
       for (i in 3 downTo 0 step 1) {
         val accountResponseBody = webTestClient.post()
           .uri("/accounts")
@@ -345,9 +344,9 @@ class TransactionIntegrationTest @Autowired constructor(
   @Nested
   inner class GetTransaction {
 
-    var accounts : MutableList<AccountResponse> = mutableListOf()
-    var subAccounts : MutableList<SubAccountResponse> = mutableListOf()
-    lateinit var transaction : TransactionResponse
+    var accounts: MutableList<AccountResponse> = mutableListOf()
+    var subAccounts: MutableList<SubAccountResponse> = mutableListOf()
+    lateinit var transaction: TransactionResponse
 
     @BeforeEach
     fun setUp() {
@@ -404,12 +403,12 @@ class TransactionIntegrationTest @Autowired constructor(
 
     @Test
     fun `should return 200 transaction with postings when sent a valid id`() {
-     val transactionResponse = webTestClient.get()
-      .uri("/transactions/${transaction.id}")
+      val transactionResponse = webTestClient.get()
+        .uri("/transactions/${transaction.id}")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .exchange()
         .expectStatus().isOk
-      .expectBody<TransactionResponse>()
+        .expectBody<TransactionResponse>()
         .returnResult()
         .responseBody!!
 
@@ -424,7 +423,6 @@ class TransactionIntegrationTest @Autowired constructor(
       assertThat(transactionResponse.postings[1].amount).isEqualTo(1L)
       assertThat(transactionResponse.postings[1].subAccountID).isEqualTo(subAccounts[1].id)
       assertThat(transactionResponse.postings[1].type).isEqualTo(PostingType.DR)
-
     }
 
     @Test
@@ -440,7 +438,7 @@ class TransactionIntegrationTest @Autowired constructor(
     fun `should return 404 when sent a valid UUID that doesn't exist`() {
       val uuid = UUID.randomUUID()
       webTestClient.get()
-        .uri("/transactions/${uuid}")
+        .uri("/transactions/$uuid")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .exchange()
         .expectStatus().isNotFound
@@ -462,6 +460,5 @@ class TransactionIntegrationTest @Autowired constructor(
         .exchange()
         .expectStatus().isForbidden
     }
-
   }
 }
