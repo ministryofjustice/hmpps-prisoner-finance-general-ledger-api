@@ -86,11 +86,11 @@ class PostingDataRepositoryTest @Autowired constructor(
     entityManager.persist(testSubAccountEntityThree)
 
 //    Needs multiple transactions on both subaccount one and two
-    testTransactionEntity = TransactionEntity(reference = "TEST_TRANSACTION_REF", description = "TEST_DESCRIPTION", amount = 5, timestamp = LocalDateTime.now())
+    testTransactionEntity = TransactionEntity(reference = "TEST_TRANSACTION_REF", description = "TEST_DESCRIPTION", amount = 4, timestamp = LocalDateTime.now())
     entityManager.persist(testTransactionEntity)
 
     for (i in 1..10) {
-      //  SubAccountEntityOne will get all credits, Two will get all debits
+      //  testSubAccountEntityOne will get 5 £1 credits, testSubAccountEntityTwo will get 5 £1 debits
       val evenNumber = i % 2 == 0
       val subAccountForPosting = if (evenNumber) testSubAccountEntityOne else testSubAccountEntityTwo
       val postingType = if (evenNumber) PostingType.CR else PostingType.DR
@@ -100,6 +100,19 @@ class PostingDataRepositoryTest @Autowired constructor(
       testTransactionEntity.postings.add(newPostingEntity)
       entityManager.persist(newPostingEntity)
     }
+
+//    At this point testSubAccountEntityOne should have 5 credits and testSubAccountEntityTwo should have 5 debits
+//    Totals should be 5 and -5 respectively
+
+//    Postings in the opposite direction to prove things work with varied posting types on a single subAccount
+//    This puts each at 4 and -4 respectively
+    val debitOnePoundFromSubAccountOne = PostingEntity(createdBy = "TEST_USERNAME", createdAt = LocalDateTime.now(), type = PostingType.DR, amount = 1, subAccountEntity = testSubAccountEntityOne, transactionEntity = testTransactionEntity)
+    val creditOnePoundToSubAccountTwo = PostingEntity(createdBy = "TEST_USERNAME", createdAt = LocalDateTime.now(), type = PostingType.CR, amount = 1, subAccountEntity = testSubAccountEntityTwo, transactionEntity = testTransactionEntity)
+
+    testTransactionEntity.postings.add(debitOnePoundFromSubAccountOne)
+    testTransactionEntity.postings.add(creditOnePoundToSubAccountTwo)
+    entityManager.persist(debitOnePoundFromSubAccountOne)
+    entityManager.persist(creditOnePoundToSubAccountTwo)
 
     entityManager.flush()
   }
@@ -112,8 +125,8 @@ class PostingDataRepositoryTest @Autowired constructor(
       val subOneBalance = postingsDataRepository.getNetAmountForSubAccount(testSubAccountEntityOne.id)
       val subTwoBalance = postingsDataRepository.getNetAmountForSubAccount(testSubAccountEntityTwo.id)
 
-      assertThat(subOneBalance).isEqualTo(5)
-      assertThat(subTwoBalance).isEqualTo(-5)
+      assertThat(subOneBalance).isEqualTo(4)
+      assertThat(subTwoBalance).isEqualTo(-4)
     }
 
     @Test
