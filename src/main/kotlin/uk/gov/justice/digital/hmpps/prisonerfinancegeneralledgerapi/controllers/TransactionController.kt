@@ -8,7 +8,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.http.HttpStatus
+import org.springframework.http.HttpStatus.BAD_REQUEST
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -83,6 +85,9 @@ class TransactionController(
         TransactionResponse.fromEntity(transactionEntity = transactionEntity),
       )
     } catch (ex: Exception) {
+      if (ex is DataIntegrityViolationException) {
+        throw CustomException(status = BAD_REQUEST, message = "Duplicate transaction reference: ${body.reference}")
+      }
       throw ex
     }
   }
