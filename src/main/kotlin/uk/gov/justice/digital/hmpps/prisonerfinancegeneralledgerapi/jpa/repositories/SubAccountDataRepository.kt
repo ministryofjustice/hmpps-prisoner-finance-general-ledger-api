@@ -11,4 +11,6 @@ interface SubAccountDataRepository : JpaRepository<SubAccountEntity, UUID> {
     accountReference: String,
     subAccountReference: String,
   ): SubAccountEntity?
+
+  fun getSubAccountEntityById(id: UUID): SubAccountEntity?
 }
