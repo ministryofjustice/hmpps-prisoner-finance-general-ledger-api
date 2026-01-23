@@ -105,6 +105,28 @@ class SubAccountServiceTest {
   }
 
   @Nested
+  inner class GetSubAccountById {
+
+    @Test
+    fun `Should call the repo method to get the sub account and return it if a matching sub account is found`() {
+      whenever(subAccountDataRepositoryMock.getSubAccountEntityById(dummySubAccountUUID)).thenReturn(dummySubAccountEntity)
+
+      val retrievedAccount = subAccountService.getSubAccountByID(dummySubAccountUUID)
+
+      assertThat(retrievedAccount).isEqualTo(dummySubAccountEntity)
+    }
+
+    @Test
+    fun `Should return null if the repository method returns null`() {
+      whenever(subAccountDataRepositoryMock.getSubAccountEntityById(any())).thenReturn(null)
+
+      val retrievedAccount = subAccountService.getSubAccountByID(dummySubAccountUUID)
+
+      assertThat(retrievedAccount).isNull()
+    }
+  }
+
+  @Nested
   inner class ReadSubAccountBalance {
 
     @Test

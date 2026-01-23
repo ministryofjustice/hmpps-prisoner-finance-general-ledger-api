@@ -396,4 +396,78 @@ class SubAccountIntegrationTest @Autowired constructor(
         .expectStatus().isForbidden
     }
   }
+
+  @Nested
+  inner class GetSubAccountById {
+    lateinit var dummySubAccountOne: SubAccountResponse
+
+    @BeforeEach
+    fun seedAccountAndSubAccount() {
+      val dummyParentAccountOneResponseBody = webTestClient.post()
+        .uri("/accounts")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF"))
+        .exchange()
+        .expectBody<AccountResponse>()
+        .returnResult()
+        .responseBody!!
+
+      dummyParentAccountOne = dummyParentAccountOneResponseBody
+
+      val subAccountOneResponseBody = webTestClient.post()
+        .uri("/accounts/${dummyParentAccountOne.id}/sub-accounts")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateSubAccountRequest("TEST_SUB_ACCOUNT_REF_1"))
+        .exchange()
+        .expectBody<SubAccountResponse>()
+        .returnResult()
+        .responseBody!!
+
+      dummySubAccountOne = subAccountOneResponseBody
+    }
+
+    @Test
+    fun `Should return 200 and the correct subAccount`() {
+      val responseBody = webTestClient.get()
+        .uri("/sub-accounts/${dummySubAccountOne.id}")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<SubAccountResponse>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(responseBody.id).isEqualTo(dummySubAccountOne.id)
+      assertThat(responseBody.reference).isEqualTo(dummySubAccountOne.reference)
+      assertThat(responseBody.parentAccountId).isEqualTo(dummySubAccountOne.parentAccountId)
+    }
+
+    @Test
+    fun `Should return 404 if the subAccount does not exist`() {
+      webTestClient.get()
+        .uri("/sub-accounts/00000000-0000-0000-0000-000000000000")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `Should return 401 if no authorisation headers are provided`() {
+      webTestClient.get()
+        .uri("/sub-accounts/${dummySubAccountOne.id}")
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `Should return 403 if the user does not have the correct role`() {
+      webTestClient.get()
+        .uri("/sub-accounts/${dummySubAccountOne.id}")
+        .headers(setAuthorisation(roles = listOf("ROLE__WRONG_ROLE")))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+  }
 }

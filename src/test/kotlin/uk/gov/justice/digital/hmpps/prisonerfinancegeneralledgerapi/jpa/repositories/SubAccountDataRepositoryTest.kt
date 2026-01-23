@@ -74,4 +74,19 @@ class SubAccountDataRepositoryTest @Autowired constructor(
       assertThat(retrievedSubAccountEntity).isNull()
     }
   }
+
+  @Nested
+  inner class GetSubAccountEntityById {
+    @Test
+    fun `Should return a subaccount entity matching the provided ID`() {
+      val retrievedSubAccountEntity = subAccountDataRepository.getSubAccountEntityById(testSubAccountEntity.id)
+      assertThat(retrievedSubAccountEntity?.parentAccountEntity?.reference).isEqualTo("TEST_ACCOUNT_REF")
+    }
+
+    @Test
+    fun `Should return a null if no subaccount entity matches the provided ID`() {
+      val retrievedSubAccountEntity = subAccountDataRepository.getSubAccountEntityById(UUID.fromString("00000000-0000-0000-0000-000000000002"))
+      assertThat(retrievedSubAccountEntity).isNull()
+    }
+  }
 }

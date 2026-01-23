@@ -5,18 +5,11 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.CustomException
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.SubAccountBalanceResponse
-import java.time.LocalDateTime
 import java.util.UUID
 
 @Service
-class SubAccountService(
-  private val subAccountDataRepository: SubAccountDataRepository,
-  private val accountDataRepository: AccountDataRepository,
-  private val postingsDataRepository: PostingsDataRepository,
-) {
+class SubAccountService(private val subAccountDataRepository: SubAccountDataRepository, private val accountDataRepository: AccountDataRepository) {
   fun createSubAccount(reference: String, createdBy: String, parentAccountId: UUID): SubAccountEntity {
     val parentAccount = accountDataRepository.getReferenceById(parentAccountId)
 
@@ -30,7 +23,7 @@ class SubAccountService(
   fun findSubAccounts(accountReference: String?, subAccountReference: String?): List<SubAccountEntity> {
     if (subAccountReference == null || accountReference == null) {
       throw CustomException(
-        message = "Both reference and subAccount reference must be provided",
+        message = "Both reference and accountReference query parameters must be provided",
         status = HttpStatus.BAD_REQUEST,
       )
     }
@@ -42,11 +35,9 @@ class SubAccountService(
     return listOf(retrievedSubAccount)
   }
 
-  fun getSubAccountBalance(subAccountId: UUID): SubAccountBalanceResponse? {
-    val subAccount = subAccountDataRepository.getReferenceById(subAccountId)
-    if (subAccount == null) return null
+  fun getSubAccountByID(subAccountID: UUID): SubAccountEntity? {
+    val retrievedAccount = subAccountDataRepository.getSubAccountEntityById(subAccountID)
 
-    val balance = postingsDataRepository.getNetAmountForSubAccount(subAccountId)
-    return SubAccountBalanceResponse(subAccountId, LocalDateTime.now(), balance)
+    return retrievedAccount
   }
 }
