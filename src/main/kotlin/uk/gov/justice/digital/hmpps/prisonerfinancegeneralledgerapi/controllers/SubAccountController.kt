@@ -202,6 +202,9 @@ class SubAccountController(
   @GetMapping("/sub-accounts/{subAccountId}")
   fun getSubAccountByID(@PathVariable subAccountId: UUID): ResponseEntity<SubAccountResponse> {
     val subAccount = subAccountService.getSubAccountByID(subAccountId)
+    if (subAccount == null) {
+      throw CustomException(message = "Sub account not found", status = HttpStatus.NOT_FOUND)
+    }
     return ResponseEntity.ok(SubAccountResponse.fromEntity(subAccount))
   }
 }
