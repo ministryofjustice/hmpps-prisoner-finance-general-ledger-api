@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.CustomException
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateTransactionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.TransactionResponse
@@ -125,18 +126,14 @@ class TransactionController(
   @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
   @GetMapping(value = ["/transactions/{transactionUUID}"])
   fun getTransactionById(@PathVariable transactionUUID: UUID): ResponseEntity<TransactionResponse> {
-    try {
-      val transactionEntity = transactionService.readTransaction(transactionUUID)
+    val transactionEntity = transactionService.readTransaction(transactionUUID)
 
-      if (transactionEntity == null) {
-        return ResponseEntity<TransactionResponse>(HttpStatus.NOT_FOUND)
-      }
-
-      return ResponseEntity<TransactionResponse>.status(HttpStatus.OK).body(
-        TransactionResponse.fromEntity(transactionEntity = transactionEntity),
-      )
-    } catch (ex: Exception) {
-      throw ex
+    if (transactionEntity == null) {
+      throw CustomException(message = "Parent account not found", status = HttpStatus.NOT_FOUND)
     }
+
+    return ResponseEntity<TransactionResponse>.status(HttpStatus.OK).body(
+      TransactionResponse.fromEntity(transactionEntity = transactionEntity),
+    )
   }
 }
