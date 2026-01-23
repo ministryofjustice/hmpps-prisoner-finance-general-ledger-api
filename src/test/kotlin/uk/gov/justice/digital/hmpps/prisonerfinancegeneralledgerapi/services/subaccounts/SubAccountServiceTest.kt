@@ -16,6 +16,7 @@ import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.SubAccountService
 import java.time.LocalDateTime
@@ -33,6 +34,9 @@ class SubAccountServiceTest {
 
   @Mock
   lateinit var accountDataRepository: AccountDataRepository
+
+  @Mock
+  lateinit var postingsDataRepository: PostingsDataRepository
 
   @InjectMocks
   lateinit var subAccountService: SubAccountService
@@ -97,6 +101,32 @@ class SubAccountServiceTest {
       assertThat(retrievedSubAccounts.first()).isEqualTo(
         dummySubAccountEntity,
       )
+    }
+  }
+
+  @Nested
+  inner class ReadSubAccountBalance {
+
+    @Test
+    fun `Should check if the subAccount exists and call the method on the postings repository to get the balance`() {
+      whenever(subAccountDataRepositoryMock.getReferenceById(dummySubAccountUUID)).thenReturn(dummySubAccountEntity)
+      whenever(postingsDataRepository.getNetAmountForSubAccount(dummySubAccountUUID)).thenReturn(10)
+
+      val subAccountBalance = subAccountService.getSubAccountBalance(dummySubAccountUUID)
+
+      assertThat(subAccountBalance?.subAccountId).isEqualTo(dummySubAccountUUID)
+      assertThat(subAccountBalance?.balanceDateTime).isInThePast
+      assertThat(subAccountBalance?.amount).isEqualTo(10)
+    }
+
+    @Test
+    fun `Should return null if no subAccount found with the id`() {
+      val randomUUID = UUID.randomUUID()
+      whenever(subAccountDataRepositoryMock.getReferenceById(randomUUID)).thenReturn(null)
+
+      val subAccountBalance = subAccountService.getSubAccountBalance(randomUUID)
+
+      assertThat(subAccountBalance).isNull()
     }
   }
 }
