@@ -16,6 +16,9 @@ serve: build-dev
 serve-environment:
 	docker compose up --scale hmpps-prisoner-finance-general-ledger-api=0 -d --wait
 
+serve-db:
+	docker compose up --scale hmpps-prisoner-finance-general-ledger-api=0 --scale hmpps-auth=0 -d --wait
+
 serve-clean-environment: stop-clean
 	docker compose up --scale hmpps-prisoner-finance-general-ledger-api=0 -d --wait
 
@@ -76,4 +79,4 @@ export-architecture: update-structurizer-cli
 	docker run -it --rm -v ./docs/architecture:/usr/local/structurizr structurizr/cli export -w ./workspace.dsl -f plantuml -o ./plantuml
 	./bin/generate_images.sh
 
-.PHONY: build-dev build update-dependencies analyse-dependencies serve serve-environment serve-clean-environment update-environment stop stop-clean unit-test integration-test test e2e lint format check serve-structurizer export-architecture
+.PHONY: build-dev build update-dependencies analyse-dependencies serve serve-environment serve-clean-environment update-environment stop stop-clean unit-test integration-test test e2e lint format check serve-structurizer export-architecture serve-db
