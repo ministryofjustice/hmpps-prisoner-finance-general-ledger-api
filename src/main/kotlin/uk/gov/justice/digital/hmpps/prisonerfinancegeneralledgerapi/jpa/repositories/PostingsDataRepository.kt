@@ -24,5 +24,5 @@ interface PostingsDataRepository : JpaRepository<PostingEntity, UUID> {
   """,
     nativeQuery = true,
   )
-  fun getNetAmountForSubAccount(@Param("subAccountId") subAccountId: UUID): Long
+  fun getBalanceForSubAccount(@Param("subAccountId") subAccountId: UUID): Long
 }

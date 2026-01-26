@@ -49,10 +49,10 @@ class SubAccountService(
   }
 
   fun getSubAccountBalance(subAccountId: UUID): SubAccountBalanceResponse? {
-    val subAccount = subAccountDataRepository.getReferenceById(subAccountId)
+    val subAccount = subAccountDataRepository.getSubAccountEntityById(subAccountId)
     if (subAccount == null) return null
 
-    val balance = postingsDataRepository.getNetAmountForSubAccount(subAccountId)
+    val balance = postingsDataRepository.getBalanceForSubAccount(subAccountId)
     return SubAccountBalanceResponse(subAccountId, LocalDateTime.now(), balance)
   }
 }

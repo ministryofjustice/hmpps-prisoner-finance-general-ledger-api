@@ -131,8 +131,8 @@ class SubAccountServiceTest {
 
     @Test
     fun `Should check if the subAccount exists and call the method on the postings repository to get the balance`() {
-      whenever(subAccountDataRepositoryMock.getReferenceById(dummySubAccountUUID)).thenReturn(dummySubAccountEntity)
-      whenever(postingsDataRepository.getNetAmountForSubAccount(dummySubAccountUUID)).thenReturn(10)
+      whenever(subAccountDataRepositoryMock.getSubAccountEntityById(dummySubAccountUUID)).thenReturn(dummySubAccountEntity)
+      whenever(postingsDataRepository.getBalanceForSubAccount(dummySubAccountUUID)).thenReturn(10)
 
       val subAccountBalance = subAccountService.getSubAccountBalance(dummySubAccountUUID)
 
@@ -144,7 +144,7 @@ class SubAccountServiceTest {
     @Test
     fun `Should return null if no subAccount found with the id`() {
       val randomUUID = UUID.randomUUID()
-      whenever(subAccountDataRepositoryMock.getReferenceById(randomUUID)).thenReturn(null)
+      whenever(subAccountDataRepositoryMock.getSubAccountEntityById(randomUUID)).thenReturn(null)
 
       val subAccountBalance = subAccountService.getSubAccountBalance(randomUUID)
 

@@ -122,8 +122,8 @@ class PostingDataRepositoryTest @Autowired constructor(
 
     @Test
     fun `Should return a balance of all credits minus all debits for a sub account`() {
-      val subOneBalance = postingsDataRepository.getNetAmountForSubAccount(testSubAccountEntityOne.id)
-      val subTwoBalance = postingsDataRepository.getNetAmountForSubAccount(testSubAccountEntityTwo.id)
+      val subOneBalance = postingsDataRepository.getBalanceForSubAccount(testSubAccountEntityOne.id)
+      val subTwoBalance = postingsDataRepository.getBalanceForSubAccount(testSubAccountEntityTwo.id)
 
       assertThat(subOneBalance).isEqualTo(4)
       assertThat(subTwoBalance).isEqualTo(-4)
@@ -131,7 +131,7 @@ class PostingDataRepositoryTest @Autowired constructor(
 
     @Test
     fun `Should return 0 if no postings found for the subaccount Id`() {
-      val subThreeBalance = postingsDataRepository.getNetAmountForSubAccount(testSubAccountEntityThree.id)
+      val subThreeBalance = postingsDataRepository.getBalanceForSubAccount(testSubAccountEntityThree.id)
 
       assertThat(subThreeBalance).isEqualTo(0)
     }
