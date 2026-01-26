@@ -7,20 +7,30 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
+import org.springframework.http.ProblemDetail
 import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.TransactionDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.SubAccountBalanceResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateAccountRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreatePostingRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateSubAccountRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateTransactionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountResponse
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.TransactionResponse
 import java.time.LocalDateTime
 import java.util.UUID
 
 class SubAccountIntegrationTest @Autowired constructor(
   var accountDataRepository: AccountDataRepository,
   var subAccountDataRepository: SubAccountDataRepository,
+  var transactionDataRepository: TransactionDataRepository,
+  var postingsDataRepository: PostingsDataRepository,
 ) : IntegrationTestBase() {
 
   lateinit var dummyParentAccountOne: AccountResponse
@@ -28,6 +38,8 @@ class SubAccountIntegrationTest @Autowired constructor(
   @Transactional
   @BeforeEach
   fun resetDB() {
+    postingsDataRepository.deleteAllInBatch()
+    transactionDataRepository.deleteAllInBatch()
     subAccountDataRepository.deleteAllInBatch()
     accountDataRepository.deleteAllInBatch()
   }
@@ -468,6 +480,191 @@ class SubAccountIntegrationTest @Autowired constructor(
         .headers(setAuthorisation(roles = listOf("ROLE__WRONG_ROLE")))
         .exchange()
         .expectStatus().isForbidden
+    }
+  }
+
+  @Nested
+  inner class GetSubAccountBalance {
+
+    lateinit var dummyParentAccountOne: AccountResponse
+    lateinit var dummySubAccountOne: SubAccountResponse
+
+    lateinit var dummyParentAccountTwo: AccountResponse
+    lateinit var dummySubAccountTwo: SubAccountResponse
+
+    lateinit var dummyTransactionOne: TransactionResponse
+    lateinit var dummyTransactionTwo: TransactionResponse
+
+    @BeforeEach
+    fun seedAccountAndSubAccount() {
+//      The result of this set up should leave sub account one with a balance of 5
+//      and sub account two with a balance of -5
+      val dummyParentAccountOneResponseBody = webTestClient.post()
+        .uri("/accounts")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF_1"))
+        .exchange()
+        .expectBody<AccountResponse>()
+        .returnResult()
+        .responseBody!!
+
+      dummyParentAccountOne = dummyParentAccountOneResponseBody
+
+      val subAccountOneResponseBody = webTestClient.post()
+        .uri("/accounts/${dummyParentAccountOne.id}/sub-accounts")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateSubAccountRequest("TEST_SUB_ACCOUNT_REF_1"))
+        .exchange()
+        .expectBody<SubAccountResponse>()
+        .returnResult()
+        .responseBody!!
+
+      dummySubAccountOne = subAccountOneResponseBody
+
+      val dummyParentAccountTwoResponseBody = webTestClient.post()
+        .uri("/accounts")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF_2"))
+        .exchange()
+        .expectBody<AccountResponse>()
+        .returnResult()
+        .responseBody!!
+
+      dummyParentAccountTwo = dummyParentAccountTwoResponseBody
+
+      val subAccountTwoResponseBody = webTestClient.post()
+        .uri("/accounts/${dummyParentAccountOne.id}/sub-accounts")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateSubAccountRequest("TEST_SUB_ACCOUNT_REF_2"))
+        .exchange()
+        .expectBody<SubAccountResponse>()
+        .returnResult()
+        .responseBody!!
+
+      dummySubAccountTwo = subAccountTwoResponseBody
+
+//      Send 10 from subAccountTwo to subAccountOne
+      val testPostingsOne = listOf(
+        CreatePostingRequest(
+          subAccountId = dummySubAccountOne.id,
+          amount = 10,
+          type = PostingType
+            .CR,
+        ),
+        CreatePostingRequest(
+          subAccountId = dummySubAccountTwo.id,
+          amount = 10,
+          type = PostingType
+            .DR,
+        ),
+      )
+
+//      Send 5 back from subAccountOne to subAccountTwo to create varied posting types one each
+      val testPostingsTwo = listOf(
+        CreatePostingRequest(
+          subAccountId = dummySubAccountOne.id,
+          amount = 5,
+          type = PostingType
+            .DR,
+        ),
+        CreatePostingRequest(
+          subAccountId = dummySubAccountTwo.id,
+          amount = 5,
+          type = PostingType
+            .CR,
+        ),
+      )
+
+      val transactionPayloadOne = CreateTransactionRequest(
+        reference = "TEST_TX_REF_1",
+        description = "TESTING",
+        timestamp = LocalDateTime.now(),
+        amount = 10,
+        postings = testPostingsOne,
+      )
+
+      val transactionOneResponseBody = webTestClient.post().uri("/transactions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .bodyValue(transactionPayloadOne)
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody<TransactionResponse>()
+        .returnResult()
+        .responseBody!!
+
+      dummyTransactionOne = transactionOneResponseBody
+
+      val transactionPayloadTwo = CreateTransactionRequest(
+        reference = "TEST_TX_REF_2",
+        description = "TESTING",
+        timestamp = LocalDateTime.now(),
+        amount = 5,
+        postings = testPostingsTwo,
+      )
+
+      val transactionTwoResponseBody = webTestClient.post().uri("/transactions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(transactionPayloadTwo)
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody<TransactionResponse>()
+        .returnResult()
+        .responseBody!!
+
+      dummyTransactionTwo = transactionTwoResponseBody
+    }
+
+    @Test
+    fun `Should return 200 ok and a balance object for the requested subaccount`() {
+      val subAccountOneBalance = webTestClient.get()
+        .uri("/sub-accounts/${dummySubAccountOne.id}/balance")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<SubAccountBalanceResponse>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(subAccountOneBalance.amount).isEqualTo(5)
+      assertThat(subAccountOneBalance.subAccountId).isEqualTo(dummySubAccountOne.id)
+      assertThat(subAccountOneBalance.balanceDateTime).isInThePast
+    }
+
+    @Test
+    fun `Should return 400 Bad Request if the subAccountId is not a valid UUID`() {
+      webTestClient.get()
+        .uri("/sub-accounts/NOT_A_UUID/balance")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    fun `Should return 403 Forbidden if the user does not have the correct role`() {
+      webTestClient.get()
+        .uri("/sub-accounts/${dummySubAccountOne.id}/balance")
+        .headers(setAuthorisation(roles = listOf("ROLE__WRONG_ROLE")))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `Should return 404 Not Found if the subAccount id does not exist`() {
+      val responseBody = webTestClient.get()
+        .uri("/sub-accounts/${UUID.randomUUID()}/balance")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isNotFound
+        .expectBody<ProblemDetail>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(responseBody.properties?.get("userMessage")).isEqualTo("Sub Account not found")
     }
   }
 }
