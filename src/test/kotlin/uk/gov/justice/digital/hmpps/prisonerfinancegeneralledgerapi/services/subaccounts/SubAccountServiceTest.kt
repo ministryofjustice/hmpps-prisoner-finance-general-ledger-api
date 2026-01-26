@@ -130,7 +130,7 @@ class SubAccountServiceTest {
   inner class ReadSubAccountBalance {
 
     @Test
-    fun `Should check if the subAccount exists and call the method on the postings repository to get the balance`() {
+    fun `Should return a balance when the sub account exists and has postings`() {
       whenever(subAccountDataRepositoryMock.getSubAccountEntityById(dummySubAccountUUID)).thenReturn(dummySubAccountEntity)
       whenever(postingsDataRepository.getBalanceForSubAccount(dummySubAccountUUID)).thenReturn(10)
 
