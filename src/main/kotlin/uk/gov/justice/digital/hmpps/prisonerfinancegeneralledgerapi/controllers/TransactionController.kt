@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatus.BAD_REQUEST
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.orm.jpa.JpaObjectRetrievalFailureException
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -87,6 +88,9 @@ class TransactionController(
     } catch (ex: Exception) {
       if (ex is DataIntegrityViolationException) {
         throw CustomException(status = BAD_REQUEST, message = "Duplicate transaction reference: ${body.reference}")
+      }
+      if (ex is JpaObjectRetrievalFailureException) {
+        throw CustomException(status = BAD_REQUEST, message = "Sub-account not found")
       }
       throw ex
     }
