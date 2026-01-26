@@ -1,8 +1,6 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services
 
-import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.CustomException
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
@@ -27,14 +25,7 @@ class SubAccountService(
     return createdSubAccount
   }
 
-  fun findSubAccounts(accountReference: String?, subAccountReference: String?): List<SubAccountEntity> {
-    if (subAccountReference == null || accountReference == null) {
-      throw CustomException(
-        message = "Both reference and subAccount reference must be provided",
-        status = HttpStatus.BAD_REQUEST,
-      )
-    }
-
+  fun findSubAccounts(accountReference: String, subAccountReference: String): List<SubAccountEntity> {
     val retrievedSubAccount = subAccountDataRepository.findByParentAccountEntityReferenceAndReference(accountReference, subAccountReference)
 
     if (retrievedSubAccount == null) return emptyList()
