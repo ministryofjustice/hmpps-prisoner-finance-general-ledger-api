@@ -150,5 +150,17 @@ class SubAccountServiceTest {
 
       assertThat(subAccountBalance).isNull()
     }
+
+    @Test
+    fun `Should return a balance if the sub account exists but has no postings`() {
+      whenever(subAccountDataRepositoryMock.getSubAccountEntityById(dummySubAccountUUID)).thenReturn(dummySubAccountEntity)
+      whenever(postingsDataRepository.getBalanceForSubAccount(dummySubAccountUUID)).thenReturn(0)
+
+      val subAccountBalance = subAccountService.getSubAccountBalance(dummySubAccountUUID)
+
+      assertThat(subAccountBalance?.subAccountId).isEqualTo(dummySubAccountUUID)
+      assertThat(subAccountBalance?.balanceDateTime).isInThePast
+      assertThat(subAccountBalance?.amount).isEqualTo(0)
+    }
   }
 }
