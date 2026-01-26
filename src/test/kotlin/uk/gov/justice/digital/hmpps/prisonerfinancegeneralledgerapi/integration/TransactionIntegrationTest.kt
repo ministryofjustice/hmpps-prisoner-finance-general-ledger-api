@@ -232,6 +232,30 @@ class TransactionIntegrationTest @Autowired constructor(
     }
 
     @Test
+    fun `return a 400 when sent a valid transaction with an invalid sub-account UUID`() {
+      val createPostingRequests: List<CreatePostingRequest> = listOf(
+        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 1L),
+        CreatePostingRequest(subAccountId = UUID.randomUUID(), type = PostingType.DR, amount = 1L),
+      )
+
+      val transactionResponseBody = webTestClient.post()
+        .uri("/transactions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(
+          CreateTransactionRequest(
+            reference = "TX",
+            description = "DESCRIPTION",
+            amount = 1L,
+            timestamp = LocalDateTime.now(),
+            postings = createPostingRequests,
+          ),
+        )
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
     fun `should return 400 when sent a transaction with fewer than two postings`() {
       val createPostingRequests: List<CreatePostingRequest> = listOf(
         CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.DR, amount = 1L),
