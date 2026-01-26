@@ -645,6 +645,15 @@ class SubAccountIntegrationTest @Autowired constructor(
     }
 
     @Test
+    fun `Should return 403 Forbidden if the user does not have the correct role`() {
+      webTestClient.get()
+        .uri("/sub-accounts/${dummySubAccountOne.id}/balance")
+        .headers(setAuthorisation(roles = listOf("ROLE__WRONG_ROLE")))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
     fun `Should return 404 Not Found if the subAccount id does not exist`() {
       val responseBody = webTestClient.get()
         .uri("/sub-accounts/${UUID.randomUUID()}/balance")
@@ -656,15 +665,6 @@ class SubAccountIntegrationTest @Autowired constructor(
         .responseBody!!
 
       assertThat(responseBody.properties?.get("userMessage")).isEqualTo("Sub Account not found")
-    }
-
-    @Test
-    fun `Should return 403 Forbidden if the user does not have the correct role`() {
-      webTestClient.get()
-        .uri("/sub-accounts/${dummySubAccountOne.id}/balance")
-        .headers(setAuthorisation(roles = listOf("ROLE__WRONG_ROLE")))
-        .exchange()
-        .expectStatus().isForbidden
     }
   }
 }
