@@ -27,103 +27,112 @@ class PostingDataRepositoryTest @Autowired constructor(
   val postingsDataRepository: PostingsDataRepository,
 ) {
 
-  private lateinit var testAccountEntityOne: AccountEntity
-  private lateinit var testAccountEntityTwo: AccountEntity
-  private lateinit var testSubAccountEntityOne: SubAccountEntity
-  private lateinit var testSubAccountEntityTwo: SubAccountEntity
+  private lateinit var accountOne: AccountEntity
+  private lateinit var accountOneSubAccountOne: SubAccountEntity
+
+  private lateinit var accountTwo: AccountEntity
+  private lateinit var accountTwoSubAccountOne: SubAccountEntity
+
+  private lateinit var accountThree: AccountEntity
+  private lateinit var accountThreeSubAccountOne: SubAccountEntity
+
   private lateinit var testTransactionEntity: TransactionEntity
 
-  private lateinit var testAccountEntityThree: AccountEntity
-  private lateinit var testSubAccountEntityThree: SubAccountEntity
+  @Nested
+  inner class GetBalanceForSubAccount {
 
-  @BeforeEach
-  fun setupEntities() {
-//    Account and sub account one will have only credits
-    testAccountEntityOne = AccountEntity(
-      reference = "TEST_ACCOUNT_REF_1",
-      createdBy = "TEST_USERNAME",
-      id = UUID.fromString("00000000-0000-0000-0000-000000000001"),
-    )
-    entityManager.persist(testAccountEntityOne)
+    // Account | SubAccount   | Amount
+    // --------|--------------|--------
+    // 1       | SubAccount1  | 4 CR
+    //         | TOTAL        | 4
+    //
+    // 2       | SubAccount1  | 4 DR
+    //         | TOTAL        | -4
+    //
+    // 3       | SubAccount1  | 0 CR
+    //         | TOTAL        | 0
 
-    testSubAccountEntityOne = SubAccountEntity(
-      reference = "TEST_SUB_ACCOUNT_REF_1",
-      createdBy = "TEST_USERNAME",
-      id = UUID.fromString("00000000-0000-0000-0000-000000000001"),
-      parentAccountEntity = testAccountEntityOne,
-    )
-    entityManager.persist(testSubAccountEntityOne)
+    @BeforeEach
+    fun setupEntities() {
+      accountOne = AccountEntity(
+        reference = "TEST_ACCOUNT_REF_1",
+        createdBy = "TEST_USERNAME",
+        id = UUID.fromString("00000000-0000-0000-0000-000000000001"),
+      )
+      entityManager.persist(accountOne)
 
-// Account and sub account two will have only debits
-    testAccountEntityTwo = AccountEntity(
-      reference = "TEST_ACCOUNT_REF_2",
-      createdBy = "TEST_USERNAME",
-      id = UUID.fromString("00000000-0000-0000-0000-000000000002"),
-    )
-    entityManager.persist(testAccountEntityTwo)
-    testSubAccountEntityTwo = SubAccountEntity(
-      reference = "TEST_SUB_ACCOUNT_REF_2",
-      createdBy = "TEST_USERNAME",
-      id = UUID.fromString("00000000-0000-0000-0000-000000000002"),
-      parentAccountEntity = testAccountEntityTwo,
-    )
-    entityManager.persist(testSubAccountEntityTwo)
+      accountOneSubAccountOne = SubAccountEntity(
+        reference = "TEST_SUB_ACCOUNT_REF_1",
+        createdBy = "TEST_USERNAME",
+        id = UUID.fromString("00000000-0000-0000-0000-000000000001"),
+        parentAccountEntity = accountOne,
+      )
+      entityManager.persist(accountOneSubAccountOne)
 
-//    Account and sub account three will have no postings
-    testAccountEntityThree = AccountEntity(
-      reference = "TEST_ACCOUNT_REF_3",
-      createdBy = "TEST_USERNAME",
-      id = UUID.fromString("00000000-0000-0000-0000-000000000003"),
-    )
-    entityManager.persist(testAccountEntityThree)
+      accountTwo = AccountEntity(
+        reference = "TEST_ACCOUNT_REF_2",
+        createdBy = "TEST_USERNAME",
+        id = UUID.fromString("00000000-0000-0000-0000-000000000002"),
+      )
+      entityManager.persist(accountTwo)
 
-    testSubAccountEntityThree = SubAccountEntity(
-      reference = "TEST_SUB_ACCOUNT_REF_3",
-      createdBy = "TEST_USERNAME",
-      id = UUID.fromString("00000000-0000-0000-0000-000000000003"),
-      parentAccountEntity = testAccountEntityThree,
-    )
-    entityManager.persist(testSubAccountEntityThree)
+      accountTwoSubAccountOne = SubAccountEntity(
+        reference = "TEST_SUB_ACCOUNT_REF_2",
+        createdBy = "TEST_USERNAME",
+        id = UUID.fromString("00000000-0000-0000-0000-000000000002"),
+        parentAccountEntity = accountTwo,
+      )
+      entityManager.persist(accountTwoSubAccountOne)
 
-//    Needs multiple transactions on both subaccount one and two
-    testTransactionEntity = TransactionEntity(reference = "TEST_TRANSACTION_REF", description = "TEST_DESCRIPTION", amount = 4, timestamp = LocalDateTime.now())
-    entityManager.persist(testTransactionEntity)
+      accountThree = AccountEntity(
+        reference = "TEST_ACCOUNT_REF_3",
+        createdBy = "TEST_USERNAME",
+        id = UUID.fromString("00000000-0000-0000-0000-000000000003"),
+      )
+      entityManager.persist(accountThree)
 
-    for (i in 1..10) {
-      //  testSubAccountEntityOne will get 5 £1 credits, testSubAccountEntityTwo will get 5 £1 debits
-      val evenNumber = i % 2 == 0
-      val subAccountForPosting = if (evenNumber) testSubAccountEntityOne else testSubAccountEntityTwo
-      val postingType = if (evenNumber) PostingType.CR else PostingType.DR
+      accountThreeSubAccountOne = SubAccountEntity(
+        reference = "TEST_SUB_ACCOUNT_REF_3",
+        createdBy = "TEST_USERNAME",
+        id = UUID.fromString("00000000-0000-0000-0000-000000000003"),
+        parentAccountEntity = accountThree,
+      )
+      entityManager.persist(accountThreeSubAccountOne)
 
-      val newPostingEntity = PostingEntity(createdBy = "TEST_USERNAME", createdAt = LocalDateTime.now(), type = postingType, amount = 1, subAccountEntity = subAccountForPosting, transactionEntity = testTransactionEntity)
+      testTransactionEntity = TransactionEntity(reference = "TEST_TRANSACTION_REF", description = "TEST_DESCRIPTION", amount = 4, timestamp = LocalDateTime.now())
+      entityManager.persist(testTransactionEntity)
 
-      testTransactionEntity.postings.add(newPostingEntity)
-      entityManager.persist(newPostingEntity)
-    }
+      for (i in 1..10) {
+        val evenNumber = i % 2 == 0
+        val subAccountForPosting = if (evenNumber) accountOneSubAccountOne else accountTwoSubAccountOne
+        val postingType = if (evenNumber) PostingType.CR else PostingType.DR
 
-//    At this point testSubAccountEntityOne should have 5 credits and testSubAccountEntityTwo should have 5 debits
+        val newPostingEntity = PostingEntity(createdBy = "TEST_USERNAME", createdAt = LocalDateTime.now(), type = postingType, amount = 1, subAccountEntity = subAccountForPosting, transactionEntity = testTransactionEntity)
+
+        testTransactionEntity.postings.add(newPostingEntity)
+        entityManager.persist(newPostingEntity)
+      }
+
+//    At this point accountOneSubAccountOne should have 5 credits and accountTwoSubAccountOne should have 5 debits
 //    Totals should be 5 and -5 respectively
 
 //    Postings in the opposite direction to prove things work with varied posting types on a single subAccount
 //    This puts each at 4 and -4 respectively
-    val debitOnePoundFromSubAccountOne = PostingEntity(createdBy = "TEST_USERNAME", createdAt = LocalDateTime.now(), type = PostingType.DR, amount = 1, subAccountEntity = testSubAccountEntityOne, transactionEntity = testTransactionEntity)
-    val creditOnePoundToSubAccountTwo = PostingEntity(createdBy = "TEST_USERNAME", createdAt = LocalDateTime.now(), type = PostingType.CR, amount = 1, subAccountEntity = testSubAccountEntityTwo, transactionEntity = testTransactionEntity)
+      val debitOnePence = PostingEntity(createdBy = "TEST_USERNAME", createdAt = LocalDateTime.now(), type = PostingType.DR, amount = 1, subAccountEntity = accountOneSubAccountOne, transactionEntity = testTransactionEntity)
+      val creditOnePence = PostingEntity(createdBy = "TEST_USERNAME", createdAt = LocalDateTime.now(), type = PostingType.CR, amount = 1, subAccountEntity = accountTwoSubAccountOne, transactionEntity = testTransactionEntity)
 
-    testTransactionEntity.postings.add(debitOnePoundFromSubAccountOne)
-    testTransactionEntity.postings.add(creditOnePoundToSubAccountTwo)
-    entityManager.persist(debitOnePoundFromSubAccountOne)
-    entityManager.persist(creditOnePoundToSubAccountTwo)
+      testTransactionEntity.postings.add(debitOnePence)
+      testTransactionEntity.postings.add(creditOnePence)
+      entityManager.persist(debitOnePence)
+      entityManager.persist(creditOnePence)
 
-    entityManager.flush()
-  }
-
-  @Nested
-  inner class GetNetAmountForSubAccount {
+      entityManager.flush()
+    }
 
     @Test
     fun `Should return a balance of all credits minus all debits for a sub account`() {
-      val subOneBalance = postingsDataRepository.getBalanceForSubAccount(testSubAccountEntityOne.id)
-      val subTwoBalance = postingsDataRepository.getBalanceForSubAccount(testSubAccountEntityTwo.id)
+      val subOneBalance = postingsDataRepository.getBalanceForSubAccount(accountOneSubAccountOne.id)
+      val subTwoBalance = postingsDataRepository.getBalanceForSubAccount(accountTwoSubAccountOne.id)
 
       assertThat(subOneBalance).isEqualTo(4)
       assertThat(subTwoBalance).isEqualTo(-4)
@@ -131,9 +140,144 @@ class PostingDataRepositoryTest @Autowired constructor(
 
     @Test
     fun `Should return 0 if no postings found for the subaccount Id`() {
-      val subThreeBalance = postingsDataRepository.getBalanceForSubAccount(testSubAccountEntityThree.id)
-
+      val subThreeBalance = postingsDataRepository.getBalanceForSubAccount(accountThreeSubAccountOne.id)
       assertThat(subThreeBalance).isEqualTo(0)
+    }
+  }
+
+  @Nested
+  inner class GetBalanceForAccount {
+
+    // Account | SubAccount   | Amount
+    // --------|--------------|--------
+    // 1       | SubAccount1  | 5 CR
+    //         | TOTAL        | 5
+    //
+    // 2       | SubAccount1  | 5 DR
+    // 2       | SubAccount2  | 3 CR
+    //         | TOTAL        | -2
+    //
+    // 3       | SubAccount1  | 0 CR
+    //         | TOTAL        | 0
+    //
+    // 4       | N/A          |
+    //         | TOTAL        | 0
+
+    lateinit var testAccountTwoSubAccountTwo: SubAccountEntity
+    lateinit var accountFour: AccountEntity
+
+    @BeforeEach
+    fun setupEntities() {
+      accountOne = AccountEntity(
+        reference = "TEST_ACCOUNT_REF_1",
+        createdBy = "TEST_USERNAME",
+        id = UUID.fromString("00000000-0000-0000-0000-000000000001"),
+      )
+      entityManager.persist(accountOne)
+
+      accountOneSubAccountOne = SubAccountEntity(
+        reference = "TEST_SUB_ACCOUNT_REF_1",
+        createdBy = "TEST_USERNAME",
+        id = UUID.fromString("00000000-0000-0000-0000-000000000001"),
+        parentAccountEntity = accountOne,
+      )
+      entityManager.persist(accountOneSubAccountOne)
+
+      accountTwo = AccountEntity(
+        reference = "TEST_ACCOUNT_REF_2",
+        createdBy = "TEST_USERNAME",
+        id = UUID.fromString("00000000-0000-0000-0000-000000000002"),
+      )
+      entityManager.persist(accountTwo)
+
+      accountTwoSubAccountOne = SubAccountEntity(
+        reference = "TEST_SUB_ACCOUNT_REF_1",
+        createdBy = "TEST_USERNAME",
+        id = UUID.fromString("00000000-0000-0000-0000-000000000002"),
+        parentAccountEntity = accountTwo,
+      )
+      entityManager.persist(accountTwoSubAccountOne)
+
+      testAccountTwoSubAccountTwo = SubAccountEntity(
+        reference = "TEST_SUB_ACCOUNT_REF_2",
+        createdBy = "TEST_USERNAME",
+        id = UUID.fromString("00000000-0000-0000-0000-000000000004"),
+        parentAccountEntity = accountTwo,
+      )
+      entityManager.persist(testAccountTwoSubAccountTwo)
+
+      accountThree = AccountEntity(
+        reference = "TEST_ACCOUNT_REF_3",
+        createdBy = "TEST_USERNAME",
+        id = UUID.fromString("00000000-0000-0000-0000-000000000003"),
+      )
+      entityManager.persist(accountThree)
+
+      accountThreeSubAccountOne = SubAccountEntity(
+        reference = "TEST_SUB_ACCOUNT_REF_3",
+        createdBy = "TEST_USERNAME",
+        id = UUID.fromString("00000000-0000-0000-0000-000000000003"),
+        parentAccountEntity = accountThree,
+      )
+      entityManager.persist(accountThreeSubAccountOne)
+
+      accountFour = AccountEntity(
+        reference = "TEST_ACCOUNT_REF_4",
+        createdBy = "TEST_USERNAME",
+        id = UUID.fromString("00000000-0000-0000-0000-000000000004"),
+      )
+
+      entityManager.persist(accountFour)
+
+      testTransactionEntity = TransactionEntity(reference = "TEST_TRANSACTION_REF", description = "TEST_DESCRIPTION", amount = 14, timestamp = LocalDateTime.now())
+      entityManager.persist(testTransactionEntity)
+
+      for (i in 1..10) {
+        val evenNumber = i % 2 == 0
+        val subAccountForPosting = if (evenNumber) accountOneSubAccountOne else accountTwoSubAccountOne
+        val postingType = if (evenNumber) PostingType.CR else PostingType.DR
+
+        val newPostingEntity = PostingEntity(createdBy = "TEST_USERNAME", createdAt = LocalDateTime.now(), type = postingType, amount = 1, subAccountEntity = subAccountForPosting, transactionEntity = testTransactionEntity)
+        testTransactionEntity.postings.add(newPostingEntity)
+        entityManager.persist(newPostingEntity)
+      }
+
+      val accountTwoSubAccountTwoPosting = PostingEntity(createdBy = "TEST_USERNAME", createdAt = LocalDateTime.now(), type = PostingType.CR, amount = 3, subAccountEntity = testAccountTwoSubAccountTwo, transactionEntity = testTransactionEntity)
+      testTransactionEntity.postings.add(accountTwoSubAccountTwoPosting)
+      entityManager.persist(accountTwoSubAccountTwoPosting)
+
+      entityManager.flush()
+    }
+
+    @Test
+    fun `Should return an account balance with one sub-account with a zero balance `() {
+      val accountThreeBalance = postingsDataRepository.getBalanceForAccount(accountThreeSubAccountOne.id)
+      assertThat(accountThreeBalance).isEqualTo(0)
+    }
+
+    @Test
+    fun `Should return an account balance with one sub-account with multiple postings and credits`() {
+      val accountOneBalance = postingsDataRepository.getBalanceForAccount(accountOne.id)
+      assertThat(accountOneBalance).isEqualTo(5)
+    }
+
+    @Test
+    fun `Should return an account balance with multiple sub-account with multiple postings and credits`() {
+      val accountTwoBalance = postingsDataRepository.getBalanceForAccount(accountTwo.id)
+      assertThat(accountTwoBalance).isEqualTo(-2)
+    }
+
+    @Test
+    fun `Should return an account balance with no sub-accounts`() {
+      val accountFourBalance = postingsDataRepository.getBalanceForAccount(accountFour.id)
+      assertThat(accountFourBalance).isEqualTo(0)
+    }
+
+    @Test
+    fun `Should return an account balance of 0 when the UUID does not reference an account `() {
+      val noExistUUID = UUID.randomUUID()
+      val noExistAccountBalance = postingsDataRepository.getBalanceForAccount(noExistUUID)
+      assertThat(noExistAccountBalance).isEqualTo(0)
     }
   }
 }
