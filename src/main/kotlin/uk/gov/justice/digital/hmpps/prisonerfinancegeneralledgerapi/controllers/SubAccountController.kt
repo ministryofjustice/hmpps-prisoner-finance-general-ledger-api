@@ -24,8 +24,8 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.CustomException
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.SubAccountBalanceResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateSubAccountRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountBalanceResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.SubAccountService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
