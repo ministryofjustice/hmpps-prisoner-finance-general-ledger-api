@@ -34,8 +34,10 @@ interface PostingsDataRepository : JpaRepository<PostingEntity, UUID> {
          WHEN p.type = 'DR' THEN -p.amount
          ELSE 0
       END
-        ), 0) AS balance FROM accounts as a JOIN sub_accounts as s ON a.account_id = s.account_id JOIN postings as p ON p.sub_account_id = s.sub_account_id
-         WHERE a.account_id = :accountId 
+        ), 0) AS balance FROM accounts as a 
+        JOIN sub_accounts as s ON a.account_id = s.account_id 
+        JOIN postings as p ON p.sub_account_id = s.sub_account_id
+        WHERE a.account_id = :accountId 
     """,
     nativeQuery = true,
   )

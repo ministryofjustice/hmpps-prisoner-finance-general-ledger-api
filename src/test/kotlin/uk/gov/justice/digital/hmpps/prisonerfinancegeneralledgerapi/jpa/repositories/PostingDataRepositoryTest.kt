@@ -242,35 +242,35 @@ class PostingDataRepositoryTest @Autowired constructor(
         entityManager.persist(newPostingEntity)
       }
 
-      val testAccountTwoSubAccountTwoPosting = PostingEntity(createdBy = "TEST_USERNAME", createdAt = LocalDateTime.now(), type = PostingType.CR, amount = 3, subAccountEntity = testAccountTwoSubAccountTwo, transactionEntity = testTransactionEntity)
-      testTransactionEntity.postings.add(testAccountTwoSubAccountTwoPosting)
-      entityManager.persist(testAccountTwoSubAccountTwoPosting)
+      val accountTwoSubAccountTwoPosting = PostingEntity(createdBy = "TEST_USERNAME", createdAt = LocalDateTime.now(), type = PostingType.CR, amount = 3, subAccountEntity = testAccountTwoSubAccountTwo, transactionEntity = testTransactionEntity)
+      testTransactionEntity.postings.add(accountTwoSubAccountTwoPosting)
+      entityManager.persist(accountTwoSubAccountTwoPosting)
 
       entityManager.flush()
     }
 
     @Test
-    fun `Should return an account with one sub-account with a zero balance `() {
-      val testAccountThreeBalance = postingsDataRepository.getBalanceForAccount(accountThreeSubAccountOne.id)
-      assertThat(testAccountThreeBalance).isEqualTo(0)
+    fun `Should return an account balance with one sub-account with a zero balance `() {
+      val accountThreeBalance = postingsDataRepository.getBalanceForAccount(accountThreeSubAccountOne.id)
+      assertThat(accountThreeBalance).isEqualTo(0)
     }
 
     @Test
-    fun `Should return an account with one sub-account with multiple postings and credits`() {
-      val testAccountOneBalance = postingsDataRepository.getBalanceForAccount(accountOne.id)
-      assertThat(testAccountOneBalance).isEqualTo(5)
+    fun `Should return an account balance with one sub-account with multiple postings and credits`() {
+      val accountOneBalance = postingsDataRepository.getBalanceForAccount(accountOne.id)
+      assertThat(accountOneBalance).isEqualTo(5)
     }
 
     @Test
-    fun `Should return an account with multiple sub-account with multiple postings and credits`() {
-      val testAccountTwoBalance = postingsDataRepository.getBalanceForAccount(accountTwo.id)
-      assertThat(testAccountTwoBalance).isEqualTo(-2)
+    fun `Should return an account balance with multiple sub-account with multiple postings and credits`() {
+      val accountTwoBalance = postingsDataRepository.getBalanceForAccount(accountTwo.id)
+      assertThat(accountTwoBalance).isEqualTo(-2)
     }
 
     @Test
     fun `Should return an account balance with no sub-accounts`() {
-      val testAccountFourBalance = postingsDataRepository.getBalanceForAccount(accountFour.id)
-      assertThat(testAccountFourBalance).isEqualTo(0)
+      val accountFourBalance = postingsDataRepository.getBalanceForAccount(accountFour.id)
+      assertThat(accountFourBalance).isEqualTo(0)
     }
 
     @Test
