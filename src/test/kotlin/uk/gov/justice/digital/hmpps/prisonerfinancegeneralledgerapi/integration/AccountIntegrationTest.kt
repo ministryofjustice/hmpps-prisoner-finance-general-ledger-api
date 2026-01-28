@@ -11,33 +11,44 @@ import org.springframework.http.MediaType
 import org.springframework.http.ProblemDetail
 import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.TransactionDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateAccountRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreatePostingRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateSubAccountRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateTransactionRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountBalanceResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountResponse
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.TransactionResponse
 import java.time.LocalDateTime
 import java.util.*
 
 class AccountIntegrationTest @Autowired constructor(
   private val accountDataRepository: AccountDataRepository,
   private val subAccountDataRepository: SubAccountDataRepository,
+  private val transactionDataRepository: TransactionDataRepository,
+  private val postingsDataRepository: PostingsDataRepository,
 ) : IntegrationTestBase() {
 
   @Transactional
   @BeforeEach
   fun resetDB() {
+    postingsDataRepository.deleteAllInBatch()
+    transactionDataRepository.deleteAllInBatch()
     subAccountDataRepository.deleteAllInBatch()
     accountDataRepository.deleteAllInBatch()
   }
 
-  private fun seedDummyAccount(): AccountResponse {
+  private fun seedDummyAccount(accountRef: String): AccountResponse {
     val responseBody = webTestClient.post()
       .uri("/accounts")
       .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
       .contentType(MediaType.APPLICATION_JSON)
-      .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF"))
+      .bodyValue(CreateAccountRequest(accountRef))
       .exchange()
       .expectStatus().isCreated
       .expectBody<AccountResponse>()
@@ -45,6 +56,48 @@ class AccountIntegrationTest @Autowired constructor(
       .responseBody!!
 
     return responseBody
+  }
+
+  private fun seedDummySubAccount(accountId: UUID, subAccountRef: String): SubAccountResponse {
+    val seededSubAccount = webTestClient.post()
+      .uri("/accounts/$accountId/sub-accounts")
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+      .contentType(MediaType.APPLICATION_JSON)
+      .bodyValue(CreateSubAccountRequest(subAccountRef))
+      .exchange()
+      .expectBody<SubAccountResponse>()
+      .returnResult()
+      .responseBody!!
+
+    return seededSubAccount
+  }
+
+  private fun seedTransaction(debitSubAccountID: UUID, creditSubAccountID: UUID, amount: Long): TransactionResponse {
+    val createPostingRequests: List<CreatePostingRequest> = listOf(
+      CreatePostingRequest(subAccountId = debitSubAccountID, type = PostingType.DR, amount = amount),
+      CreatePostingRequest(subAccountId = creditSubAccountID, type = PostingType.CR, amount = amount),
+    )
+
+    val transactionResponseBody = webTestClient.post()
+      .uri("/transactions")
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+      .contentType(MediaType.APPLICATION_JSON)
+      .bodyValue(
+        CreateTransactionRequest(
+          reference = "TX",
+          description = "DESCRIPTION",
+          amount = amount,
+          timestamp = LocalDateTime.now(),
+          postings = createPostingRequests,
+        ),
+      )
+      .exchange()
+      .expectStatus().isCreated
+      .expectBody<TransactionResponse>()
+      .returnResult()
+      .responseBody!!
+
+    return transactionResponseBody
   }
 
   @Nested
@@ -162,7 +215,7 @@ class AccountIntegrationTest @Autowired constructor(
 
     @Test
     fun `should return 200 OK and the correct account`() {
-      val dummyAccount = seedDummyAccount()
+      val dummyAccount = seedDummyAccount("TEST_ACCOUNT_REF")
       val responseBody = webTestClient.get()
         .uri("/accounts/${dummyAccount.id}")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
@@ -180,7 +233,7 @@ class AccountIntegrationTest @Autowired constructor(
 
     @Test
     fun `should return 200 OK and any associated subaccounts`() {
-      val dummyAccount = seedDummyAccount()
+      val dummyAccount = seedDummyAccount("TEST_ACCOUNT_REF")
       val subAccount = webTestClient.post()
         .uri("/accounts/${dummyAccount.id}/sub-accounts")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
@@ -227,7 +280,7 @@ class AccountIntegrationTest @Autowired constructor(
 
     @Test
     fun `should return 401 when requesting account without authorisation headers`() {
-      val dummyAccount = seedDummyAccount()
+      val dummyAccount = seedDummyAccount("TEST_ACCOUNT_REF")
       webTestClient.get()
         .uri("/accounts/${dummyAccount.id}")
         .exchange()
@@ -236,7 +289,7 @@ class AccountIntegrationTest @Autowired constructor(
 
     @Test
     fun `should return 403 when requesting account with incorrect role`() {
-      val dummyAccount = seedDummyAccount()
+      val dummyAccount = seedDummyAccount("TEST_ACCOUNT_REF")
       webTestClient.get()
         .uri("/accounts/${dummyAccount.id}")
         .headers(setAuthorisation(roles = listOf("ROLE__WRONG_ROLE")))
@@ -250,7 +303,7 @@ class AccountIntegrationTest @Autowired constructor(
 
     @Test
     fun `should return 200 OK if reference query matches an account`() {
-      val dummyAccount = seedDummyAccount()
+      val dummyAccount = seedDummyAccount("TEST_ACCOUNT_REF")
       val responseBody = webTestClient.get()
         .uri("/accounts?reference=TEST_ACCOUNT_REF")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
@@ -268,7 +321,7 @@ class AccountIntegrationTest @Autowired constructor(
 
     @Test
     fun `should return 200 OK and empty list if reference does not match any accounts`() {
-      seedDummyAccount()
+      seedDummyAccount("TEST_ACCOUNT_REF")
       val responseBody = webTestClient.get()
         .uri("/accounts?reference=NOT_A_MATCH")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
@@ -284,7 +337,7 @@ class AccountIntegrationTest @Autowired constructor(
 
     @Test
     fun `should return 200 OK and any associated subaccounts`() {
-      val dummyAccount = seedDummyAccount()
+      val dummyAccount = seedDummyAccount("TEST_ACCOUNT_REF")
       val subAccount = webTestClient.post()
         .uri("/accounts/${dummyAccount.id}/sub-accounts")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
@@ -312,7 +365,7 @@ class AccountIntegrationTest @Autowired constructor(
 
     @Test
     fun `should return 200 OK if the reference submitted has an associated account in a different casing`() {
-      val dummyAccount = seedDummyAccount()
+      val dummyAccount = seedDummyAccount("TEST_ACCOUNT_REF")
       val responseBody = webTestClient.get()
         .uri("/accounts?reference=${dummyAccount.reference.lowercase()}")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
@@ -356,7 +409,7 @@ class AccountIntegrationTest @Autowired constructor(
 
     @Test
     fun `should return 401 when requesting accounts without authorisation headers`() {
-      seedDummyAccount()
+      seedDummyAccount("TEST_ACCOUNT_REF")
       webTestClient.get()
         .uri("/accounts?reference=TEST_ACCOUNT_REF")
         .exchange()
@@ -365,12 +418,95 @@ class AccountIntegrationTest @Autowired constructor(
 
     @Test
     fun `should return 403 when requesting account with incorrect role`() {
-      seedDummyAccount()
+      seedDummyAccount("TEST_ACCOUNT_REF")
       webTestClient.get()
         .uri("/accounts?reference=TEST_ACCOUNT_REF")
         .headers(setAuthorisation(roles = listOf("ROLE__WRONG_ROLE")))
         .exchange()
         .expectStatus().isForbidden
+    }
+  }
+
+  @Nested
+  inner class GetBalanceForAccount {
+//     /accounts/{accountId:UUID}/balance
+    @Test
+    fun `Should return 200 and a balance of 0 for an account with no postings`() {
+      val seededAccount = seedDummyAccount("TEST_ACCOUNT_REF")
+
+      val responseBody = webTestClient.get()
+        .uri("/accounts/${seededAccount.id}/balance")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<AccountBalanceResponse>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(responseBody.accountId).isEqualTo(seededAccount.id)
+      assertThat(responseBody.amount).isEqualTo(0)
+      assertThat(responseBody.balanceDateTime).isInThePast
+    }
+
+//    TODO: 200 and balance for account that exists with postings
+
+    @Test
+    fun `Should return 200 and a balance where an account has postings`() {
+      val accountOne = seedDummyAccount("TEST_ACCOUNT_REF_ONE")
+      val accountOneSubAccount = seedDummySubAccount(accountOne.id, "TEST_SUB_ACCOUNT_REF_ONE")
+
+      val accountTwo = seedDummyAccount("TEST_ACCOUNT_REF_TWO")
+      val accountTwoSubAccount = seedDummySubAccount(accountTwo.id, "TEST_SUB_ACCOUNT_REF_TWO")
+
+      val transactionAmount = 1L
+
+      seedTransaction(
+        debitSubAccountID = accountOneSubAccount.id,
+        creditSubAccountID = accountTwoSubAccount.id,
+        amount = transactionAmount,
+      )
+
+      val responseBody = webTestClient.get()
+        .uri("/accounts/${accountTwo.id}/balance")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<AccountBalanceResponse>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(responseBody.accountId).isEqualTo(accountTwo.id)
+      assertThat(responseBody.amount).isEqualTo(transactionAmount)
+    }
+//    TODO: 400 for account id not a UUID
+
+    @Test
+    fun `Should return 400 Bad Request if the id is not a valid UUID`() {
+      webTestClient.get()
+        .uri("/accounts/not-a-uuid/balance")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+//    TODO: 403 authorised with wrong role
+
+    @Test
+    fun `Should return 403 Forbidden if wrong role provided for authorisation`() {
+      val account = seedDummyAccount("TEST_ACCOUNT_REF")
+      webTestClient.get().uri("/accounts/${account.id}/balance")
+        .headers(setAuthorisation(roles = listOf("WRONG_ROLE")))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+//    TODO: 404 for an account that doesnt exist
+
+    @Test
+    fun `Should return 404 for a valid UUID that does not have an associated account`() {
+      webTestClient.get()
+        .uri("/accounts/${UUID.randomUUID()}/balance")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isNotFound
     }
   }
 }

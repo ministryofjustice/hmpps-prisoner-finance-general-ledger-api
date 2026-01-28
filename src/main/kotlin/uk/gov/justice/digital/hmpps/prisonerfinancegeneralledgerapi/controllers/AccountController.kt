@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.CustomException
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateAccountRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountBalanceResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.AccountService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
@@ -191,5 +192,49 @@ class AccountController(
 
     val listOfAccountResponses = retrievedAccounts.map { AccountResponse.fromEntity(it) }
     return ResponseEntity<List<AccountResponse>>.status(HttpStatus.OK).body(listOfAccountResponses)
+  }
+
+  @Operation(
+    summary = "Get Account Balance",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Retrieved the account balance",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = AccountBalanceResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Bad Request - Invalid UUID for accountId",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized - requires a valid OAuth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden - requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "500",
+        description = "Internal Server Error - An unexpected error occurred.",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW])
+  @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
+  @GetMapping("/accounts/{accountId}/balance")
+  fun getAccountBalance(@PathVariable accountId: UUID): ResponseEntity<AccountBalanceResponse> {
+    val accountBalanceResponse = accountService.calculateAccountBalance(accountId)
+    if (accountBalanceResponse == null) {
+      throw CustomException(message = "Account not found", status = HttpStatus.NOT_FOUND)
+    }
+
+    return ResponseEntity.ok().body(accountBalanceResponse)
   }
 }
