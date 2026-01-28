@@ -15,6 +15,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.AccountService
 import java.time.LocalDateTime
 import java.util.UUID
@@ -27,6 +28,9 @@ class AccountServiceTest {
 
   @Mock
   lateinit var accountDataRepositoryMock: AccountDataRepository
+
+  @Mock
+  lateinit var postingDataRepositoryMock: PostingsDataRepository
 
   @InjectMocks
   lateinit var accountService: AccountService
@@ -91,6 +95,30 @@ class AccountServiceTest {
 
       assertThat(retrievedAccounts.first()).isEqualTo(dummyAccountEntity)
       assertThat(retrievedAccounts.size).isEqualTo(1)
+    }
+  }
+
+  @Nested
+  inner class CalculateAccountBalance {
+
+    @Test
+    fun `Should return null if the account doesn't exist`() {
+      whenever(accountDataRepositoryMock.findAccountById(dummyAccountEntity.id)).thenReturn(null)
+      val accountBalance = accountService.calculateAccountBalance(dummyAccountEntity.id)
+
+      assertThat(accountBalance).isNull()
+    }
+
+    @Test
+    fun `Should return a balance if the account exists`() {
+      whenever(accountDataRepositoryMock.findAccountById(dummyAccountEntity.id)).thenReturn(dummyAccountEntity)
+      whenever(postingDataRepositoryMock.getBalanceForAccount(dummyAccountEntity.id)).thenReturn(10)
+
+      val accountBalance = accountService.calculateAccountBalance(dummyAccountEntity.id)
+
+      assertThat(accountBalance?.accountId).isEqualTo(dummyAccountEntity.id)
+      assertThat(accountBalance?.amount).isEqualTo(10)
+      assertThat(accountBalance?.balanceDateTime).isInThePast
     }
   }
 }

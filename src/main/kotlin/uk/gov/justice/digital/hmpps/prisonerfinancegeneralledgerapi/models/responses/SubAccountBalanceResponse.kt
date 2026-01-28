@@ -1,9 +1,9 @@
-package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models
+package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses
 
 import java.time.LocalDateTime
 import java.util.UUID
 
-class SubAccountBalanceResponse(
+data class SubAccountBalanceResponse(
   val subAccountId: UUID,
   val balanceDateTime: LocalDateTime,
   val amount: Long,
