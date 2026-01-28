@@ -429,7 +429,6 @@ class AccountIntegrationTest @Autowired constructor(
 
   @Nested
   inner class GetBalanceForAccount {
-//     /accounts/{accountId:UUID}/balance
     @Test
     fun `Should return 200 and a balance of 0 for an account with no postings`() {
       val seededAccount = seedDummyAccount("TEST_ACCOUNT_REF")
@@ -447,8 +446,6 @@ class AccountIntegrationTest @Autowired constructor(
       assertThat(responseBody.amount).isEqualTo(0)
       assertThat(responseBody.balanceDateTime).isInThePast
     }
-
-//    TODO: 200 and balance for account that exists with postings
 
     @Test
     fun `Should return 200 and a balance where an account has postings`() {
@@ -478,7 +475,6 @@ class AccountIntegrationTest @Autowired constructor(
       assertThat(responseBody.accountId).isEqualTo(accountTwo.id)
       assertThat(responseBody.amount).isEqualTo(transactionAmount)
     }
-//    TODO: 400 for account id not a UUID
 
     @Test
     fun `Should return 400 Bad Request if the id is not a valid UUID`() {
@@ -488,7 +484,6 @@ class AccountIntegrationTest @Autowired constructor(
         .exchange()
         .expectStatus().isBadRequest
     }
-//    TODO: 403 authorised with wrong role
 
     @Test
     fun `Should return 403 Forbidden if wrong role provided for authorisation`() {
@@ -498,7 +493,6 @@ class AccountIntegrationTest @Autowired constructor(
         .exchange()
         .expectStatus().isForbidden
     }
-//    TODO: 404 for an account that doesnt exist
 
     @Test
     fun `Should return 404 for a valid UUID that does not have an associated account`() {
