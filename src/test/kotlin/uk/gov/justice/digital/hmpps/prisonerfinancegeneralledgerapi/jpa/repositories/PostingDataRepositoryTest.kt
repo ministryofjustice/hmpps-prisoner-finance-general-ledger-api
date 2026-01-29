@@ -280,4 +280,105 @@ class PostingDataRepositoryTest @Autowired constructor(
       assertThat(noExistAccountBalance).isEqualTo(0)
     }
   }
+
+  @Nested
+  inner class GetBalanceForAPrisonerAtAPrison {
+
+    fun createAccount(ref: String): AccountEntity {
+      val account = AccountEntity(
+        reference = ref,
+      )
+      entityManager.persist(account)
+      return account
+    }
+
+    fun createSubAccount(ref: String, account: AccountEntity): SubAccountEntity {
+      val subAccountEntity = SubAccountEntity(
+        reference = ref,
+        parentAccountEntity = account,
+      )
+      entityManager.persist(subAccountEntity)
+      return subAccountEntity
+    }
+
+    fun createTransaction(
+      ref: String,
+      debitSubAccount: SubAccountEntity,
+      creditSubAccount: SubAccountEntity,
+      amount: Long,
+    ): TransactionEntity {
+      val transaction = TransactionEntity(
+        reference = ref,
+        amount = amount,
+      )
+
+      val postings = listOf(
+        PostingEntity(
+          subAccountEntity = debitSubAccount,
+          amount = amount,
+          transactionEntity = transaction,
+          type = PostingType.DR,
+        ),
+        PostingEntity(
+          subAccountEntity = creditSubAccount,
+          amount = amount,
+          transactionEntity = transaction,
+          type = PostingType.CR,
+        ),
+      )
+
+      transaction.postings.addAll(postings)
+      entityManager.persist(transaction)
+      entityManager.persist(postings[0])
+      entityManager.persist(postings[1])
+
+      return transaction
+    }
+
+    @Test
+    fun `Should return zero if a prisoner has no transactions with that prison`() {
+      val prisonA = createAccount("AAA")
+      val prisonerOne = createAccount("123456")
+
+      val balanceForPrisonerAtPrison =
+        postingsDataRepository.getBalanceForAPrisonerAtAPrison(prisonId = prisonA.id, prisonerId = prisonerOne.id)
+
+      assertThat(balanceForPrisonerAtPrison).isEqualTo(0)
+    }
+
+    @Test
+    fun `Should return the balance of a prisoner sub account postings when they are all at one prison`() {
+      val prisonA = createAccount("AAA")
+      val prisonACanteen = createSubAccount("AAA:Canteen", prisonA)
+      val prisonerOne = createAccount("123456")
+      val prisonerOneCash = createSubAccount("CASH", prisonerOne)
+
+      createTransaction("MEAL", prisonerOneCash, prisonACanteen, 10)
+      createTransaction("MEAL-REFUND", prisonACanteen, prisonerOneCash, 5)
+
+      val prisonerBalAtPrison =
+        postingsDataRepository.getBalanceForAPrisonerAtAPrison(prisonId = prisonA.id, prisonerId = prisonerOne.id)
+
+      assertThat(prisonerBalAtPrison).isEqualTo(-5)
+    }
+
+    @Test
+    fun `Should return the balance of a prisoner at the queried prison when transactions exist at another prison`() {
+      val prisonA = createAccount("AAA")
+      val prisonACanteen = createSubAccount("AAA:Canteen", prisonA)
+
+      val prisonB = createAccount("BBB")
+      val prisonBCatalog = createSubAccount("BBB:Catalog", prisonB)
+
+      val prisoner = createAccount("123456")
+      val prisonerCashAccount = createSubAccount("CASH", prisoner)
+
+      createTransaction("MEAL", prisonerCashAccount, prisonACanteen, 15)
+      createTransaction("MARS-BAR", prisonerCashAccount, prisonBCatalog, 1)
+
+      val balanceForPrisonerAtPrison =
+        postingsDataRepository.getBalanceForAPrisonerAtAPrison(prisonId = prisonA.id, prisonerId = prisoner.id)
+      assertThat(balanceForPrisonerAtPrison).isEqualTo(-15)
+    }
+  }
 }

@@ -42,4 +42,29 @@ interface PostingsDataRepository : JpaRepository<PostingEntity, UUID> {
     nativeQuery = true,
   )
   fun getBalanceForAccount(@Param("accountId") accountId: UUID): Long
+
+  @Query(
+    """
+WITH qualifying_transactions AS (  
+SELECT p.transaction_id  
+FROM postings p 
+JOIN sub_accounts sa ON sa.sub_account_id = p.sub_account_id  
+WHERE sa.account_id IN (:prisonerId, :prisonId)  
+GROUP BY p.transaction_id  
+HAVING COUNT(DISTINCT sa.account_id) = 2)  
+SELECT COALESCE(SUM(
+     CASE
+         WHEN p.type = 'CR' THEN p.amount
+         WHEN p.type = 'DR' THEN -p.amount
+         ELSE 0
+      END
+        ), 0) AS balance  
+FROM postings p 
+JOIN sub_accounts sa ON sa.sub_account_id = p.sub_account_id  
+JOIN qualifying_transactions qt ON qt.transaction_id = p.transaction_id  
+WHERE sa.account_id = :prisonerId
+""",
+    nativeQuery = true,
+  )
+  fun getBalanceForAPrisonerAtAPrison(@Param("prisonId") prisonId: UUID, @Param("prisonerId") prisonerId: UUID): Long
 }
