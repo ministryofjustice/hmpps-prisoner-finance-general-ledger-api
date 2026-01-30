@@ -121,4 +121,63 @@ class AccountServiceTest {
       assertThat(accountBalance?.balanceDateTime).isInThePast
     }
   }
+
+  @Nested
+  inner class CalculatePrisonersBalanceAtAPrison {
+
+    lateinit var dummyPrisonAccount: AccountEntity
+    lateinit var dummyPrisonerAccount: AccountEntity
+
+    @BeforeEach
+    fun setUp() {
+      dummyPrisonAccount = AccountEntity(reference = "LEI")
+      dummyPrisonerAccount = AccountEntity(reference = "123456")
+    }
+
+    @Test
+    fun `If a prisoner and prison exists with no shared transactions, returns a balance of 0`() {
+      whenever(accountDataRepositoryMock.findAccountByReference(any())).thenReturn(dummyPrisonAccount)
+      whenever(accountDataRepositoryMock.findAccountById(any())).thenReturn(dummyPrisonerAccount)
+      whenever(postingDataRepositoryMock.getBalanceForAPrisonerAtAPrison(dummyPrisonAccount.id, dummyPrisonerAccount.id)).thenReturn(0)
+
+      val prisonerBalance = accountService.calculatePrisonerBalanceAtAPrison(dummyPrisonerAccount.id, dummyPrisonAccount.reference)
+
+      assertThat(prisonerBalance?.amount).isEqualTo(0)
+      assertThat(prisonerBalance?.accountId).isEqualTo(dummyPrisonerAccount.id)
+    }
+
+    @Test
+    fun `If a prisoner and prison exists with shared transactions, returns the balance`() {
+      whenever(accountDataRepositoryMock.findAccountByReference(any())).thenReturn(dummyPrisonAccount)
+      whenever(accountDataRepositoryMock.findAccountById(any())).thenReturn(dummyPrisonerAccount)
+      whenever(postingDataRepositoryMock.getBalanceForAPrisonerAtAPrison(dummyPrisonAccount.id, dummyPrisonerAccount.id)).thenReturn(10)
+
+      val prisonerBalance = accountService.calculatePrisonerBalanceAtAPrison(dummyPrisonerAccount.id, dummyPrisonAccount.reference)
+
+      assertThat(prisonerBalance?.amount).isEqualTo(10)
+      assertThat(prisonerBalance?.accountId).isEqualTo(dummyPrisonerAccount.id)
+    }
+
+    @Test
+    fun `If a prisoner doesnt exist, returns null, doesnt call any more repo methods`() {
+      whenever(accountDataRepositoryMock.findAccountById(any())).thenReturn(null)
+
+      val prisonerBalance = accountService.calculatePrisonerBalanceAtAPrison(dummyPrisonerAccount.id, dummyPrisonerAccount.reference)
+
+      assertThat(prisonerBalance).isNull()
+      verify(accountDataRepositoryMock, times(0)).findAccountByReference(any())
+      verify(postingDataRepositoryMock, times(0)).getBalanceForAPrisonerAtAPrison(any(), any())
+    }
+
+    @Test
+    fun `If a prison doesnt exist, returns a zero balance object and doesnt call any more repo methods`() {
+      whenever(accountDataRepositoryMock.findAccountById(any())).thenReturn(dummyPrisonerAccount)
+      whenever(accountDataRepositoryMock.findAccountByReference(any())).thenReturn(null)
+
+      val prisonerBalance = accountService.calculatePrisonerBalanceAtAPrison(dummyPrisonerAccount.id, dummyPrisonerAccount.reference)
+
+      assertThat(prisonerBalance?.amount).isEqualTo(0)
+      verify(postingDataRepositoryMock, times(0)).getBalanceForAPrisonerAtAPrison(any(), any())
+    }
+  }
 }
