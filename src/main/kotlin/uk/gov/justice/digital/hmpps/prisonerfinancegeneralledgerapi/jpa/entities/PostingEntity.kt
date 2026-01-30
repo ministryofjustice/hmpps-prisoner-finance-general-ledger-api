@@ -29,16 +29,16 @@ class PostingEntity(
 
   @Enumerated(EnumType.STRING)
   @Column(name = "type", nullable = false)
-  val type: PostingType = PostingType.CR,
+  val type: PostingType,
 
   @Column(name = "amount", nullable = false)
-  val amount: Long = 0,
+  val amount: Long,
 
   @ManyToOne(optional = false, fetch = jakarta.persistence.FetchType.LAZY)
   @JoinColumn(name = "sub_account_id", nullable = false)
-  val subAccountEntity: SubAccountEntity = SubAccountEntity(),
+  val subAccountEntity: SubAccountEntity,
 
   @ManyToOne(optional = false, fetch = jakarta.persistence.FetchType.LAZY)
   @JoinColumn(name = "transaction_id", nullable = false)
-  val transactionEntity: TransactionEntity = TransactionEntity(),
+  val transactionEntity: TransactionEntity,
 )
