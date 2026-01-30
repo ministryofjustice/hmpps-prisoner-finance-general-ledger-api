@@ -24,6 +24,9 @@ import java.util.UUID
 )
 class PostingDataRepositoryTest @Autowired constructor(
   val entityManager: TestEntityManager,
+  val accountDataRepository: AccountDataRepository,
+  val transactionDataRepository: TransactionDataRepository,
+  val subAccountDataRepository: SubAccountDataRepository,
   val postingsDataRepository: PostingsDataRepository,
 ) {
 
@@ -37,6 +40,15 @@ class PostingDataRepositoryTest @Autowired constructor(
   private lateinit var accountThreeSubAccountOne: SubAccountEntity
 
   private lateinit var testTransactionEntity: TransactionEntity
+
+  @BeforeEach
+  fun clearDb() {
+    postingsDataRepository.deleteAll()
+    transactionDataRepository.deleteAll()
+    subAccountDataRepository.deleteAll()
+    accountDataRepository.deleteAll()
+    entityManager.clear()
+  }
 
   @Nested
   inner class GetBalanceForSubAccount {
@@ -99,7 +111,12 @@ class PostingDataRepositoryTest @Autowired constructor(
       )
       entityManager.persist(accountThreeSubAccountOne)
 
-      testTransactionEntity = TransactionEntity(reference = "TEST_TRANSACTION_REF", description = "TEST_DESCRIPTION", amount = 4, timestamp = LocalDateTime.now())
+      testTransactionEntity = TransactionEntity(
+        reference = "TEST_TRANSACTION_REF",
+        description = "TEST_DESCRIPTION",
+        amount = 4,
+        timestamp = LocalDateTime.now(),
+      )
       entityManager.persist(testTransactionEntity)
 
       for (i in 1..10) {
@@ -107,7 +124,14 @@ class PostingDataRepositoryTest @Autowired constructor(
         val subAccountForPosting = if (evenNumber) accountOneSubAccountOne else accountTwoSubAccountOne
         val postingType = if (evenNumber) PostingType.CR else PostingType.DR
 
-        val newPostingEntity = PostingEntity(createdBy = "TEST_USERNAME", createdAt = LocalDateTime.now(), type = postingType, amount = 1, subAccountEntity = subAccountForPosting, transactionEntity = testTransactionEntity)
+        val newPostingEntity = PostingEntity(
+          createdBy = "TEST_USERNAME",
+          createdAt = LocalDateTime.now(),
+          type = postingType,
+          amount = 1,
+          subAccountEntity = subAccountForPosting,
+          transactionEntity = testTransactionEntity,
+        )
 
         testTransactionEntity.postings.add(newPostingEntity)
         entityManager.persist(newPostingEntity)
@@ -118,8 +142,22 @@ class PostingDataRepositoryTest @Autowired constructor(
 
 //    Postings in the opposite direction to prove things work with varied posting types on a single subAccount
 //    This puts each at 4 and -4 respectively
-      val debitOnePence = PostingEntity(createdBy = "TEST_USERNAME", createdAt = LocalDateTime.now(), type = PostingType.DR, amount = 1, subAccountEntity = accountOneSubAccountOne, transactionEntity = testTransactionEntity)
-      val creditOnePence = PostingEntity(createdBy = "TEST_USERNAME", createdAt = LocalDateTime.now(), type = PostingType.CR, amount = 1, subAccountEntity = accountTwoSubAccountOne, transactionEntity = testTransactionEntity)
+      val debitOnePence = PostingEntity(
+        createdBy = "TEST_USERNAME",
+        createdAt = LocalDateTime.now(),
+        type = PostingType.DR,
+        amount = 1,
+        subAccountEntity = accountOneSubAccountOne,
+        transactionEntity = testTransactionEntity,
+      )
+      val creditOnePence = PostingEntity(
+        createdBy = "TEST_USERNAME",
+        createdAt = LocalDateTime.now(),
+        type = PostingType.CR,
+        amount = 1,
+        subAccountEntity = accountTwoSubAccountOne,
+        transactionEntity = testTransactionEntity,
+      )
 
       testTransactionEntity.postings.add(debitOnePence)
       testTransactionEntity.postings.add(creditOnePence)
@@ -229,7 +267,12 @@ class PostingDataRepositoryTest @Autowired constructor(
 
       entityManager.persist(accountFour)
 
-      testTransactionEntity = TransactionEntity(reference = "TEST_TRANSACTION_REF", description = "TEST_DESCRIPTION", amount = 14, timestamp = LocalDateTime.now())
+      testTransactionEntity = TransactionEntity(
+        reference = "TEST_TRANSACTION_REF",
+        description = "TEST_DESCRIPTION",
+        amount = 14,
+        timestamp = LocalDateTime.now(),
+      )
       entityManager.persist(testTransactionEntity)
 
       for (i in 1..10) {
@@ -237,12 +280,26 @@ class PostingDataRepositoryTest @Autowired constructor(
         val subAccountForPosting = if (evenNumber) accountOneSubAccountOne else accountTwoSubAccountOne
         val postingType = if (evenNumber) PostingType.CR else PostingType.DR
 
-        val newPostingEntity = PostingEntity(createdBy = "TEST_USERNAME", createdAt = LocalDateTime.now(), type = postingType, amount = 1, subAccountEntity = subAccountForPosting, transactionEntity = testTransactionEntity)
+        val newPostingEntity = PostingEntity(
+          createdBy = "TEST_USERNAME",
+          createdAt = LocalDateTime.now(),
+          type = postingType,
+          amount = 1,
+          subAccountEntity = subAccountForPosting,
+          transactionEntity = testTransactionEntity,
+        )
         testTransactionEntity.postings.add(newPostingEntity)
         entityManager.persist(newPostingEntity)
       }
 
-      val accountTwoSubAccountTwoPosting = PostingEntity(createdBy = "TEST_USERNAME", createdAt = LocalDateTime.now(), type = PostingType.CR, amount = 3, subAccountEntity = testAccountTwoSubAccountTwo, transactionEntity = testTransactionEntity)
+      val accountTwoSubAccountTwoPosting = PostingEntity(
+        createdBy = "TEST_USERNAME",
+        createdAt = LocalDateTime.now(),
+        type = PostingType.CR,
+        amount = 3,
+        subAccountEntity = testAccountTwoSubAccountTwo,
+        transactionEntity = testTransactionEntity,
+      )
       testTransactionEntity.postings.add(accountTwoSubAccountTwoPosting)
       entityManager.persist(accountTwoSubAccountTwoPosting)
 
@@ -335,6 +392,47 @@ class PostingDataRepositoryTest @Autowired constructor(
       return transaction
     }
 
+    fun createOneToManyTransaction(
+      ref: String,
+      debitSubAccount: SubAccountEntity,
+      creditSubAccounts: List<SubAccountEntity>,
+      amountToCreditEachSubAccount: Long,
+    ): TransactionEntity {
+      val overallDebitAmount = amountToCreditEachSubAccount * creditSubAccounts.size
+
+      val transaction = TransactionEntity(
+        reference = ref,
+        amount = overallDebitAmount,
+      )
+
+      val postings = mutableListOf<PostingEntity>(
+        PostingEntity(
+          subAccountEntity = debitSubAccount,
+          amount = overallDebitAmount,
+          transactionEntity = transaction,
+          type = PostingType.DR,
+        ),
+      )
+
+      for (i in 0..<creditSubAccounts.size) {
+        val creditPosting = PostingEntity(
+          subAccountEntity = creditSubAccounts[i],
+          transactionEntity = transaction,
+          type = PostingType.CR,
+          amount = amountToCreditEachSubAccount,
+        )
+        postings.add(creditPosting)
+      }
+
+      transaction.postings.addAll(postings)
+      entityManager.persist(transaction)
+      postings.forEach { postingEntity ->
+        entityManager.persist(postingEntity)
+      }
+
+      return transaction
+    }
+
     @Test
     fun `Should return zero if a prisoner has no transactions with that prison`() {
       val prisonA = createAccount("AAA")
@@ -379,6 +477,33 @@ class PostingDataRepositoryTest @Autowired constructor(
       val balanceForPrisonerAtPrison =
         postingsDataRepository.getBalanceForAPrisonerAtAPrison(prisonId = prisonA.id, prisonerId = prisoner.id)
       assertThat(balanceForPrisonerAtPrison).isEqualTo(-15)
+    }
+
+    @Test
+    fun `Should return the balance of a prisoner at the queried prison when transactions exist with many to one or one to many relationships`() {
+      val prisonA = createAccount("AAA")
+      val prisonACash = createSubAccount("AAA:CASH", prisonA)
+
+      val prisonerOne = createAccount("123456")
+      val prisonerOneCashAccount = createSubAccount("CASH", prisonerOne)
+
+      val prisonerTwo = createAccount("7891011")
+      val prisonerTwoCashAccount = createSubAccount("CASH", prisonerTwo)
+
+      createOneToManyTransaction(
+        "BONUS",
+        prisonACash,
+        listOf(prisonerOneCashAccount, prisonerTwoCashAccount),
+        30,
+      )
+
+      createTransaction("DAMAGES", prisonerTwoCashAccount, prisonACash, 1)
+
+      createTransaction("WAGES", prisonACash, prisonerOneCashAccount, 5)
+
+      val balanceForPrisonerAtPrison =
+        postingsDataRepository.getBalanceForAPrisonerAtAPrison(prisonId = prisonA.id, prisonerId = prisonerOne.id)
+      assertThat(balanceForPrisonerAtPrison).isEqualTo(35)
     }
   }
 }

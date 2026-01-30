@@ -54,7 +54,7 @@ GROUP BY p.transaction_id
 HAVING COUNT(DISTINCT sa.account_id) = 2)  
 SELECT COALESCE(SUM(
      CASE
-         WHEN p.type = 'CR' THEN p.amount
+         WHEN p.type = 'CR' THEN p.amount   
          WHEN p.type = 'DR' THEN -p.amount
          ELSE 0
       END
