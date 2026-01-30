@@ -3,6 +3,7 @@ plugins {
   kotlin("plugin.spring") version "2.2.21"
   id("org.jetbrains.kotlin.plugin.noarg") version "2.2.21"
   id("jacoco")
+  kotlin("plugin.jpa") version "2.2.21"
 }
 
 configurations {
