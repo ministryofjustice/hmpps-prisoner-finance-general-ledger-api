@@ -84,7 +84,7 @@ class AccountIntegrationTest @Autowired constructor(
       .contentType(MediaType.APPLICATION_JSON)
       .bodyValue(
         CreateTransactionRequest(
-          reference = "TX",
+          reference = UUID.randomUUID().toString(),
           description = "DESCRIPTION",
           amount = amount,
           timestamp = LocalDateTime.now(),
@@ -474,6 +474,74 @@ class AccountIntegrationTest @Autowired constructor(
 
       assertThat(responseBody.accountId).isEqualTo(accountTwo.id)
       assertThat(responseBody.amount).isEqualTo(transactionAmount)
+    }
+
+    @Test
+    fun `Should return a 200 and a zero balance for a prisoner when no transactions exist between the queried prison and the prisoner`() {
+      val prisonA = seedDummyAccount("AAA")
+      val prisonASubAccount = seedDummySubAccount(prisonA.id, "AAA:CANTEEN")
+
+      val prisonB = seedDummyAccount("BBB")
+      val prisonBSubAccount = seedDummySubAccount(prisonB.id, "BBB:CATALOGUE")
+
+      val prisoner = seedDummyAccount("123456")
+      val prisonerSubAccount = seedDummySubAccount(prisoner.id, "SPENDS")
+
+      val transactionAmount = 1L
+
+      seedTransaction(
+        debitSubAccountID = prisonerSubAccount.id,
+        creditSubAccountID = prisonBSubAccount.id,
+        amount = transactionAmount,
+      )
+
+      val responseBody = webTestClient.get()
+        .uri("/accounts/${prisoner.id}/balance?prisonRef=${prisonA.reference}")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<AccountBalanceResponse>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(responseBody.accountId).isEqualTo(prisoner.id)
+      assertThat(responseBody.amount).isEqualTo(0)
+    }
+
+    @Test
+    fun `Should return a 200 and a balance for a prisoner at a single prison when transactions exist between the prisoner and multiple prisons`() {
+      val prisonA = seedDummyAccount("AAA")
+      val prisonASubAccount = seedDummySubAccount(prisonA.id, "AAA:CANTEEN")
+
+      val prisonB = seedDummyAccount("BBB")
+      val prisonBSubAccount = seedDummySubAccount(prisonB.id, "BBB:CATALOGUE")
+
+      val prisoner = seedDummyAccount("123456")
+      val prisonerSubAccount = seedDummySubAccount(prisoner.id, "SPENDS")
+
+      seedTransaction(
+        debitSubAccountID = prisonerSubAccount.id,
+        creditSubAccountID = prisonASubAccount.id,
+        amount = 1L,
+      )
+
+      seedTransaction(
+        debitSubAccountID = prisonerSubAccount.id,
+        creditSubAccountID = prisonBSubAccount.id,
+        amount = 2L,
+      )
+
+      val responseBody = webTestClient.get()
+        .uri("/accounts/${prisoner.id}/balance?prisonRef=${prisonA.reference}")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<AccountBalanceResponse>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(responseBody.accountId).isEqualTo(prisoner.id)
+      assertThat(responseBody.amount).isEqualTo(-1L)
     }
 
     @Test
