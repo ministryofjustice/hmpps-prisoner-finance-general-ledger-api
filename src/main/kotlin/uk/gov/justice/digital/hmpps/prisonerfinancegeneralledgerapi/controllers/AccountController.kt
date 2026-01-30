@@ -229,8 +229,13 @@ class AccountController(
   @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW])
   @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
   @GetMapping("/accounts/{accountId}/balance")
-  fun getAccountBalance(@PathVariable accountId: UUID): ResponseEntity<AccountBalanceResponse> {
-    val accountBalanceResponse = accountService.calculateAccountBalance(accountId)
+  fun getAccountBalance(@PathVariable accountId: UUID, @RequestParam prisonRef: String?): ResponseEntity<AccountBalanceResponse> {
+    var accountBalanceResponse: AccountBalanceResponse? = null
+    if (prisonRef == null) {
+      accountBalanceResponse = accountService.calculateAccountBalance(accountId)
+    } else {
+      accountBalanceResponse = accountService.calculatePrisonerBalanceAtAPrison(accountId, prisonRef)
+    }
     if (accountBalanceResponse == null) {
       throw CustomException(message = "Account not found", status = HttpStatus.NOT_FOUND)
     }
