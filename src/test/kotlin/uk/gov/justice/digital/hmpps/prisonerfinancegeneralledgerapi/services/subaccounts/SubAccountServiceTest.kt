@@ -14,9 +14,11 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.StatementBalanceEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.StatementBalanceDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.SubAccountService
 import java.time.LocalDateTime
@@ -38,9 +40,11 @@ class SubAccountServiceTest {
   @Mock
   lateinit var postingsDataRepository: PostingsDataRepository
 
+  @Mock
+  lateinit var statementBalanceDataRepository: StatementBalanceDataRepository
+
   @InjectMocks
   lateinit var subAccountService: SubAccountService
-
   lateinit var dummyParentAccountEntity: AccountEntity
   lateinit var dummySubAccountEntity: SubAccountEntity
 
@@ -161,6 +165,27 @@ class SubAccountServiceTest {
       assertThat(subAccountBalance?.subAccountId).isEqualTo(dummySubAccountUUID)
       assertThat(subAccountBalance?.balanceDateTime).isInThePast
       assertThat(subAccountBalance?.amount).isEqualTo(0)
+    }
+  }
+
+  @Nested
+  inner class CreateStatementBalance {
+
+    @Test
+    fun `should save the balance if the provided sub account exists`() {
+      val dummyStatementBalanceEntity = StatementBalanceEntity(subAccountEntity = dummySubAccountEntity, amount = 10, balanceDateTime = LocalDateTime.now())
+      whenever(subAccountDataRepositoryMock.getSubAccountEntityById(dummySubAccountUUID)).thenReturn(dummySubAccountEntity)
+      whenever(statementBalanceDataRepository.save(any())).thenReturn(dummyStatementBalanceEntity)
+
+      val returnedBalance = subAccountService.createStatementBalance(dummySubAccountUUID, 10, LocalDateTime.now())
+      assertThat(returnedBalance).isEqualTo(dummyStatementBalanceEntity)
+    }
+
+    @Test
+    fun `should return null if the provided sub account does not exist`() {
+      whenever(subAccountDataRepositoryMock.getSubAccountEntityById(any())).thenReturn(null)
+      val returnedBalance = subAccountService.createStatementBalance(UUID.randomUUID(), 10, LocalDateTime.now())
+      assertThat(returnedBalance).isNull()
     }
   }
 }

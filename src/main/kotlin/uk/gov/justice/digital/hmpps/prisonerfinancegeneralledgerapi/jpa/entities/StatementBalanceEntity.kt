@@ -15,7 +15,7 @@ import java.util.UUID
   name = "balances",
   indexes = [Index(name = "idx_balance_sub_account_id", columnList = "sub_account_id")],
 )
-class BalanceEntity(
+class StatementBalanceEntity(
 
   @Id
   @Column(name = "balance_id", nullable = false, unique = true)
