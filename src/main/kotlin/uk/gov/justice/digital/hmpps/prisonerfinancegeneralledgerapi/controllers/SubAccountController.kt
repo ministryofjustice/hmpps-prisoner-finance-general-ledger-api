@@ -24,7 +24,6 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.CustomException
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.StatementBalanceEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateStatementBalanceRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateSubAccountRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.StatementBalanceResponse
@@ -33,7 +32,6 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.respo
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.SubAccountService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.security.Principal
-import java.time.LocalDateTime
 import java.util.UUID
 
 @Tag(name = "Sub Account Controller")
@@ -274,12 +272,56 @@ class SubAccountController(
     return ResponseEntity.ok().body(subAccountBalance)
   }
 
+  @Operation(
+    summary = "Create a statement balance",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Returns a created statement balance",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = StatementBalanceResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Bad Request",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized - requires a valid OAuth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden - requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Resource not found - Sub account not found",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "500",
+        description = "Internal Server Error - An unexpected error occurred.",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW])
+  @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
   @PostMapping("/sub-accounts/{subAccountId}/balance")
   fun postStatementBalance(@PathVariable subAccountId: UUID, @RequestBody statementBalanceRequest: CreateStatementBalanceRequest): ResponseEntity<StatementBalanceResponse> {
     val subAccountStatementBalance = subAccountService.createStatementBalance(subAccountId, statementBalanceRequest.amount, statementBalanceRequest.balanceDateTime)
-//    if (subAccountBalance == null) {
-//      throw CustomException(message = "Sub Account not found", status = HttpStatus.NOT_FOUND)
-//    }
-    return ResponseEntity.status(201).body(StatementBalanceResponse.fromEntity(subAccountStatementBalance!!))
+    if (subAccountStatementBalance == null) {
+      throw CustomException(message = "Sub Account not found", status = HttpStatus.NOT_FOUND)
+    }
+    return ResponseEntity.status(201).body(StatementBalanceResponse.fromEntity(subAccountStatementBalance))
   }
 }
