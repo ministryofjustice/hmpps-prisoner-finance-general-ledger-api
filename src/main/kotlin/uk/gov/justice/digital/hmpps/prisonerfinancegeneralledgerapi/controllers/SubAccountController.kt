@@ -24,12 +24,16 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.CustomException
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.StatementBalanceEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateStatementBalanceRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateSubAccountRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.StatementBalanceResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountBalanceResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.SubAccountService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.security.Principal
+import java.time.LocalDateTime
 import java.util.UUID
 
 @Tag(name = "Sub Account Controller")
@@ -268,5 +272,14 @@ class SubAccountController(
       throw CustomException(message = "Sub Account not found", status = HttpStatus.NOT_FOUND)
     }
     return ResponseEntity.ok().body(subAccountBalance)
+  }
+
+  @PostMapping("/sub-accounts/{subAccountId}/balance")
+  fun postStatementBalance(@PathVariable subAccountId: UUID, @RequestBody statementBalanceRequest: CreateStatementBalanceRequest): ResponseEntity<StatementBalanceResponse> {
+    val subAccountStatementBalance = subAccountService.createStatementBalance(subAccountId, statementBalanceRequest.amount, statementBalanceRequest.balanceDateTime)
+//    if (subAccountBalance == null) {
+//      throw CustomException(message = "Sub Account not found", status = HttpStatus.NOT_FOUND)
+//    }
+    return ResponseEntity.status(201).body(StatementBalanceResponse.fromEntity(subAccountStatementBalance!!))
   }
 }

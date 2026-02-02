@@ -17,9 +17,11 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.reposito
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.TransactionDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateAccountRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreatePostingRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateStatementBalanceRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateSubAccountRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateTransactionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountResponse
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.StatementBalanceResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountBalanceResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.TransactionResponse
@@ -665,6 +667,54 @@ class SubAccountIntegrationTest @Autowired constructor(
         .responseBody!!
 
       assertThat(responseBody.properties?.get("userMessage")).isEqualTo("Sub Account not found")
+    }
+  }
+
+  @Nested
+  inner class PostStatementBalance {
+    lateinit var dummySubAccountOne: SubAccountResponse
+
+    @BeforeEach
+    fun seedAccountAndSubAccount() {
+      val responseBody = webTestClient.post()
+        .uri("/accounts")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF"))
+        .exchange()
+        .expectBody<AccountResponse>()
+        .returnResult()
+        .responseBody!!
+
+      dummyParentAccountOne = responseBody
+      val subAccountResponse = webTestClient.post()
+        .uri("/accounts/${dummyParentAccountOne.id}/sub-accounts")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateSubAccountRequest("TEST_SUB_ACCOUNT_REF_1"))
+        .exchange()
+        .expectBody<SubAccountResponse>()
+        .returnResult().responseBody!!
+
+      dummySubAccountOne = subAccountResponse
+    }
+
+    @Test
+    fun `should return 201 and the created statement balance`() {
+      val balanceDateTime = LocalDateTime.now()
+      val statementBalanceResponse = webTestClient.post()
+        .uri("/sub-accounts/${dummySubAccountOne.id}/balance")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateStatementBalanceRequest(amount = 10, balanceDateTime = balanceDateTime))
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody<StatementBalanceResponse>()
+        .returnResult().responseBody!!
+
+      assertThat(statementBalanceResponse.amount).isEqualTo(10)
+      assertThat(statementBalanceResponse.subAccountId).isEqualTo(dummySubAccountOne.id)
+      assertThat(statementBalanceResponse.balanceDateTime).isEqualTo(balanceDateTime)
     }
   }
 }
