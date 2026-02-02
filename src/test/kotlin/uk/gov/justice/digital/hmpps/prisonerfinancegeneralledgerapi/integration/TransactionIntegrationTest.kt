@@ -113,9 +113,7 @@ class TransactionIntegrationTest @Autowired constructor(
     }
 
     @Test
-    fun `return a 201 when sent a valid transaction with many to one postings`() {
-      // createTransaction(reference: String, createdBy: String, description: String, amount: BigInteger, timestamp: LocalDateTime, postings: List<PostingRequest>): TransactionEntity
-
+    fun `return a 201 when sent a valid transaction with many credits for one debit`() {
       val createPostingRequests: List<CreatePostingRequest> = listOf(
         CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.DR, amount = 2L),
         CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.CR, amount = 1L),
@@ -150,7 +148,42 @@ class TransactionIntegrationTest @Autowired constructor(
     }
 
     @Test
-    fun `return a 201 when sent a valid transaction with many to many postings`() {
+    fun `return a 201 when sent a valid transaction with one credit to many debits`() {
+      val createPostingRequests: List<CreatePostingRequest> = listOf(
+        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.DR, amount = 2L),
+        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = 1L),
+        CreatePostingRequest(subAccountId = subAccounts[2].id, type = PostingType.CR, amount = 3L),
+      )
+
+      val transactionResponseBody = webTestClient.post()
+        .uri("/transactions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(
+          CreateTransactionRequest(
+            reference = "TX",
+            description = "DESCRIPTION",
+            amount = 3L,
+            timestamp = LocalDateTime.now(),
+            postings = createPostingRequests,
+          ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody<TransactionResponse>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(transactionResponseBody.postings[0].type).isEqualTo(PostingType.DR)
+      assertThat(transactionResponseBody.postings[1].type).isEqualTo(PostingType.DR)
+      assertThat(transactionResponseBody.postings[2].type).isEqualTo(PostingType.CR)
+      assertThat(transactionResponseBody.postings[0].amount).isEqualTo(2L)
+      assertThat(transactionResponseBody.postings[1].amount).isEqualTo(1L)
+      assertThat(transactionResponseBody.postings[2].amount).isEqualTo(3L)
+    }
+
+    @Test
+    fun `return a 400 when sent a valid transaction with many to many postings`() {
       val createPostingRequests: List<CreatePostingRequest> = listOf(
         CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.DR, amount = 1L),
         CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.CR, amount = 1L),
@@ -172,20 +205,7 @@ class TransactionIntegrationTest @Autowired constructor(
           ),
         )
         .exchange()
-        .expectStatus().isCreated
-        .expectBody<TransactionResponse>()
-        .returnResult()
-        .responseBody!!
-
-      assertThat(transactionResponseBody.postings[0].type).isEqualTo(PostingType.DR)
-      assertThat(transactionResponseBody.postings[1].type).isEqualTo(PostingType.CR)
-      assertThat(transactionResponseBody.postings[2].type).isEqualTo(PostingType.DR)
-      assertThat(transactionResponseBody.postings[3].type).isEqualTo(PostingType.CR)
-      assertThat(transactionResponseBody.postings[0].amount).isEqualTo(1L)
-      assertThat(transactionResponseBody.postings[1].amount).isEqualTo(1L)
-      assertThat(transactionResponseBody.postings[2].amount).isEqualTo(1L)
-      assertThat(transactionResponseBody.postings[3].amount).isEqualTo(1L)
-      assertThat(transactionResponseBody.amount).isEqualTo(2L)
+        .expectStatus().isBadRequest
     }
 
     @Test
