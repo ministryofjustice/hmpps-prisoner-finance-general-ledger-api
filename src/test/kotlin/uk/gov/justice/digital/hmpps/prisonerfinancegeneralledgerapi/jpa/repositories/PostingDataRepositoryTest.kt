@@ -506,4 +506,44 @@ class PostingDataRepositoryTest @Autowired constructor(
       assertThat(balanceForPrisonerAtPrison).isEqualTo(35)
     }
   }
+
+  @Nested
+  inner class CalculateBalanceFromPostings {
+
+    @Test
+    fun `Should sum credits positively`() {
+      val postings = listOf(
+        PostingEntity(amount = 1, type = PostingType.CR, subAccountEntity = SubAccountEntity(reference = "TEST_SUB_ACCOUNT_REF_1"), transactionEntity = TransactionEntity(reference = "TEST_TRANSACTION_REF")),
+      )
+      val balance = postingsDataRepository.calculateBalanceFromPostings(postings)
+      assertThat(balance).isEqualTo(1)
+    }
+
+    @Test
+    fun `Should sum debits negatively`() {
+      val postings = listOf(
+        PostingEntity(amount = 1, type = PostingType.DR, subAccountEntity = SubAccountEntity(reference = "TEST_SUB_ACCOUNT_REF_1"), transactionEntity = TransactionEntity(reference = "TEST_TRANSACTION_REF")),
+      )
+      val balance = postingsDataRepository.calculateBalanceFromPostings(postings)
+      assertThat(balance).isEqualTo(-1)
+    }
+
+    @Test
+    fun `Should handle multiple postings of varied type`() {
+      val postings = listOf(
+        PostingEntity(
+          amount = 3,
+          type = PostingType.CR,
+          subAccountEntity = SubAccountEntity(reference = "TEST_SUB_ACCOUNT_REF_1"),
+          transactionEntity = TransactionEntity(
+            reference =
+            "TEST_TRANSACTION_REF",
+          ),
+        ),
+        PostingEntity(amount = 1, type = PostingType.DR, subAccountEntity = SubAccountEntity(reference = "TEST_SUB_ACCOUNT_REF_1"), transactionEntity = TransactionEntity(reference = "TEST_TRANSACTION_REF")),
+      )
+      val balance = postingsDataRepository.calculateBalanceFromPostings(postings)
+      assertThat(balance).isEqualTo(2)
+    }
+  }
 }

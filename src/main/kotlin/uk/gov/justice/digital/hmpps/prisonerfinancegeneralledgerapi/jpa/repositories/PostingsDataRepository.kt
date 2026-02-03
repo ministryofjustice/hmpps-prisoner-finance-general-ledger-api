@@ -5,26 +5,27 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import java.util.UUID
 
 @Repository
 interface PostingsDataRepository : JpaRepository<PostingEntity, UUID> {
 
-  @Query(
-    """
-    SELECT COALESCE(SUM(
-     CASE
-         WHEN p.type = 'CR' THEN p.amount
-         WHEN p.type = 'DR' THEN -p.amount
-         ELSE 0
-      END
-        ), 0) AS balance
-    FROM postings as p
-    WHERE p.sub_account_id = :subAccountId;
-  """,
-    nativeQuery = true,
-  )
-  fun getBalanceForSubAccount(@Param("subAccountId") subAccountId: UUID): Long
+  @Query("SELECT p FROM PostingEntity p WHERE p.subAccountEntity.id = :subAccountId")
+  fun getPostingsForSubAccountId(@Param("subAccountId") subAccountId: UUID): List<PostingEntity>
+
+  fun getBalanceForSubAccount(@Param("subAccountId") subAccountId: UUID): Long {
+    val postingsForSubAccount = getPostingsForSubAccountId(subAccountId)
+
+    val balance = calculateBalanceFromPostings(postingsForSubAccount)
+
+    return balance
+  }
+
+  fun calculateBalanceFromPostings(postings: List<PostingEntity>): Long {
+    val balance = postings.fold(0L) { acc, posting -> acc + (if (posting.type == PostingType.CR) posting.amount else -posting.amount) }
+    return balance
+  }
 
   @Query(
     """
