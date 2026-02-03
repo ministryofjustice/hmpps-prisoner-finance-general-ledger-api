@@ -12,13 +12,13 @@ import java.util.UUID
 
 @Entity
 @Table(
-  name = "balances",
-  indexes = [Index(name = "idx_balance_sub_account_id", columnList = "sub_account_id")],
+  name = "statement_balances",
+  indexes = [Index(name = "idx_statement_balance_sub_account_id", columnList = "sub_account_id")],
 )
 class StatementBalanceEntity(
 
   @Id
-  @Column(name = "balance_id", nullable = false, unique = true)
+  @Column(name = "statement_balance_id", nullable = false, unique = true)
   val id: UUID = UUID.randomUUID(),
 
   @ManyToOne(optional = false, fetch = jakarta.persistence.FetchType.LAZY)

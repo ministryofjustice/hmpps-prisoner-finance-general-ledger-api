@@ -1,13 +1,13 @@
-CREATE TABLE balances
+CREATE TABLE statement_balances
 (
-    balance_id        UUID   NOT NULL,
+    statement_balance_id        UUID   NOT NULL,
     sub_account_id    UUID   NOT NULL,
     balance_date_time TIMESTAMP WITHOUT TIME ZONE NOT NULL,
     amount            BIGINT NOT NULL,
-    CONSTRAINT pk_balances PRIMARY KEY (balance_id)
+    CONSTRAINT pk_statement_balances PRIMARY KEY (statement_balance_id)
 );
 
-ALTER TABLE balances
+ALTER TABLE statement_balances
     ADD CONSTRAINT FK_BALANCES_ON_SUB_ACCOUNT FOREIGN KEY (sub_account_id) REFERENCES sub_accounts (sub_account_id);
 
-CREATE INDEX idx_balance_sub_account_id ON balances (sub_account_id);
+CREATE INDEX idx_statement_balance_sub_account_id ON statement_balances (sub_account_id);
