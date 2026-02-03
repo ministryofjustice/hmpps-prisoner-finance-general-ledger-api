@@ -221,11 +221,13 @@ class PostingDataRepositoryTest @Autowired constructor(
       val zeroBalance = postingsDataRepository.getBalanceForSubAccount(accountWithNoMoney.id)
       assertThat(zeroBalance).isEqualTo(0)
 
-      val txToIgnoreFromTwoDaysAgo = createTransaction(100, LocalDateTime.now().minusDays(2), accountOneSubAccountOne, accountWithNoMoney)
+      // txToIgnoreFromTwoDaysAgo
+      createTransaction(100, LocalDateTime.now().minusDays(2), accountOneSubAccountOne, accountWithNoMoney)
 
       val statementBalanceFromYesterday = StatementBalanceEntity(amount = 0, subAccountEntity = accountOneSubAccountOne, balanceDateTime = LocalDateTime.now().minusDays(1))
 
-      val txFromTodayToInclude = createTransaction(50, LocalDateTime.now(), accountOneSubAccountOne, accountWithNoMoney)
+      // txFromTodayToInclude
+      createTransaction(50, LocalDateTime.now(), accountOneSubAccountOne, accountWithNoMoney)
 
       val subAccountBalance = postingsDataRepository.getBalanceForSubAccount(accountWithNoMoney.id, latestStatementBalanceDateTime = statementBalanceFromYesterday.balanceDateTime)
 

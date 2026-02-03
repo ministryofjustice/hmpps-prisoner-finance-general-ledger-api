@@ -15,17 +15,22 @@ interface PostingsDataRepository : JpaRepository<PostingEntity, UUID> {
   @Query("SELECT p FROM PostingEntity p WHERE p.subAccountEntity.id = :subAccountId")
   fun getPostingsForSubAccountId(@Param("subAccountId") subAccountId: UUID): List<PostingEntity>
 
-//  fun getPostingsForSubAccountIdAfterDateTime(@Param("subAccountId") subAccountId: UUID, @Param("dateTime") dateTime: LocalDateTime): List<PostingEntity>
+  @Query("SELECT p FROM PostingEntity p WHERE p.subAccountEntity.id = :subAccountId AND p.createdAt > :dateTime")
+  fun getPostingsForSubAccountIdAfterDateTime(@Param("subAccountId") subAccountId: UUID, @Param("dateTime") dateTime: LocalDateTime): List<PostingEntity>
 
   fun getBalanceForSubAccount(subAccountId: UUID, latestStatementBalanceDateTime: LocalDateTime? = null): Long {
-    val postingsForSubAccount = getPostingsForSubAccountId(subAccountId)
+    lateinit var postingsForSubAccount: List<PostingEntity>
+
+    if (latestStatementBalanceDateTime == null) {
+      postingsForSubAccount = getPostingsForSubAccountId(subAccountId)
+    } else {
+      postingsForSubAccount = getPostingsForSubAccountIdAfterDateTime(subAccountId, latestStatementBalanceDateTime)
+    }
 
     val balance = calculateBalanceFromPostings(postingsForSubAccount)
 
     return balance
   }
-
-//  fun getLatestStatementBalanceForSubAccount(){}
 
   fun calculateBalanceFromPostings(postings: List<PostingEntity>): Long {
     val balance = postings.fold(0L) { acc, posting -> acc + (if (posting.type == PostingType.CR) posting.amount else -posting.amount) }

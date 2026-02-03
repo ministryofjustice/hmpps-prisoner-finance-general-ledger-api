@@ -166,6 +166,20 @@ class SubAccountServiceTest {
       assertThat(subAccountBalance?.balanceDateTime).isInThePast
       assertThat(subAccountBalance?.amount).isEqualTo(0)
     }
+
+    @Test
+    fun `Should combine latest statement balance amount with postings when there is statement balance date`() {
+      val statementBalanceEntity = StatementBalanceEntity(id = UUID.randomUUID(), amount = 33L, subAccountEntity = dummySubAccountEntity)
+      whenever(subAccountDataRepositoryMock.getSubAccountEntityById(dummySubAccountUUID)).thenReturn(dummySubAccountEntity)
+      whenever(statementBalanceDataRepository.getLatestStatementBalanceForSubAccountId(dummySubAccountUUID)).thenReturn(statementBalanceEntity)
+      whenever(postingsDataRepository.getBalanceForSubAccount(dummySubAccountUUID, latestStatementBalanceDateTime = statementBalanceEntity.balanceDateTime)).thenReturn(10)
+
+      val subAccountBalance = subAccountService.getSubAccountBalance(dummySubAccountUUID)
+
+      assertThat(subAccountBalance?.subAccountId).isEqualTo(dummySubAccountUUID)
+      assertThat(subAccountBalance?.balanceDateTime).isInThePast
+      assertThat(subAccountBalance?.amount).isEqualTo(43)
+    }
   }
 
   @Nested
