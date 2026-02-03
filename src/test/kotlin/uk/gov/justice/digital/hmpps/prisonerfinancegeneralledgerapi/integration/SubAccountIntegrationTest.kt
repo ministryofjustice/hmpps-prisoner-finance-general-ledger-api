@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration
 
+import com.fasterxml.jackson.module.kotlin.jsonMapper
 import jakarta.transaction.Transactional
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -13,13 +14,16 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.StatementBalanceDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.TransactionDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateAccountRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreatePostingRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateStatementBalanceRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateSubAccountRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateTransactionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountResponse
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.StatementBalanceResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountBalanceResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.TransactionResponse
@@ -31,6 +35,7 @@ class SubAccountIntegrationTest @Autowired constructor(
   var subAccountDataRepository: SubAccountDataRepository,
   var transactionDataRepository: TransactionDataRepository,
   var postingsDataRepository: PostingsDataRepository,
+  val statementBalanceDataRepository: StatementBalanceDataRepository,
 ) : IntegrationTestBase() {
 
   lateinit var dummyParentAccountOne: AccountResponse
@@ -38,6 +43,7 @@ class SubAccountIntegrationTest @Autowired constructor(
   @Transactional
   @BeforeEach
   fun resetDB() {
+    statementBalanceDataRepository.deleteAllInBatch()
     postingsDataRepository.deleteAllInBatch()
     transactionDataRepository.deleteAllInBatch()
     subAccountDataRepository.deleteAllInBatch()
@@ -665,6 +671,102 @@ class SubAccountIntegrationTest @Autowired constructor(
         .responseBody!!
 
       assertThat(responseBody.properties?.get("userMessage")).isEqualTo("Sub Account not found")
+    }
+  }
+
+  @Nested
+  inner class PostStatementBalance {
+    lateinit var dummySubAccountOne: SubAccountResponse
+
+    @BeforeEach
+    fun seedAccountAndSubAccount() {
+      val responseBody = webTestClient.post()
+        .uri("/accounts")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF"))
+        .exchange()
+        .expectBody<AccountResponse>()
+        .returnResult()
+        .responseBody!!
+
+      dummyParentAccountOne = responseBody
+      val subAccountResponse = webTestClient.post()
+        .uri("/accounts/${dummyParentAccountOne.id}/sub-accounts")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateSubAccountRequest("TEST_SUB_ACCOUNT_REF_1"))
+        .exchange()
+        .expectBody<SubAccountResponse>()
+        .returnResult().responseBody!!
+
+      dummySubAccountOne = subAccountResponse
+    }
+
+    @Test
+    fun `should return 201 and the created statement balance`() {
+      val balanceDateTime = LocalDateTime.now()
+      val statementBalanceResponse = webTestClient.post()
+        .uri("/sub-accounts/${dummySubAccountOne.id}/balance")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateStatementBalanceRequest(amount = 10, balanceDateTime = balanceDateTime))
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody<StatementBalanceResponse>()
+        .returnResult().responseBody!!
+
+      assertThat(statementBalanceResponse.amount).isEqualTo(10)
+      assertThat(statementBalanceResponse.subAccountId).isEqualTo(dummySubAccountOne.id)
+      assertThat(statementBalanceResponse.balanceDateTime).isEqualTo(balanceDateTime)
+    }
+
+    @Test
+    fun `should return 400 when given a malformed body`() {
+      webTestClient.post()
+        .uri("/sub-accounts/${dummySubAccountOne.id}/balance")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    fun `should return 400 when post body are incorrect types`() {
+      webTestClient.post()
+        .uri("/sub-accounts/${dummySubAccountOne.id}/balance")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(
+          jsonMapper {
+            "amount" to 2.2
+            "balanceDateTime" to "Tuesday"
+          },
+        )
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    fun `should return 403 when called with incorrect role`() {
+      webTestClient.post()
+        .uri("/sub-accounts/${dummySubAccountOne.id}/balance")
+        .headers(setAuthorisation(roles = listOf("WRONG_ROLE")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateStatementBalanceRequest(amount = 10, balanceDateTime = LocalDateTime.now()))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `should return 404 when sub-account does not exist`() {
+      webTestClient.post()
+        .uri("/sub-accounts/${UUID.randomUUID()}/balance")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateStatementBalanceRequest(amount = 10, balanceDateTime = LocalDateTime.now()))
+        .exchange()
+        .expectStatus().isNotFound
     }
   }
 }
