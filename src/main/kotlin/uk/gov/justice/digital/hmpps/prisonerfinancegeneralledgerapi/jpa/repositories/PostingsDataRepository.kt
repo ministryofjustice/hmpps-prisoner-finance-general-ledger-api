@@ -6,6 +6,7 @@ import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
+import java.time.LocalDateTime
 import java.util.UUID
 
 @Repository
@@ -14,13 +15,17 @@ interface PostingsDataRepository : JpaRepository<PostingEntity, UUID> {
   @Query("SELECT p FROM PostingEntity p WHERE p.subAccountEntity.id = :subAccountId")
   fun getPostingsForSubAccountId(@Param("subAccountId") subAccountId: UUID): List<PostingEntity>
 
-  fun getBalanceForSubAccount(@Param("subAccountId") subAccountId: UUID): Long {
+//  fun getPostingsForSubAccountIdAfterDateTime(@Param("subAccountId") subAccountId: UUID, @Param("dateTime") dateTime: LocalDateTime): List<PostingEntity>
+
+  fun getBalanceForSubAccount(subAccountId: UUID, latestStatementBalanceDateTime: LocalDateTime? = null): Long {
     val postingsForSubAccount = getPostingsForSubAccountId(subAccountId)
 
     val balance = calculateBalanceFromPostings(postingsForSubAccount)
 
     return balance
   }
+
+//  fun getLatestStatementBalanceForSubAccount(){}
 
   fun calculateBalanceFromPostings(postings: List<PostingEntity>): Long {
     val balance = postings.fold(0L) { acc, posting -> acc + (if (posting.type == PostingType.CR) posting.amount else -posting.amount) }

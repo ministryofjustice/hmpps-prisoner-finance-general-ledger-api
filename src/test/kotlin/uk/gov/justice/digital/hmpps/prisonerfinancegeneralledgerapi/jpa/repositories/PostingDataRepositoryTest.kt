@@ -10,6 +10,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager
 import org.springframework.test.context.TestPropertySource
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.StatementBalanceEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.TransactionEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
@@ -27,7 +28,8 @@ class PostingDataRepositoryTest @Autowired constructor(
   val accountDataRepository: AccountDataRepository,
   val transactionDataRepository: TransactionDataRepository,
   val subAccountDataRepository: SubAccountDataRepository,
-  val postingsDataRepository: PostingsDataRepository,
+  @Autowired val postingsDataRepository: PostingsDataRepository,
+  dataRepository: PostingsDataRepository,
 ) {
 
   private lateinit var accountOne: AccountEntity
@@ -180,6 +182,54 @@ class PostingDataRepositoryTest @Autowired constructor(
     fun `Should return 0 if no postings found for the subaccount Id`() {
       val subThreeBalance = postingsDataRepository.getBalanceForSubAccount(accountThreeSubAccountOne.id)
       assertThat(subThreeBalance).isEqualTo(0)
+    }
+
+    fun createTransaction(transactionAmount: Long, transactionDateTime: LocalDateTime, debitSubAccount: SubAccountEntity, creditSubAccount: SubAccountEntity): TransactionEntity {
+      val txInThePast = TransactionEntity(
+        reference = UUID.randomUUID().toString(),
+        description = "TEST_DESCRIPTION_PAST",
+        amount = transactionAmount,
+      )
+      val postingsInThePast = listOf(
+        PostingEntity(
+          createdAt = transactionDateTime,
+          type = PostingType.DR,
+          amount = transactionAmount,
+          subAccountEntity = debitSubAccount,
+          transactionEntity = txInThePast,
+        ),
+        PostingEntity(
+          createdAt = transactionDateTime,
+          type = PostingType.CR,
+          amount = transactionAmount,
+          subAccountEntity = creditSubAccount,
+          transactionEntity = txInThePast,
+        ),
+      )
+
+      txInThePast.postings.addAll(postingsInThePast)
+      entityManager.persist(txInThePast)
+      entityManager.persist(postingsInThePast[0])
+      entityManager.persist(postingsInThePast[1])
+
+      return txInThePast
+    }
+
+    @Test
+    fun `Should return the balance of all postings after a datetime if provided`() {
+      val accountWithNoMoney = accountThreeSubAccountOne
+      val zeroBalance = postingsDataRepository.getBalanceForSubAccount(accountWithNoMoney.id)
+      assertThat(zeroBalance).isEqualTo(0)
+
+      val txToIgnoreFromTwoDaysAgo = createTransaction(100, LocalDateTime.now().minusDays(2), accountOneSubAccountOne, accountWithNoMoney)
+
+      val statementBalanceFromYesterday = StatementBalanceEntity(amount = 0, subAccountEntity = accountOneSubAccountOne, balanceDateTime = LocalDateTime.now().minusDays(1))
+
+      val txFromTodayToInclude = createTransaction(50, LocalDateTime.now(), accountOneSubAccountOne, accountWithNoMoney)
+
+      val subAccountBalance = postingsDataRepository.getBalanceForSubAccount(accountWithNoMoney.id, latestStatementBalanceDateTime = statementBalanceFromYesterday.balanceDateTime)
+
+      assertThat(subAccountBalance).isEqualTo(50)
     }
   }
 
