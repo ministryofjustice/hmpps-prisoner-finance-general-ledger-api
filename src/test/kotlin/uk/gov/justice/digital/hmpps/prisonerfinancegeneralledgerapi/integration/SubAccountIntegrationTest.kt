@@ -642,6 +642,49 @@ class SubAccountIntegrationTest @Autowired constructor(
     }
 
     @Test
+    fun `Should have balance overwritten when a new balance is posted`() {
+      val subAccountOneOriginalBalance = webTestClient.get()
+        .uri("/sub-accounts/${dummySubAccountOne.id}/balance")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<SubAccountBalanceResponse>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(subAccountOneOriginalBalance.amount).isEqualTo(5)
+      assertThat(subAccountOneOriginalBalance.subAccountId).isEqualTo(dummySubAccountOne.id)
+      assertThat(subAccountOneOriginalBalance.balanceDateTime).isInThePast
+
+      val balanceDateTimeTomorrow = LocalDateTime.now().plusDays(1)
+      val statementBalanceResponse = webTestClient.post()
+        .uri("/sub-accounts/${dummySubAccountOne.id}/balance")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateStatementBalanceRequest(amount = 10, balanceDateTime = balanceDateTimeTomorrow))
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody<StatementBalanceResponse>()
+        .returnResult().responseBody!!
+
+      assertThat(statementBalanceResponse.amount).isEqualTo(10)
+      assertThat(statementBalanceResponse.subAccountId).isEqualTo(dummySubAccountOne.id)
+      assertThat(statementBalanceResponse.balanceDateTime).isEqualTo(balanceDateTimeTomorrow)
+
+      val subAccountOneCurrentBalance = webTestClient.get()
+        .uri("/sub-accounts/${dummySubAccountOne.id}/balance")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<SubAccountBalanceResponse>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(subAccountOneCurrentBalance.amount).isEqualTo(10)
+      assertThat(subAccountOneCurrentBalance.subAccountId).isEqualTo(dummySubAccountOne.id)
+    }
+
+    @Test
     fun `Should return 400 Bad Request if the subAccountId is not a valid UUID`() {
       webTestClient.get()
         .uri("/sub-accounts/NOT_A_UUID/balance")

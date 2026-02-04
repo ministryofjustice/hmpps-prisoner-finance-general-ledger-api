@@ -46,8 +46,13 @@ class SubAccountService(
     val subAccount = subAccountDataRepository.getSubAccountEntityById(subAccountId)
     if (subAccount == null) return null
 
-    val balance = postingsDataRepository.getBalanceForSubAccount(subAccountId)
-    return SubAccountBalanceResponse(subAccountId, LocalDateTime.now(), balance)
+    val latestStatementBalanceEntity = statementBalanceDataRepository.getLatestStatementBalanceForSubAccountId(subAccount.id)
+    val latestStatementBalanceDatetime = latestStatementBalanceEntity?.balanceDateTime
+
+    val postingsBalanceAfterStatementBalance = postingsDataRepository.getBalanceForSubAccount(subAccountId, latestStatementBalanceDatetime)
+    val totalBalance = postingsBalanceAfterStatementBalance + (latestStatementBalanceEntity?.amount ?: 0L)
+
+    return SubAccountBalanceResponse(subAccountId, LocalDateTime.now(), totalBalance)
   }
 
   fun createStatementBalance(subAccountID: UUID, amount: Long, balanceDateTime: LocalDateTime): StatementBalanceEntity? {
