@@ -13,6 +13,7 @@ import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.IdempotencyKeyDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.StatementBalanceDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
@@ -36,6 +37,7 @@ class SubAccountIntegrationTest @Autowired constructor(
   var transactionDataRepository: TransactionDataRepository,
   var postingsDataRepository: PostingsDataRepository,
   val statementBalanceDataRepository: StatementBalanceDataRepository,
+  val idempotencyKeyDataRepository: IdempotencyKeyDataRepository,
 ) : IntegrationTestBase() {
 
   lateinit var dummyParentAccountOne: AccountResponse
@@ -43,6 +45,7 @@ class SubAccountIntegrationTest @Autowired constructor(
   @Transactional
   @BeforeEach
   fun resetDB() {
+    idempotencyKeyDataRepository.deleteAllInBatch()
     statementBalanceDataRepository.deleteAllInBatch()
     postingsDataRepository.deleteAllInBatch()
     transactionDataRepository.deleteAllInBatch()

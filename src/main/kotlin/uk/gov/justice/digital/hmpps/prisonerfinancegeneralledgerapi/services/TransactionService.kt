@@ -2,8 +2,10 @@ package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services
 
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.IdempotencyEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.TransactionEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.IdempotencyKeyDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.TransactionDataRepository
@@ -15,11 +17,18 @@ class TransactionService(
   private val transactionDataRepository: TransactionDataRepository,
   private val postingsDataRepository: PostingsDataRepository,
   private val subAccountDataRepository: SubAccountDataRepository,
+  private val idempotencyKeyDataRepository: IdempotencyKeyDataRepository,
 ) {
   @Transactional()
-  fun createTransaction(createTxReq: CreateTransactionRequest, createdBy: String): TransactionEntity {
+  fun createTransaction(createTxReq: CreateTransactionRequest, createdBy: String, idempotencyKey: UUID): TransactionEntity {
+    val idempotencyEntity = idempotencyKeyDataRepository.getIdempotencyEntityByIdempotencyKey(idempotencyKey)
+    if (idempotencyEntity != null) return idempotencyEntity.transaction
+
     val transactionEntity = TransactionEntity(reference = createTxReq.reference, createdBy = createdBy, description = createTxReq.description, amount = createTxReq.amount, timestamp = createTxReq.timestamp)
     transactionDataRepository.save(transactionEntity)
+
+    val idempotencyEntityToSave = IdempotencyEntity(idempotencyKey, transactionEntity)
+    idempotencyKeyDataRepository.save(idempotencyEntityToSave)
 
     val postingEntities = createTxReq.postings.map {
       PostingEntity(

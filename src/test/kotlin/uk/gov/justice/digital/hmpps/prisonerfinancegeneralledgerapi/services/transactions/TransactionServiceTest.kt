@@ -13,10 +13,12 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.IdempotencyEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.TransactionEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.IdempotencyKeyDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.TransactionDataRepository
@@ -40,6 +42,9 @@ class TransactionServiceTest {
 
   @Mock
   lateinit var subAccountDataRepository: SubAccountDataRepository
+
+  @Mock
+  lateinit var idempotencyKeyDataRepository: IdempotencyKeyDataRepository
 
   @InjectMocks
   lateinit var transactionService: TransactionService
@@ -75,7 +80,9 @@ class TransactionServiceTest {
   inner class CreateTransaction {
 
     @Test
-    fun `Save transaction and create postings with the created transaction ID and return it`() {
+    fun `Save transaction, postings, and idempotency key with the created transaction ID and return it if the idempotency key does not already exist`() {
+      val idempotencyKey = UUID.randomUUID()
+      whenever(idempotencyKeyDataRepository.getIdempotencyEntityByIdempotencyKey(any())).thenReturn(null)
       whenever(transactionDataRepository.save(any())).thenReturn(transactionEntity)
       whenever(postingsDataRepository.saveAll(any<Iterable<PostingEntity>>())).thenReturn(postingEntities)
       whenever(subAccountDataRepository.getReferenceById(any<UUID>())).thenAnswer { SubAccountEntity(id = it.getArgument(0)) }
@@ -83,7 +90,7 @@ class TransactionServiceTest {
       val txnReq = CreateTransactionRequest(reference = TEST_TREF, description = transactionDescription, amount = transactionAmount, timestamp = timeStamp, postings = createPostingRequests)
 
       val createdTransaction: TransactionEntity =
-        transactionService.createTransaction(txnReq, createdBy = TEST_USERNAME)
+        transactionService.createTransaction(txnReq, createdBy = TEST_USERNAME, idempotencyKey = idempotencyKey)
 
       val transactionCaptor = argumentCaptor<TransactionEntity>()
       verify(transactionDataRepository, times(1)).save(transactionCaptor.capture())
@@ -117,6 +124,32 @@ class TransactionServiceTest {
 
       assertThat(createdTransaction.postings[1].id).isEqualTo(postingsToSave[1].id)
       assertThat(createdTransaction.postings[1].type).isEqualTo(postingsToSave[1].type)
+
+      val idempotencyCaptor = argumentCaptor<IdempotencyEntity>()
+      verify(idempotencyKeyDataRepository, times(1)).save(idempotencyCaptor.capture())
+
+      val idempotencyEntityToSave = idempotencyCaptor.firstValue
+      assertThat(idempotencyEntityToSave.idempotencyKey).isEqualTo(idempotencyKey)
+      assertThat(idempotencyEntityToSave.transaction.id).isEqualTo(createdTransaction.id)
+    }
+
+    @Test
+    fun `Should return transaction entity without saving it if the idempotency key already exists`() {
+      val idempotencyKey = UUID.randomUUID()
+      val idempotencyEntity = IdempotencyEntity(idempotencyKey, transactionEntity)
+
+      whenever(idempotencyKeyDataRepository.getIdempotencyEntityByIdempotencyKey(idempotencyKey)).thenReturn(idempotencyEntity)
+
+      val txnReq = CreateTransactionRequest(reference = TEST_TREF, description = transactionDescription, amount = transactionAmount, timestamp = timeStamp, postings = createPostingRequests)
+
+      val createdTransaction: TransactionEntity =
+        transactionService.createTransaction(txnReq, createdBy = TEST_USERNAME, idempotencyKey = idempotencyKey)
+
+      assertThat(createdTransaction.id).isEqualTo(transactionEntity.id)
+
+      verify(transactionDataRepository, times(0)).save(any())
+      verify(postingsDataRepository, times(0)).saveAll(listOf(any()))
+      verify(subAccountDataRepository, times(0)).getReferenceById(any())
     }
   }
 

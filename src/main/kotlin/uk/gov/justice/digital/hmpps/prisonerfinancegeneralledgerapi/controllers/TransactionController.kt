@@ -83,7 +83,7 @@ class TransactionController(
     user: Principal,
   ): ResponseEntity<TransactionResponse> {
     try {
-      val transactionEntity = transactionService.createTransaction(body, createdBy = user.name)
+      val transactionEntity = transactionService.createTransaction(body, createdBy = user.name, idempotencyKey = UUID.randomUUID())
       return ResponseEntity<TransactionResponse>.status(HttpStatus.CREATED).body(
         TransactionResponse.fromEntity(transactionEntity = transactionEntity),
       )
