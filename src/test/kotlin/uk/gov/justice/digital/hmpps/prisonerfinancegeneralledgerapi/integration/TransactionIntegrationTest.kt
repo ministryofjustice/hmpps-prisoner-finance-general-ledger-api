@@ -30,7 +30,7 @@ class TransactionIntegrationTest @Autowired constructor(
   var subAccountDataRepository: SubAccountDataRepository,
   var postingsDataRepository: PostingsDataRepository,
   var accountDataRepository: AccountDataRepository,
-  @Autowired private val idempotencyKeyDataRepository: IdempotencyKeyDataRepository,
+  var idempotencyKeyDataRepository: IdempotencyKeyDataRepository,
 ) : IntegrationTestBase() {
 
   @Transactional
