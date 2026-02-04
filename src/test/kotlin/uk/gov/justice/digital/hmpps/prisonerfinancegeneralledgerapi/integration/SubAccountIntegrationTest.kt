@@ -595,6 +595,7 @@ class SubAccountIntegrationTest @Autowired constructor(
 
       val transactionOneResponseBody = webTestClient.post().uri("/transactions")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .headers(setIdempotencyKey(UUID.randomUUID()))
         .bodyValue(transactionPayloadOne)
         .exchange()
         .expectStatus().isCreated
@@ -614,6 +615,7 @@ class SubAccountIntegrationTest @Autowired constructor(
 
       val transactionTwoResponseBody = webTestClient.post().uri("/transactions")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .headers(setIdempotencyKey(UUID.randomUUID()))
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(transactionPayloadTwo)
         .exchange()

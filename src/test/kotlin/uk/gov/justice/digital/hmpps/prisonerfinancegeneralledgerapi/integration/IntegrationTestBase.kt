@@ -10,6 +10,7 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration.wiremock.HmppsAuthApiExtension
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration.wiremock.HmppsAuthApiExtension.Companion.hmppsAuth
 import uk.gov.justice.hmpps.test.kotlin.auth.JwtAuthorisationHelper
+import java.util.UUID
 
 @ExtendWith(HmppsAuthApiExtension::class)
 @SpringBootTest(webEnvironment = RANDOM_PORT)
@@ -31,4 +32,8 @@ abstract class IntegrationTestBase {
   protected fun stubPingWithResponse(status: Int) {
     hmppsAuth.stubHealthPing(status)
   }
+
+  internal fun setIdempotencyKey(
+    key: UUID,
+  ): (HttpHeaders) -> Unit = { it.set("Idempotency-Key", key.toString()) }
 }

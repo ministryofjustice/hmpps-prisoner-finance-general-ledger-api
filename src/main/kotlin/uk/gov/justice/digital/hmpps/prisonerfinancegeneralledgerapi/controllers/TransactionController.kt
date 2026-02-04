@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.CustomException
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
@@ -78,6 +79,7 @@ class TransactionController(
   @PostMapping(value = ["/transactions"], consumes = [MediaType.APPLICATION_JSON_VALUE])
   fun postTransaction(
     @Valid @RequestBody body: CreateTransactionRequest,
+    @RequestHeader("Idempotency-Key", required = true) idempotencyKey: UUID,
     user: Principal,
   ): ResponseEntity<TransactionResponse> {
     try {

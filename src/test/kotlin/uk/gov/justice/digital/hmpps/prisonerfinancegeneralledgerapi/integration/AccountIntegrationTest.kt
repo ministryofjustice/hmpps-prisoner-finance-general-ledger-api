@@ -81,6 +81,7 @@ class AccountIntegrationTest @Autowired constructor(
     val transactionResponseBody = webTestClient.post()
       .uri("/transactions")
       .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+      .headers(setIdempotencyKey(UUID.randomUUID()))
       .contentType(MediaType.APPLICATION_JSON)
       .bodyValue(
         CreateTransactionRequest(
