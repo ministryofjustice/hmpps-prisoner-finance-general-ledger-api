@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.controllers
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.CustomException
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
@@ -78,10 +81,21 @@ class TransactionController(
   @PostMapping(value = ["/transactions"], consumes = [MediaType.APPLICATION_JSON_VALUE])
   fun postTransaction(
     @Valid @RequestBody body: CreateTransactionRequest,
+    @Parameter(
+      name = "Idempotency-Key",
+      `in` = ParameterIn.HEADER,
+      required = true,
+      description = "An Idempotency Key to ensure that transactions are not repeated",
+    )
+    @RequestHeader(
+      "Idempotency-Key",
+      required = true,
+    )
+    idempotencyKey: UUID,
     user: Principal,
   ): ResponseEntity<TransactionResponse> {
     try {
-      val transactionEntity = transactionService.createTransaction(body, createdBy = user.name)
+      val transactionEntity = transactionService.createTransaction(body, createdBy = user.name, idempotencyKey = idempotencyKey)
       return ResponseEntity<TransactionResponse>.status(HttpStatus.CREATED).body(
         TransactionResponse.fromEntity(transactionEntity = transactionEntity),
       )

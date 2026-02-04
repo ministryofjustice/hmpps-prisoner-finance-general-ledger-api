@@ -10,7 +10,7 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 @Entity
-@Table(name = "transactions", indexes = [Index(name = "index_transaction_ref", columnList = "reference", unique = true)])
+@Table(name = "transactions", indexes = [Index(name = "index_transaction_ref", columnList = "reference")])
 class TransactionEntity(
 
   @Id
@@ -23,7 +23,7 @@ class TransactionEntity(
   @Column(name = "created_at", nullable = false)
   val createdAt: LocalDateTime = LocalDateTime.now(),
 
-  @Column(name = "reference", nullable = false, unique = true)
+  @Column(name = "reference", nullable = false)
   val reference: String = "",
 
   @Column(name = "description")

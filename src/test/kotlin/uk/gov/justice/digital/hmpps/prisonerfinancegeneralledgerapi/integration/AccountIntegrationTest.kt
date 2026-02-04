@@ -13,6 +13,7 @@ import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.IdempotencyKeyDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.TransactionDataRepository
@@ -32,11 +33,13 @@ class AccountIntegrationTest @Autowired constructor(
   private val subAccountDataRepository: SubAccountDataRepository,
   private val transactionDataRepository: TransactionDataRepository,
   private val postingsDataRepository: PostingsDataRepository,
+  private val idempotencyKeyDataRepository: IdempotencyKeyDataRepository,
 ) : IntegrationTestBase() {
 
   @Transactional
   @BeforeEach
   fun resetDB() {
+    idempotencyKeyDataRepository.deleteAllInBatch()
     postingsDataRepository.deleteAllInBatch()
     transactionDataRepository.deleteAllInBatch()
     subAccountDataRepository.deleteAllInBatch()
@@ -81,6 +84,7 @@ class AccountIntegrationTest @Autowired constructor(
     val transactionResponseBody = webTestClient.post()
       .uri("/transactions")
       .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+      .headers(setIdempotencyKey(UUID.randomUUID()))
       .contentType(MediaType.APPLICATION_JSON)
       .bodyValue(
         CreateTransactionRequest(

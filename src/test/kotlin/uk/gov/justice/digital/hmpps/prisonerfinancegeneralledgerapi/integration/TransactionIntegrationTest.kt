@@ -11,6 +11,7 @@ import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.IdempotencyKeyDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.TransactionDataRepository
@@ -29,11 +30,13 @@ class TransactionIntegrationTest @Autowired constructor(
   var subAccountDataRepository: SubAccountDataRepository,
   var postingsDataRepository: PostingsDataRepository,
   var accountDataRepository: AccountDataRepository,
+  var idempotencyKeyDataRepository: IdempotencyKeyDataRepository,
 ) : IntegrationTestBase() {
 
   @Transactional
   @BeforeEach
   fun resetDB() {
+    idempotencyKeyDataRepository.deleteAllInBatch()
     postingsDataRepository.deleteAllInBatch()
     transactionDataRepository.deleteAllInBatch()
     subAccountDataRepository.deleteAllInBatch()
@@ -85,6 +88,7 @@ class TransactionIntegrationTest @Autowired constructor(
       val transactionResponseBody = webTestClient.post()
         .uri("/transactions")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .headers(setIdempotencyKey(UUID.randomUUID()))
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(
           CreateTransactionRequest(
@@ -123,6 +127,7 @@ class TransactionIntegrationTest @Autowired constructor(
       val transactionResponseBody = webTestClient.post()
         .uri("/transactions")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .headers(setIdempotencyKey(UUID.randomUUID()))
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(
           CreateTransactionRequest(
@@ -158,6 +163,7 @@ class TransactionIntegrationTest @Autowired constructor(
       val transactionResponseBody = webTestClient.post()
         .uri("/transactions")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .headers(setIdempotencyKey(UUID.randomUUID()))
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(
           CreateTransactionRequest(
@@ -183,35 +189,59 @@ class TransactionIntegrationTest @Autowired constructor(
     }
 
     @Test
-    fun `return a 400 when sent a valid transaction with many to many postings`() {
+    fun `return a 201 and the corresponding transaction when the idempotency key already exists`() {
       val createPostingRequests: List<CreatePostingRequest> = listOf(
-        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.DR, amount = 1L),
-        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.CR, amount = 1L),
-        CreatePostingRequest(subAccountId = subAccounts[2].id, type = PostingType.DR, amount = 1L),
-        CreatePostingRequest(subAccountId = subAccounts[3].id, type = PostingType.CR, amount = 1L),
+        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 1L),
+        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = 1L),
       )
+
+      val idempotencyKey = UUID.randomUUID()
 
       val transactionResponseBody = webTestClient.post()
         .uri("/transactions")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .headers(setIdempotencyKey(idempotencyKey))
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(
           CreateTransactionRequest(
             reference = "TX",
             description = "DESCRIPTION",
-            amount = 2L,
+            amount = 1L,
             timestamp = LocalDateTime.now(),
             postings = createPostingRequests,
           ),
         )
         .exchange()
-        .expectStatus().isBadRequest
+        .expectStatus().isCreated
+        .expectBody<TransactionResponse>()
+        .returnResult()
+        .responseBody!!
+
+      val repeatedTransactionResponseBody = webTestClient.post()
+        .uri("/transactions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .headers(setIdempotencyKey(idempotencyKey))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(
+          CreateTransactionRequest(
+            reference = "TX",
+            description = "DESCRIPTION",
+            amount = 1L,
+            timestamp = LocalDateTime.now(),
+            postings = createPostingRequests,
+          ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody<TransactionResponse>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(repeatedTransactionResponseBody.id).isEqualTo(transactionResponseBody.id)
     }
 
     @Test
-    fun `return a 400 when sent a valid transaction that violates the reference uniqueness constraint`() {
-      val reference = "TX"
-
+    fun `Should return a 400 when no Idempotency Key header is sent`() {
       val createPostingRequests: List<CreatePostingRequest> = listOf(
         CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 1L),
         CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = 1L),
@@ -223,7 +253,7 @@ class TransactionIntegrationTest @Autowired constructor(
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(
           CreateTransactionRequest(
-            reference = reference,
+            reference = "TX",
             description = "DESCRIPTION",
             amount = 1L,
             timestamp = LocalDateTime.now(),
@@ -231,18 +261,28 @@ class TransactionIntegrationTest @Autowired constructor(
           ),
         )
         .exchange()
-        .expectStatus().isCreated
-        .expectBody<TransactionResponse>()
+        .expectStatus().isBadRequest
+    }
 
-      webTestClient.post()
+    @Test
+    fun `return a 400 when sent a valid transaction with many to many postings`() {
+      val createPostingRequests: List<CreatePostingRequest> = listOf(
+        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.DR, amount = 1L),
+        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.CR, amount = 1L),
+        CreatePostingRequest(subAccountId = subAccounts[2].id, type = PostingType.DR, amount = 1L),
+        CreatePostingRequest(subAccountId = subAccounts[3].id, type = PostingType.CR, amount = 1L),
+      )
+
+      val transactionResponseBody = webTestClient.post()
         .uri("/transactions")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .headers(setIdempotencyKey(UUID.randomUUID()))
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(
           CreateTransactionRequest(
-            reference = reference,
+            reference = "TX",
             description = "DESCRIPTION",
-            amount = 1L,
+            amount = 2L,
             timestamp = LocalDateTime.now(),
             postings = createPostingRequests,
           ),
@@ -261,6 +301,7 @@ class TransactionIntegrationTest @Autowired constructor(
       val transactionResponseBody = webTestClient.post()
         .uri("/transactions")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .headers(setIdempotencyKey(UUID.randomUUID()))
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(
           CreateTransactionRequest(
@@ -284,6 +325,7 @@ class TransactionIntegrationTest @Autowired constructor(
       webTestClient.post()
         .uri("/transactions")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .headers(setIdempotencyKey(UUID.randomUUID()))
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(
           CreateTransactionRequest(
@@ -308,6 +350,7 @@ class TransactionIntegrationTest @Autowired constructor(
       webTestClient.post()
         .uri("/transactions")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .headers(setIdempotencyKey(UUID.randomUUID()))
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(
           CreateTransactionRequest(
@@ -332,6 +375,7 @@ class TransactionIntegrationTest @Autowired constructor(
       webTestClient.post()
         .uri("/transactions")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .headers(setIdempotencyKey(UUID.randomUUID()))
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(
           CreateTransactionRequest(
@@ -356,6 +400,7 @@ class TransactionIntegrationTest @Autowired constructor(
       webTestClient.post()
         .uri("/transactions")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .headers(setIdempotencyKey(UUID.randomUUID()))
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(
           CreateTransactionRequest(
@@ -381,6 +426,7 @@ class TransactionIntegrationTest @Autowired constructor(
       webTestClient.post()
         .uri("/transactions")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .headers(setIdempotencyKey(UUID.randomUUID()))
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(
           CreateTransactionRequest(
@@ -399,6 +445,7 @@ class TransactionIntegrationTest @Autowired constructor(
     fun `should return 401 when requesting account without authorisation headers`() {
       webTestClient.post()
         .uri("/transactions")
+        .headers(setIdempotencyKey(UUID.randomUUID()))
         .exchange()
         .expectStatus().isUnauthorized
     }
@@ -413,6 +460,7 @@ class TransactionIntegrationTest @Autowired constructor(
       webTestClient.post()
         .uri("/transactions")
         .headers(setAuthorisation(roles = listOf("ROLE__WRONG_ROLE")))
+        .headers(setIdempotencyKey(UUID.randomUUID()))
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(
           CreateTransactionRequest(
@@ -471,6 +519,7 @@ class TransactionIntegrationTest @Autowired constructor(
       transaction = webTestClient.post()
         .uri("/transactions")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .headers(setIdempotencyKey(UUID.randomUUID()))
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(
           CreateTransactionRequest(
