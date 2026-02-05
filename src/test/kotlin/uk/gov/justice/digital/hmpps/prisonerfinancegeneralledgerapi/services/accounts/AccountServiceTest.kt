@@ -14,8 +14,11 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.StatementBalanceEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.StatementBalanceDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.AccountService
 import java.time.LocalDateTime
 import java.util.UUID
@@ -31,6 +34,9 @@ class AccountServiceTest {
 
   @Mock
   lateinit var postingDataRepositoryMock: PostingsDataRepository
+
+  @Mock
+  lateinit var statementBalanceDataRepository: StatementBalanceDataRepository
 
   @InjectMocks
   lateinit var accountService: AccountService
@@ -110,16 +116,99 @@ class AccountServiceTest {
     }
 
     @Test
-    fun `Should return a balance if the account exists`() {
+    fun `Should return a zero balance if account exists without subaccounts`() {
       whenever(accountDataRepositoryMock.findAccountById(dummyAccountEntity.id)).thenReturn(dummyAccountEntity)
-      whenever(postingDataRepositoryMock.getBalanceForAccount(dummyAccountEntity.id)).thenReturn(10)
 
       val accountBalance = accountService.calculateAccountBalance(dummyAccountEntity.id)
 
-      assertThat(accountBalance?.accountId).isEqualTo(dummyAccountEntity.id)
-      assertThat(accountBalance?.amount).isEqualTo(10)
-      assertThat(accountBalance?.balanceDateTime).isInThePast
+      assertThat(accountBalance!!.accountId).isEqualTo(dummyAccountEntity.id)
+      assertThat(accountBalance.amount).isEqualTo(0)
+      assertThat(accountBalance.balanceDateTime).isInThePast
     }
+
+    @Test
+    fun `Should return an account balance for an account with one subaccount and no statement balances`() {
+      val subAccount = SubAccountEntity(id = UUID.randomUUID(), dummyAccountEntity, "TEST_SUB_ACCOUNT_REF")
+      dummyAccountEntity.subAccounts.add(subAccount)
+
+      whenever(accountDataRepositoryMock.findAccountById(dummyAccountEntity.id)).thenReturn(dummyAccountEntity)
+      whenever((statementBalanceDataRepository.getLatestStatementBalanceForSubAccountId(subAccount.id))).thenReturn(null)
+      whenever(postingDataRepositoryMock.getBalanceForSubAccount(subAccount.id, null)).thenReturn(1L)
+      val accountBalance = accountService.calculateAccountBalance(dummyAccountEntity.id)
+
+      assertThat(accountBalance!!.accountId).isEqualTo(dummyAccountEntity.id)
+      assertThat(accountBalance.amount).isEqualTo(1)
+      assertThat(accountBalance.balanceDateTime).isInThePast
+    }
+
+    @Test
+    fun `Should return an account balance for an account with one subaccount and no postings dated after the statement balance`() {
+      val subAccount = SubAccountEntity(id = UUID.randomUUID(), dummyAccountEntity, "TEST_SUB_ACCOUNT_REF")
+      val statementBalance = StatementBalanceEntity(UUID.randomUUID(), subAccountEntity = subAccount, LocalDateTime.now(), 100L)
+      dummyAccountEntity.subAccounts.add(subAccount)
+
+      whenever(accountDataRepositoryMock.findAccountById(dummyAccountEntity.id)).thenReturn(dummyAccountEntity)
+
+      whenever(statementBalanceDataRepository.getLatestStatementBalanceForSubAccountId(subAccount.id)).thenReturn(
+        statementBalance,
+      )
+      whenever(postingDataRepositoryMock.getBalanceForSubAccount(subAccount.id, statementBalance.balanceDateTime)).thenReturn(0L)
+
+      val accountBalance = accountService.calculateAccountBalance(dummyAccountEntity.id)
+
+      assertThat(accountBalance!!.accountId).isEqualTo(dummyAccountEntity.id)
+      assertThat(accountBalance.amount).isEqualTo(100)
+      assertThat(accountBalance.balanceDateTime).isInThePast
+    }
+
+    @Test
+    fun `Should return an account balance for an account with one subaccount and postings dated after the statement balance`() {
+      val subAccount = SubAccountEntity(id = UUID.randomUUID(), dummyAccountEntity, "TEST_SUB_ACCOUNT_REF")
+      val statementBalance = StatementBalanceEntity(UUID.randomUUID(), subAccountEntity = subAccount, LocalDateTime.now(), 100L)
+      dummyAccountEntity.subAccounts.add(subAccount)
+
+      whenever(accountDataRepositoryMock.findAccountById(dummyAccountEntity.id)).thenReturn(dummyAccountEntity)
+
+      whenever(statementBalanceDataRepository.getLatestStatementBalanceForSubAccountId(subAccount.id)).thenReturn(
+        statementBalance,
+      )
+
+      whenever(postingDataRepositoryMock.getBalanceForSubAccount(subAccount.id, statementBalance.balanceDateTime)).thenReturn(1L)
+
+      val accountBalance = accountService.calculateAccountBalance(dummyAccountEntity.id)
+
+      assertThat(accountBalance!!.accountId).isEqualTo(dummyAccountEntity.id)
+      assertThat(accountBalance.amount).isEqualTo(101)
+      assertThat(accountBalance.balanceDateTime).isInThePast
+    }
+
+    @Test
+    fun `Should return an account balance for an account with multiple subaccounts`() {
+      val subAccountOne = SubAccountEntity(id = UUID.randomUUID(), dummyAccountEntity, "TEST_SUB_ACCOUNT_REF_ONE")
+      val subAccountTwo = SubAccountEntity(id = UUID.randomUUID(), dummyAccountEntity, "TEST_SUB_ACCOUNT_REF_TWO")
+      val statementBalance = StatementBalanceEntity(UUID.randomUUID(), subAccountEntity = subAccountOne, LocalDateTime.now(), 1L)
+      dummyAccountEntity.subAccounts.addAll(listOf(subAccountOne, subAccountTwo))
+
+      whenever(accountDataRepositoryMock.findAccountById(dummyAccountEntity.id)).thenReturn(dummyAccountEntity)
+
+      whenever(statementBalanceDataRepository.getLatestStatementBalanceForSubAccountId(subAccountOne.id)).thenReturn(
+        statementBalance,
+      )
+      whenever(statementBalanceDataRepository.getLatestStatementBalanceForSubAccountId(subAccountTwo.id)).thenReturn(
+        null,
+      )
+
+      whenever(postingDataRepositoryMock.getBalanceForSubAccount(subAccountOne.id, statementBalance.balanceDateTime)).thenReturn(10L)
+
+      whenever(postingDataRepositoryMock.getBalanceForSubAccount(subAccountTwo.id, null)).thenReturn(100L)
+
+      val accountBalance = accountService.calculateAccountBalance(dummyAccountEntity.id)
+
+      assertThat(accountBalance!!.accountId).isEqualTo(dummyAccountEntity.id)
+      assertThat(accountBalance.amount).isEqualTo(111)
+      assertThat(accountBalance.balanceDateTime).isInThePast
+    }
+    // TODO: Test that it checks the statement balance for multiple sub accounts with and without statement balances
   }
 
   @Nested

@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.StatementBalanceDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountBalanceResponse
 import java.time.LocalDateTime
 import java.util.*
@@ -12,6 +13,7 @@ import java.util.*
 class AccountService(
   private val accountDataRepository: AccountDataRepository,
   private val postingsDataRepository: PostingsDataRepository,
+  private val statementBalanceDataRepository: StatementBalanceDataRepository,
 
 ) {
 
@@ -35,7 +37,12 @@ class AccountService(
     val account = accountDataRepository.findAccountById(accountId)
     if (account == null) return null
 
-    val balance = postingsDataRepository.getBalanceForAccount(accountId)
+    var balance = 0L
+    for (subAccount in account.subAccounts) {
+      val latestStatementBalance = statementBalanceDataRepository.getLatestStatementBalanceForSubAccountId(subAccount.id)
+      val postingsBalance = postingsDataRepository.getBalanceForSubAccount(subAccount.id, latestStatementBalance?.balanceDateTime)
+      balance += postingsBalance + (latestStatementBalance?.amount ?: 0)
+    }
 
     return AccountBalanceResponse(accountId, LocalDateTime.now(), balance)
   }
