@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager
+import org.springframework.context.annotation.Import
 import org.springframework.test.context.TestPropertySource
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
@@ -14,8 +15,8 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.TransactionEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.helpers.RepoTestHelpers
 import java.time.LocalDateTime
-import java.util.UUID
 
 @DataJpaTest
 @TestPropertySource(
@@ -23,13 +24,14 @@ import java.util.UUID
     "spring.flyway.locations=classpath:/db/migrations/common,classpath:/db/migrations/h2",
   ],
 )
+@Import(RepoTestHelpers::class)
 class PostingDataRepositoryTest @Autowired constructor(
   val entityManager: TestEntityManager,
   val accountDataRepository: AccountDataRepository,
   val transactionDataRepository: TransactionDataRepository,
   val subAccountDataRepository: SubAccountDataRepository,
-  @Autowired val postingsDataRepository: PostingsDataRepository,
-  dataRepository: PostingsDataRepository,
+  val postingsDataRepository: PostingsDataRepository,
+  val repoTestHelpers: RepoTestHelpers,
 ) {
 
   private lateinit var accountOne: AccountEntity
@@ -68,50 +70,17 @@ class PostingDataRepositoryTest @Autowired constructor(
 
     @BeforeEach
     fun setupEntities() {
-      accountOne = AccountEntity(
-        reference = "TEST_ACCOUNT_REF_1",
-        createdBy = "TEST_USERNAME",
-        id = UUID.fromString("00000000-0000-0000-0000-000000000001"),
-      )
-      entityManager.persist(accountOne)
+      accountOne = repoTestHelpers.createAccount("TEST_ACCOUNT_REF_1")
 
-      accountOneSubAccountOne = SubAccountEntity(
-        reference = "TEST_SUB_ACCOUNT_REF_1",
-        createdBy = "TEST_USERNAME",
-        id = UUID.fromString("00000000-0000-0000-0000-000000000001"),
-        parentAccountEntity = accountOne,
-      )
-      entityManager.persist(accountOneSubAccountOne)
+      accountOneSubAccountOne = repoTestHelpers.createSubAccount("TEST_SUB_ACCOUNT_REF_1", accountOne)
 
-      accountTwo = AccountEntity(
-        reference = "TEST_ACCOUNT_REF_2",
-        createdBy = "TEST_USERNAME",
-        id = UUID.fromString("00000000-0000-0000-0000-000000000002"),
-      )
-      entityManager.persist(accountTwo)
+      accountTwo = repoTestHelpers.createAccount("TEST_ACCOUNT_REF_2")
 
-      accountTwoSubAccountOne = SubAccountEntity(
-        reference = "TEST_SUB_ACCOUNT_REF_2",
-        createdBy = "TEST_USERNAME",
-        id = UUID.fromString("00000000-0000-0000-0000-000000000002"),
-        parentAccountEntity = accountTwo,
-      )
-      entityManager.persist(accountTwoSubAccountOne)
+      accountTwoSubAccountOne = repoTestHelpers.createSubAccount("TEST_SUB_ACCOUNT_REF_2", accountTwo)
 
-      accountThree = AccountEntity(
-        reference = "TEST_ACCOUNT_REF_3",
-        createdBy = "TEST_USERNAME",
-        id = UUID.fromString("00000000-0000-0000-0000-000000000003"),
-      )
-      entityManager.persist(accountThree)
+      accountThree = repoTestHelpers.createAccount("TEST_ACCOUNT_REF_3")
 
-      accountThreeSubAccountOne = SubAccountEntity(
-        reference = "TEST_SUB_ACCOUNT_REF_3",
-        createdBy = "TEST_USERNAME",
-        id = UUID.fromString("00000000-0000-0000-0000-000000000003"),
-        parentAccountEntity = accountThree,
-      )
-      entityManager.persist(accountThreeSubAccountOne)
+      accountThreeSubAccountOne = repoTestHelpers.createSubAccount("TEST_SUB_ACCOUNT_REF_3", accountThree)
 
       testTransactionEntity = TransactionEntity(
         reference = "TEST_TRANSACTION_REF",
@@ -184,37 +153,6 @@ class PostingDataRepositoryTest @Autowired constructor(
       assertThat(subThreeBalance).isEqualTo(0)
     }
 
-    fun createTransaction(transactionAmount: Long, transactionDateTime: LocalDateTime, debitSubAccount: SubAccountEntity, creditSubAccount: SubAccountEntity): TransactionEntity {
-      val txInThePast = TransactionEntity(
-        reference = UUID.randomUUID().toString(),
-        description = "TEST_DESCRIPTION_PAST",
-        amount = transactionAmount,
-      )
-      val postingsInThePast = listOf(
-        PostingEntity(
-          createdAt = transactionDateTime,
-          type = PostingType.DR,
-          amount = transactionAmount,
-          subAccountEntity = debitSubAccount,
-          transactionEntity = txInThePast,
-        ),
-        PostingEntity(
-          createdAt = transactionDateTime,
-          type = PostingType.CR,
-          amount = transactionAmount,
-          subAccountEntity = creditSubAccount,
-          transactionEntity = txInThePast,
-        ),
-      )
-
-      txInThePast.postings.addAll(postingsInThePast)
-      entityManager.persist(txInThePast)
-      entityManager.persist(postingsInThePast[0])
-      entityManager.persist(postingsInThePast[1])
-
-      return txInThePast
-    }
-
     @Test
     fun `Should return the balance of all postings after a datetime if provided`() {
       val accountWithNoMoney = accountThreeSubAccountOne
@@ -222,12 +160,12 @@ class PostingDataRepositoryTest @Autowired constructor(
       assertThat(zeroBalance).isEqualTo(0)
 
       // txToIgnoreFromTwoDaysAgo
-      createTransaction(100, LocalDateTime.now().minusDays(2), accountOneSubAccountOne, accountWithNoMoney)
+      repoTestHelpers.createOneToOneTransaction(100, LocalDateTime.now().minusDays(2), accountOneSubAccountOne, accountWithNoMoney)
 
       val statementBalanceFromYesterday = StatementBalanceEntity(amount = 0, subAccountEntity = accountOneSubAccountOne, balanceDateTime = LocalDateTime.now().minusDays(1))
 
       // txFromTodayToInclude
-      createTransaction(50, LocalDateTime.now(), accountOneSubAccountOne, accountWithNoMoney)
+      repoTestHelpers.createOneToOneTransaction(50, LocalDateTime.now(), accountOneSubAccountOne, accountWithNoMoney)
 
       val subAccountBalance = postingsDataRepository.getBalanceForSubAccount(accountWithNoMoney.id, latestStatementBalanceDateTime = statementBalanceFromYesterday.balanceDateTime)
 
@@ -238,102 +176,10 @@ class PostingDataRepositoryTest @Autowired constructor(
   @Nested
   inner class GetBalanceForAPrisonerAtAPrison {
 
-    fun createAccount(ref: String): AccountEntity {
-      val account = AccountEntity(
-        reference = ref,
-      )
-      entityManager.persist(account)
-      return account
-    }
-
-    fun createSubAccount(ref: String, account: AccountEntity): SubAccountEntity {
-      val subAccountEntity = SubAccountEntity(
-        reference = ref,
-        parentAccountEntity = account,
-      )
-      entityManager.persist(subAccountEntity)
-      return subAccountEntity
-    }
-
-    fun createTransaction(
-      ref: String,
-      debitSubAccount: SubAccountEntity,
-      creditSubAccount: SubAccountEntity,
-      amount: Long,
-    ): TransactionEntity {
-      val transaction = TransactionEntity(
-        reference = ref,
-        amount = amount,
-      )
-
-      val postings = listOf(
-        PostingEntity(
-          subAccountEntity = debitSubAccount,
-          amount = amount,
-          transactionEntity = transaction,
-          type = PostingType.DR,
-        ),
-        PostingEntity(
-          subAccountEntity = creditSubAccount,
-          amount = amount,
-          transactionEntity = transaction,
-          type = PostingType.CR,
-        ),
-      )
-
-      transaction.postings.addAll(postings)
-      entityManager.persist(transaction)
-      entityManager.persist(postings[0])
-      entityManager.persist(postings[1])
-
-      return transaction
-    }
-
-    fun createOneToManyTransaction(
-      ref: String,
-      debitSubAccount: SubAccountEntity,
-      creditSubAccounts: List<SubAccountEntity>,
-      amountToCreditEachSubAccount: Long,
-    ): TransactionEntity {
-      val overallDebitAmount = amountToCreditEachSubAccount * creditSubAccounts.size
-
-      val transaction = TransactionEntity(
-        reference = ref,
-        amount = overallDebitAmount,
-      )
-
-      val postings = mutableListOf<PostingEntity>(
-        PostingEntity(
-          subAccountEntity = debitSubAccount,
-          amount = overallDebitAmount,
-          transactionEntity = transaction,
-          type = PostingType.DR,
-        ),
-      )
-
-      for (i in 0..<creditSubAccounts.size) {
-        val creditPosting = PostingEntity(
-          subAccountEntity = creditSubAccounts[i],
-          transactionEntity = transaction,
-          type = PostingType.CR,
-          amount = amountToCreditEachSubAccount,
-        )
-        postings.add(creditPosting)
-      }
-
-      transaction.postings.addAll(postings)
-      entityManager.persist(transaction)
-      postings.forEach { postingEntity ->
-        entityManager.persist(postingEntity)
-      }
-
-      return transaction
-    }
-
     @Test
     fun `Should return zero if a prisoner has no transactions with that prison`() {
-      val prisonA = createAccount("AAA")
-      val prisonerOne = createAccount("123456")
+      val prisonA = repoTestHelpers.createAccount("AAA")
+      val prisonerOne = repoTestHelpers.createAccount("123456")
 
       val balanceForPrisonerAtPrison =
         postingsDataRepository.getBalanceForAPrisonerAtAPrison(prisonId = prisonA.id, prisonerId = prisonerOne.id)
@@ -343,13 +189,13 @@ class PostingDataRepositoryTest @Autowired constructor(
 
     @Test
     fun `Should return the balance of a prisoner sub account postings when they are all at one prison`() {
-      val prisonA = createAccount("AAA")
-      val prisonACanteen = createSubAccount("AAA:Canteen", prisonA)
-      val prisonerOne = createAccount("123456")
-      val prisonerOneCash = createSubAccount("CASH", prisonerOne)
+      val prisonA = repoTestHelpers.createAccount("AAA")
+      val prisonACanteen = repoTestHelpers.createSubAccount("AAA:Canteen", prisonA)
+      val prisonerOne = repoTestHelpers.createAccount("123456")
+      val prisonerOneCash = repoTestHelpers.createSubAccount("CASH", prisonerOne)
 
-      createTransaction("MEAL", prisonerOneCash, prisonACanteen, 10)
-      createTransaction("MEAL-REFUND", prisonACanteen, prisonerOneCash, 5)
+      repoTestHelpers.createOneToOneTransaction(10, LocalDateTime.now(), prisonerOneCash, prisonACanteen)
+      repoTestHelpers.createOneToOneTransaction(5, LocalDateTime.now(), prisonACanteen, prisonerOneCash)
 
       val prisonerBalAtPrison =
         postingsDataRepository.getBalanceForAPrisonerAtAPrison(prisonId = prisonA.id, prisonerId = prisonerOne.id)
@@ -359,17 +205,17 @@ class PostingDataRepositoryTest @Autowired constructor(
 
     @Test
     fun `Should return the balance of a prisoner at the queried prison when transactions exist at another prison`() {
-      val prisonA = createAccount("AAA")
-      val prisonACanteen = createSubAccount("AAA:Canteen", prisonA)
+      val prisonA = repoTestHelpers.createAccount("AAA")
+      val prisonACanteen = repoTestHelpers.createSubAccount("AAA:Canteen", prisonA)
 
-      val prisonB = createAccount("BBB")
-      val prisonBCatalog = createSubAccount("BBB:Catalog", prisonB)
+      val prisonB = repoTestHelpers.createAccount("BBB")
+      val prisonBCatalogue = repoTestHelpers.createSubAccount("BBB:Catalog", prisonB)
 
-      val prisoner = createAccount("123456")
-      val prisonerCashAccount = createSubAccount("CASH", prisoner)
+      val prisoner = repoTestHelpers.createAccount("123456")
+      val prisonerCashAccount = repoTestHelpers.createSubAccount("CASH", prisoner)
 
-      createTransaction("MEAL", prisonerCashAccount, prisonACanteen, 15)
-      createTransaction("MARS-BAR", prisonerCashAccount, prisonBCatalog, 1)
+      repoTestHelpers.createOneToOneTransaction(15, LocalDateTime.now(), prisonerCashAccount, prisonACanteen)
+      repoTestHelpers.createOneToOneTransaction(1, LocalDateTime.now(), prisonerCashAccount, prisonBCatalogue)
 
       val balanceForPrisonerAtPrison =
         postingsDataRepository.getBalanceForAPrisonerAtAPrison(prisonId = prisonA.id, prisonerId = prisoner.id)
@@ -378,25 +224,25 @@ class PostingDataRepositoryTest @Autowired constructor(
 
     @Test
     fun `Should return the balance of a prisoner at the queried prison when transactions exist with many to one or one to many relationships`() {
-      val prisonA = createAccount("AAA")
-      val prisonACash = createSubAccount("AAA:CASH", prisonA)
+      val prisonA = repoTestHelpers.createAccount("AAA")
+      val prisonACash = repoTestHelpers.createSubAccount("AAA:CASH", prisonA)
 
-      val prisonerOne = createAccount("123456")
-      val prisonerOneCashAccount = createSubAccount("CASH", prisonerOne)
+      val prisonerOne = repoTestHelpers.createAccount("123456")
+      val prisonerOneCashAccount = repoTestHelpers.createSubAccount("CASH", prisonerOne)
 
-      val prisonerTwo = createAccount("7891011")
-      val prisonerTwoCashAccount = createSubAccount("CASH", prisonerTwo)
+      val prisonerTwo = repoTestHelpers.createAccount("7891011")
+      val prisonerTwoCashAccount = repoTestHelpers.createSubAccount("CASH", prisonerTwo)
 
-      createOneToManyTransaction(
+      repoTestHelpers.createOneToManyTransaction(
         "BONUS",
         prisonACash,
         listOf(prisonerOneCashAccount, prisonerTwoCashAccount),
         30,
       )
 
-      createTransaction("DAMAGES", prisonerTwoCashAccount, prisonACash, 1)
+      repoTestHelpers.createOneToOneTransaction(1, LocalDateTime.now(), prisonerTwoCashAccount, prisonACash)
 
-      createTransaction("WAGES", prisonACash, prisonerOneCashAccount, 5)
+      repoTestHelpers.createOneToOneTransaction(5, LocalDateTime.now(), prisonACash, prisonerOneCashAccount)
 
       val balanceForPrisonerAtPrison =
         postingsDataRepository.getBalanceForAPrisonerAtAPrison(prisonId = prisonA.id, prisonerId = prisonerOne.id)
