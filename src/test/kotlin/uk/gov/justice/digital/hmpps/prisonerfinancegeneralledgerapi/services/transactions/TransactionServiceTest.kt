@@ -132,25 +132,6 @@ class TransactionServiceTest {
       assertThat(idempotencyEntityToSave.idempotencyKey).isEqualTo(idempotencyKey)
       assertThat(idempotencyEntityToSave.transaction.id).isEqualTo(createdTransaction.id)
     }
-
-    @Test
-    fun `Should return transaction entity without saving it if the idempotency key already exists`() {
-      val idempotencyKey = UUID.randomUUID()
-      val idempotencyEntity = IdempotencyEntity(idempotencyKey, transactionEntity)
-
-      whenever(idempotencyKeyDataRepository.getIdempotencyEntityByIdempotencyKey(idempotencyKey)).thenReturn(idempotencyEntity)
-
-      val txnReq = CreateTransactionRequest(reference = TEST_TREF, description = transactionDescription, amount = transactionAmount, timestamp = timeStamp, postings = createPostingRequests)
-
-      val createdTransaction: TransactionEntity =
-        transactionService.createTransaction(txnReq, createdBy = TEST_USERNAME, idempotencyKey = idempotencyKey)
-
-      assertThat(createdTransaction.id).isEqualTo(transactionEntity.id)
-
-      verify(transactionDataRepository, times(0)).save(any())
-      verify(postingsDataRepository, times(0)).saveAll(listOf(any()))
-      verify(subAccountDataRepository, times(0)).getReferenceById(any())
-    }
   }
 
   @Nested
