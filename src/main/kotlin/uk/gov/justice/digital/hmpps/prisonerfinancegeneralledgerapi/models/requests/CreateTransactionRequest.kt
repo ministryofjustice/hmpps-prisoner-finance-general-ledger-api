@@ -15,7 +15,7 @@ data class CreateTransactionRequest(
   @field:Schema(description = "A description for the transaction")
   val description: String,
 
-  @field:Schema(description = "The local date/time of when the transaction is created")
+  @field:Schema(description = "The local date/time of when the transaction was created")
   val timestamp: LocalDateTime,
 
   @field:Schema(description = "The non-negative amount in pence of the transaction, this is the total of all money moved with postings in this transaction")

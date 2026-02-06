@@ -8,8 +8,8 @@ import java.util.UUID
 data class AccountBalanceResponse(
   @field:Schema(description = "The ID for the account")
   val accountId: UUID,
-  @field:Schema(description = "The local date/time of the account balance")
+  @field:Schema(description = "The local date/time that the account balance was calculated")
   val balanceDateTime: LocalDateTime,
-  @field:Schema(description = "The balance of an account in pence")
+  @field:Schema(description = "The balance of all sub-accounts within the account in pence")
   val amount: Long,
 )

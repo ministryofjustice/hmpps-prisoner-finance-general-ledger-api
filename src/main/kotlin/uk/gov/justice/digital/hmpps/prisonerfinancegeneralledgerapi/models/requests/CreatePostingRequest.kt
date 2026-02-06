@@ -5,7 +5,7 @@ import jakarta.validation.constraints.PositiveOrZero
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import java.util.UUID
 
-@Schema(description = "A request to create a posting within a transaction")
+@Schema(description = "A posting within a CreateTransactionRequest")
 data class CreatePostingRequest(
   @field:Schema(description = "The ID of the sub-account associated with the posting")
   val subAccountId: UUID,

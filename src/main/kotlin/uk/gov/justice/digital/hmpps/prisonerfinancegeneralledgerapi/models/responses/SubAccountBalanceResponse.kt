@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
 import java.util.UUID
 
-@Schema(description = "A sub-account balance of an account")
+@Schema(description = "The balance of a sub-account")
 data class SubAccountBalanceResponse(
   @field:Schema(description = "The unique ID for the sub-account")
   val subAccountId: UUID,
