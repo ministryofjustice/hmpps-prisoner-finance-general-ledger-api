@@ -14,6 +14,7 @@ class AccountService(
   private val accountDataRepository: AccountDataRepository,
   private val postingsDataRepository: PostingsDataRepository,
   private val statementBalanceDataRepository: StatementBalanceDataRepository,
+  private val subAccountService: SubAccountService,
 
 ) {
 
@@ -39,9 +40,10 @@ class AccountService(
 
     var balance = 0L
     for (subAccount in account.subAccounts) {
-      val latestStatementBalance = statementBalanceDataRepository.getLatestStatementBalanceForSubAccountId(subAccount.id)
-      val postingsBalance = postingsDataRepository.getBalanceForSubAccount(subAccount.id, latestStatementBalance?.balanceDateTime)
-      balance += postingsBalance + (latestStatementBalance?.amount ?: 0)
+      balance += subAccountService.getSubAccountBalance(subAccount.id)?.amount ?: 0
+//      val latestStatementBalance = statementBalanceDataRepository.getLatestStatementBalanceForSubAccountId(subAccount.id)
+//      val postingsBalance = postingsDataRepository.getBalanceForSubAccount(subAccount.id, latestStatementBalance?.balanceDateTime)
+      // balance += postingsBalance + (latestStatementBalance?.amount ?: 0)
     }
 
     return AccountBalanceResponse(accountId, LocalDateTime.now(), balance)

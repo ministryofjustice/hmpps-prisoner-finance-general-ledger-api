@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.reposito
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.StatementBalanceDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.AccountService
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.SubAccountService
 import java.time.LocalDateTime
 import java.util.UUID
 
@@ -37,6 +38,9 @@ class AccountServiceTest {
 
   @Mock
   lateinit var statementBalanceDataRepository: StatementBalanceDataRepository
+
+  @Mock
+  lateinit var subAccountServiceMock: SubAccountService
 
   @InjectMocks
   lateinit var accountService: AccountService
