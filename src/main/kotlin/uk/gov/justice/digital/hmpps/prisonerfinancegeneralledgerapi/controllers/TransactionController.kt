@@ -27,6 +27,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.CustomExcept
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateTransactionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.TransactionResponse
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.IdempotencyService
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.TransactionService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.security.Principal
@@ -36,6 +37,7 @@ import java.util.UUID
 @RestController
 class TransactionController(
   private val transactionService: TransactionService,
+  private val idempotencyService: IdempotencyService,
 ) {
   @Operation(
     summary = "Create a new transaction",
@@ -44,6 +46,16 @@ class TransactionController(
   )
   @ApiResponses(
     value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Idempotency Key already used. Returns the existing transaction.",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = TransactionResponse::class),
+          ),
+        ],
+      ),
       ApiResponse(
         responseCode = "201",
         description = "Created a new transaction and its postings",
@@ -95,6 +107,9 @@ class TransactionController(
     user: Principal,
   ): ResponseEntity<TransactionResponse> {
     try {
+      val idempotencyEntityOrNull = idempotencyService.readIdempotencyKey(idempotencyKey)
+      if (idempotencyEntityOrNull != null) return ResponseEntity<TransactionResponse>.status(HttpStatus.OK).body(TransactionResponse.fromEntity(idempotencyEntityOrNull.transaction))
+
       val transactionEntity = transactionService.createTransaction(body, createdBy = user.name, idempotencyKey = idempotencyKey)
       return ResponseEntity<TransactionResponse>.status(HttpStatus.CREATED).body(
         TransactionResponse.fromEntity(transactionEntity = transactionEntity),

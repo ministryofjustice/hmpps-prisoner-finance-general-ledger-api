@@ -21,9 +21,6 @@ class TransactionService(
 ) {
   @Transactional()
   fun createTransaction(createTxReq: CreateTransactionRequest, createdBy: String, idempotencyKey: UUID): TransactionEntity {
-    val idempotencyEntity = idempotencyKeyDataRepository.getIdempotencyEntityByIdempotencyKey(idempotencyKey)
-    if (idempotencyEntity != null) return idempotencyEntity.transaction
-
     val transactionEntity = TransactionEntity(reference = createTxReq.reference, createdBy = createdBy, description = createTxReq.description, amount = createTxReq.amount, timestamp = createTxReq.timestamp)
     transactionDataRepository.save(transactionEntity)
 

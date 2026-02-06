@@ -189,7 +189,7 @@ class TransactionIntegrationTest @Autowired constructor(
     }
 
     @Test
-    fun `return a 201 and the corresponding transaction when the idempotency key already exists`() {
+    fun `return a 200 and the corresponding transaction when the idempotency key has already been used`() {
       val createPostingRequests: List<CreatePostingRequest> = listOf(
         CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 1L),
         CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = 1L),
@@ -232,7 +232,7 @@ class TransactionIntegrationTest @Autowired constructor(
           ),
         )
         .exchange()
-        .expectStatus().isCreated
+        .expectStatus().isOk
         .expectBody<TransactionResponse>()
         .returnResult()
         .responseBody!!
