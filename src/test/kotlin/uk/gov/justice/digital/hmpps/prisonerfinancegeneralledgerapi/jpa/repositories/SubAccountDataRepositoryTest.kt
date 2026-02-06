@@ -6,11 +6,11 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
-import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager
+import org.springframework.context.annotation.Import
 import org.springframework.test.context.TestPropertySource
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
-import java.time.LocalDateTime
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.helpers.RepoTestHelpers
 import java.util.UUID
 
 @DataJpaTest
@@ -19,29 +19,19 @@ import java.util.UUID
     "spring.flyway.locations=classpath:/db/migrations/common,classpath:/db/migrations/h2",
   ],
 )
+@Import(RepoTestHelpers::class)
 class SubAccountDataRepositoryTest @Autowired constructor(
-  val entityManager: TestEntityManager,
   val subAccountDataRepository: SubAccountDataRepository,
+  val repoTestHelpers: RepoTestHelpers,
 ) {
   private lateinit var testAccountEntity: AccountEntity
   private lateinit var testSubAccountEntity: SubAccountEntity
 
   @BeforeEach
   fun setup() {
-    testAccountEntity = AccountEntity(
-      reference = "TEST_ACCOUNT_REF",
-      createdBy = "TEST_USERNAME",
-      id = UUID.fromString("00000000-0000-0000-0000-000000000000"),
-    )
-    entityManager.persist(testAccountEntity)
-    testSubAccountEntity = SubAccountEntity(
-      reference = "TEST_SUB_ACCOUNT_REF",
-      createdBy = "TEST_USERNAME",
-      id = UUID.fromString("00000000-0000-0000-0000-000000000001"),
-      parentAccountEntity = testAccountEntity,
-      createdAt = LocalDateTime.of(2025, 12, 25, 0, 0, 0),
-    )
-    entityManager.persist(testSubAccountEntity)
+    repoTestHelpers.clearDb()
+    testAccountEntity = repoTestHelpers.createAccount("TEST_ACCOUNT_REF")
+    testSubAccountEntity = repoTestHelpers.createSubAccount("TEST_SUB_ACCOUNT_REF", testAccountEntity)
   }
 
   @Nested
