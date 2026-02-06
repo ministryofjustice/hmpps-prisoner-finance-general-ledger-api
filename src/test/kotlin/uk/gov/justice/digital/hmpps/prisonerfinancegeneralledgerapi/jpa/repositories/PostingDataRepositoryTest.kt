@@ -71,71 +71,19 @@ class PostingDataRepositoryTest @Autowired constructor(
     @BeforeEach
     fun setupEntities() {
       accountOne = repoTestHelpers.createAccount("TEST_ACCOUNT_REF_1")
-
       accountOneSubAccountOne = repoTestHelpers.createSubAccount("TEST_SUB_ACCOUNT_REF_1", accountOne)
 
       accountTwo = repoTestHelpers.createAccount("TEST_ACCOUNT_REF_2")
-
       accountTwoSubAccountOne = repoTestHelpers.createSubAccount("TEST_SUB_ACCOUNT_REF_2", accountTwo)
 
       accountThree = repoTestHelpers.createAccount("TEST_ACCOUNT_REF_3")
-
       accountThreeSubAccountOne = repoTestHelpers.createSubAccount("TEST_SUB_ACCOUNT_REF_3", accountThree)
 
-      testTransactionEntity = TransactionEntity(
-        reference = "TEST_TRANSACTION_REF",
-        description = "TEST_DESCRIPTION",
-        amount = 4,
-        timestamp = LocalDateTime.now(),
-      )
-      entityManager.persist(testTransactionEntity)
-
-      for (i in 1..10) {
-        val evenNumber = i % 2 == 0
-        val subAccountForPosting = if (evenNumber) accountOneSubAccountOne else accountTwoSubAccountOne
-        val postingType = if (evenNumber) PostingType.CR else PostingType.DR
-
-        val newPostingEntity = PostingEntity(
-          createdBy = "TEST_USERNAME",
-          createdAt = LocalDateTime.now(),
-          type = postingType,
-          amount = 1,
-          subAccountEntity = subAccountForPosting,
-          transactionEntity = testTransactionEntity,
-        )
-
-        testTransactionEntity.postings.add(newPostingEntity)
-        entityManager.persist(newPostingEntity)
+      for (_i in 1..5) {
+        repoTestHelpers.createOneToOneTransaction(1, LocalDateTime.now(), accountTwoSubAccountOne, accountOneSubAccountOne)
       }
 
-//    At this point accountOneSubAccountOne should have 5 credits and accountTwoSubAccountOne should have 5 debits
-//    Totals should be 5 and -5 respectively
-
-//    Postings in the opposite direction to prove things work with varied posting types on a single subAccount
-//    This puts each at 4 and -4 respectively
-      val debitOnePence = PostingEntity(
-        createdBy = "TEST_USERNAME",
-        createdAt = LocalDateTime.now(),
-        type = PostingType.DR,
-        amount = 1,
-        subAccountEntity = accountOneSubAccountOne,
-        transactionEntity = testTransactionEntity,
-      )
-      val creditOnePence = PostingEntity(
-        createdBy = "TEST_USERNAME",
-        createdAt = LocalDateTime.now(),
-        type = PostingType.CR,
-        amount = 1,
-        subAccountEntity = accountTwoSubAccountOne,
-        transactionEntity = testTransactionEntity,
-      )
-
-      testTransactionEntity.postings.add(debitOnePence)
-      testTransactionEntity.postings.add(creditOnePence)
-      entityManager.persist(debitOnePence)
-      entityManager.persist(creditOnePence)
-
-      entityManager.flush()
+      repoTestHelpers.createOneToOneTransaction(1, LocalDateTime.now(), accountOneSubAccountOne, accountTwoSubAccountOne)
     }
 
     @Test
