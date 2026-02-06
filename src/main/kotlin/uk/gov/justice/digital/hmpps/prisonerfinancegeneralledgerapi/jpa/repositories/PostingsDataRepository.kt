@@ -39,23 +39,6 @@ interface PostingsDataRepository : JpaRepository<PostingEntity, UUID> {
 
   @Query(
     """
-          SELECT COALESCE(SUM(
-     CASE
-         WHEN p.type = 'CR' THEN p.amount
-         WHEN p.type = 'DR' THEN -p.amount
-         ELSE 0
-      END
-        ), 0) AS balance FROM accounts as a 
-        JOIN sub_accounts as s ON a.account_id = s.account_id 
-        JOIN postings as p ON p.sub_account_id = s.sub_account_id
-        WHERE a.account_id = :accountId 
-    """,
-    nativeQuery = true,
-  )
-  fun getBalanceForAccount(@Param("accountId") accountId: UUID): Long
-
-  @Query(
-    """
 WITH qualifying_transactions AS (  
 SELECT p.transaction_id  
 FROM postings p 

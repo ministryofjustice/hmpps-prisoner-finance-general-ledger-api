@@ -14,9 +14,12 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountBalanceResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.AccountService
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.SubAccountService
 import java.time.LocalDateTime
 import java.util.UUID
 
@@ -28,6 +31,9 @@ class AccountServiceTest {
 
   @Mock
   lateinit var accountDataRepositoryMock: AccountDataRepository
+
+  @Mock
+  lateinit var subAccountServiceMock: SubAccountService
 
   @Mock
   lateinit var postingDataRepositoryMock: PostingsDataRepository
@@ -110,15 +116,48 @@ class AccountServiceTest {
     }
 
     @Test
-    fun `Should return a balance if the account exists`() {
+    fun `Should return a zero balance if account exists without subaccounts`() {
       whenever(accountDataRepositoryMock.findAccountById(dummyAccountEntity.id)).thenReturn(dummyAccountEntity)
-      whenever(postingDataRepositoryMock.getBalanceForAccount(dummyAccountEntity.id)).thenReturn(10)
 
       val accountBalance = accountService.calculateAccountBalance(dummyAccountEntity.id)
 
-      assertThat(accountBalance?.accountId).isEqualTo(dummyAccountEntity.id)
-      assertThat(accountBalance?.amount).isEqualTo(10)
-      assertThat(accountBalance?.balanceDateTime).isInThePast
+      assertThat(accountBalance!!.accountId).isEqualTo(dummyAccountEntity.id)
+      assertThat(accountBalance.amount).isEqualTo(0)
+      assertThat(accountBalance.balanceDateTime).isInThePast
+      verify(subAccountServiceMock, times(0)).getSubAccountBalance(any())
+    }
+
+    @Test
+    fun `Should return the subaccount balance when there is only one on the account`() {
+      whenever(accountDataRepositoryMock.findAccountById(dummyAccountEntity.id)).thenReturn(dummyAccountEntity)
+      dummyAccountEntity.subAccounts.add(SubAccountEntity(reference = "123456", parentAccountEntity = dummyAccountEntity))
+
+      whenever(subAccountServiceMock.getSubAccountBalance(dummyAccountEntity.subAccounts[0].id)).thenReturn(SubAccountBalanceResponse(subAccountId = dummyAccountEntity.subAccounts[0].id, amount = 10, balanceDateTime = LocalDateTime.now()))
+
+      val accountBalance = accountService.calculateAccountBalance(dummyAccountEntity.id)
+
+      assertThat(accountBalance!!.accountId).isEqualTo(dummyAccountEntity.id)
+      assertThat(accountBalance.amount).isEqualTo(10)
+      assertThat(accountBalance.balanceDateTime).isInThePast
+      verify(subAccountServiceMock, times(1)).getSubAccountBalance(subAccountId = dummyAccountEntity.subAccounts[0].id)
+    }
+
+    @Test
+    fun `Should return the summed subaccount balances when there are multiple subaccounts on the account`() {
+      whenever(accountDataRepositoryMock.findAccountById(dummyAccountEntity.id)).thenReturn(dummyAccountEntity)
+      dummyAccountEntity.subAccounts.add(SubAccountEntity(reference = "123456", parentAccountEntity = dummyAccountEntity))
+      dummyAccountEntity.subAccounts.add(SubAccountEntity(reference = "654321", parentAccountEntity = dummyAccountEntity))
+
+      whenever(subAccountServiceMock.getSubAccountBalance(dummyAccountEntity.subAccounts[0].id)).thenReturn(SubAccountBalanceResponse(subAccountId = dummyAccountEntity.subAccounts[0].id, amount = 10, balanceDateTime = LocalDateTime.now()))
+
+      whenever(subAccountServiceMock.getSubAccountBalance(dummyAccountEntity.subAccounts[1].id)).thenReturn(SubAccountBalanceResponse(subAccountId = dummyAccountEntity.subAccounts[0].id, amount = 100, balanceDateTime = LocalDateTime.now()))
+
+      val accountBalance = accountService.calculateAccountBalance(dummyAccountEntity.id)
+
+      assertThat(accountBalance!!.accountId).isEqualTo(dummyAccountEntity.id)
+      assertThat(accountBalance.amount).isEqualTo(110)
+      assertThat(accountBalance.balanceDateTime).isInThePast
+      verify(subAccountServiceMock, times(2)).getSubAccountBalance(any())
     }
   }
 
