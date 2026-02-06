@@ -1,6 +1,6 @@
-package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services
+package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.idempotency
 
-import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -11,6 +11,7 @@ import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.IdempotencyEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.TransactionEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.IdempotencyKeyDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.IdempotencyService
 import java.util.UUID
 
 @ExtendWith(MockitoExtension::class)
@@ -46,8 +47,8 @@ class IdempotencyServiceTest {
 
       val idempotencyEntityOrNull = idempotencyService.readIdempotencyKey(idempotencyKey)
 
-      assertThat(idempotencyEntityOrNull!!.idempotencyKey).isEqualTo(idempotencyKey)
-      assertThat(idempotencyEntityOrNull.transaction).isEqualTo(tx)
+      Assertions.assertThat(idempotencyEntityOrNull!!.idempotencyKey).isEqualTo(idempotencyKey)
+      Assertions.assertThat(idempotencyEntityOrNull.transaction).isEqualTo(tx)
     }
   }
 }
