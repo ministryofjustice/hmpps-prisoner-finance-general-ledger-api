@@ -6,9 +6,10 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
-import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager
+import org.springframework.context.annotation.Import
 import org.springframework.test.context.TestPropertySource
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.helpers.RepoTestHelpers
 import java.util.UUID
 
 @DataJpaTest
@@ -17,21 +18,17 @@ import java.util.UUID
     "spring.flyway.locations=classpath:/db/migrations/common,classpath:/db/migrations/h2",
   ],
 )
+@Import(RepoTestHelpers::class)
 class AccountDataRepositoryTest @Autowired constructor(
-  val entityManager: TestEntityManager,
   val accountDataRepository: AccountDataRepository,
+  private val repoTestHelpers: RepoTestHelpers,
 ) {
 
   private lateinit var testAccountEntity: AccountEntity
 
   @BeforeEach
   fun setup() {
-    testAccountEntity = AccountEntity(
-      reference = "TEST_ACCOUNT_REF",
-      createdBy = "TEST_USERNAME",
-      id = UUID.fromString("00000000-0000-0000-0000-000000000000"),
-    )
-    entityManager.persist(testAccountEntity)
+    testAccountEntity = repoTestHelpers.createAccount("TEST_ACCOUNT_REF")
   }
 
   @Nested
@@ -40,7 +37,7 @@ class AccountDataRepositoryTest @Autowired constructor(
     @Test
     fun `Should return an account entity matching the provided ID`() {
       val retrievedAccount =
-        accountDataRepository.findAccountById(UUID.fromString("00000000-0000-0000-0000-000000000000"))
+        accountDataRepository.findAccountById(testAccountEntity.id)
       assertThat(retrievedAccount).isEqualTo(testAccountEntity)
     }
 

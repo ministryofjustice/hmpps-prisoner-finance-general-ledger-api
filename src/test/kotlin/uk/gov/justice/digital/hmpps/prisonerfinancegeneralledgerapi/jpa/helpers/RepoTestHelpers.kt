@@ -4,14 +4,27 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager
 import org.springframework.boot.test.context.TestConfiguration
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.StatementBalanceEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.TransactionEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.IdempotencyKeyDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.TransactionDataRepository
 import java.time.LocalDateTime
 import java.util.UUID
 
 @TestConfiguration
-class RepoTestHelpers(private val entityManager: TestEntityManager) {
+class RepoTestHelpers(
+  private val entityManager: TestEntityManager,
+  private val postingsDataRepository: PostingsDataRepository,
+  private val transactionDataRepository: TransactionDataRepository,
+  private val subAccountDataRepository: SubAccountDataRepository,
+  private val accountDataRepository: AccountDataRepository,
+  private val idempotencyKeyDataRepository: IdempotencyKeyDataRepository,
+) {
   fun createAccount(ref: String): AccountEntity {
     val account = AccountEntity(
       reference = ref,
@@ -99,5 +112,20 @@ class RepoTestHelpers(private val entityManager: TestEntityManager) {
     }
 
     return transaction
+  }
+
+  fun createStatementBalance(subAccount: SubAccountEntity, amount: Long, balanceDateTime: LocalDateTime): StatementBalanceEntity {
+    val statementBalance = StatementBalanceEntity(amount = amount, balanceDateTime = balanceDateTime, subAccountEntity = subAccount)
+    entityManager.persist(statementBalance)
+    return statementBalance
+  }
+
+  fun clearDb() {
+    idempotencyKeyDataRepository.deleteAll()
+    postingsDataRepository.deleteAll()
+    transactionDataRepository.deleteAll()
+    subAccountDataRepository.deleteAll()
+    accountDataRepository.deleteAll()
+    entityManager.clear()
   }
 }

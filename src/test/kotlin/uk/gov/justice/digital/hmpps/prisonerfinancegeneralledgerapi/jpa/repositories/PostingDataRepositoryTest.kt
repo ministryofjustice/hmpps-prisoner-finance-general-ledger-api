@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
-import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager
 import org.springframework.context.annotation.Import
 import org.springframework.test.context.TestPropertySource
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
@@ -26,10 +25,6 @@ import java.time.LocalDateTime
 )
 @Import(RepoTestHelpers::class)
 class PostingDataRepositoryTest @Autowired constructor(
-  val entityManager: TestEntityManager,
-  val accountDataRepository: AccountDataRepository,
-  val transactionDataRepository: TransactionDataRepository,
-  val subAccountDataRepository: SubAccountDataRepository,
   val postingsDataRepository: PostingsDataRepository,
   val repoTestHelpers: RepoTestHelpers,
 ) {
@@ -43,15 +38,9 @@ class PostingDataRepositoryTest @Autowired constructor(
   private lateinit var accountThree: AccountEntity
   private lateinit var accountThreeSubAccountOne: SubAccountEntity
 
-  private lateinit var testTransactionEntity: TransactionEntity
-
   @BeforeEach
-  fun clearDb() {
-    postingsDataRepository.deleteAll()
-    transactionDataRepository.deleteAll()
-    subAccountDataRepository.deleteAll()
-    accountDataRepository.deleteAll()
-    entityManager.clear()
+  fun setup() {
+    repoTestHelpers.clearDb()
   }
 
   @Nested
