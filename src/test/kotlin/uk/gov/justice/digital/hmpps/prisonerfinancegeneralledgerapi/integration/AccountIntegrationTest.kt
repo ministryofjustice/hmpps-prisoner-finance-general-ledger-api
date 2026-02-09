@@ -46,35 +46,6 @@ class AccountIntegrationTest @Autowired constructor(
     accountDataRepository.deleteAllInBatch()
   }
 
-  private fun seedDummyAccount(accountRef: String): AccountResponse {
-    val responseBody = webTestClient.post()
-      .uri("/accounts")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-      .contentType(MediaType.APPLICATION_JSON)
-      .bodyValue(CreateAccountRequest(accountRef))
-      .exchange()
-      .expectStatus().isCreated
-      .expectBody<AccountResponse>()
-      .returnResult()
-      .responseBody!!
-
-    return responseBody
-  }
-
-  private fun seedDummySubAccount(accountId: UUID, subAccountRef: String): SubAccountResponse {
-    val seededSubAccount = webTestClient.post()
-      .uri("/accounts/$accountId/sub-accounts")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-      .contentType(MediaType.APPLICATION_JSON)
-      .bodyValue(CreateSubAccountRequest(subAccountRef))
-      .exchange()
-      .expectBody<SubAccountResponse>()
-      .returnResult()
-      .responseBody!!
-
-    return seededSubAccount
-  }
-
   private fun seedTransaction(debitSubAccountID: UUID, creditSubAccountID: UUID, amount: Long): TransactionResponse {
     val createPostingRequests: List<CreatePostingRequest> = listOf(
       CreatePostingRequest(subAccountId = debitSubAccountID, type = PostingType.DR, amount = amount),
@@ -219,7 +190,7 @@ class AccountIntegrationTest @Autowired constructor(
 
     @Test
     fun `should return 200 OK and the correct account`() {
-      val dummyAccount = seedDummyAccount("TEST_ACCOUNT_REF")
+      val dummyAccount = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF")
       val responseBody = webTestClient.get()
         .uri("/accounts/${dummyAccount.id}")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
@@ -237,7 +208,7 @@ class AccountIntegrationTest @Autowired constructor(
 
     @Test
     fun `should return 200 OK and any associated subaccounts`() {
-      val dummyAccount = seedDummyAccount("TEST_ACCOUNT_REF")
+      val dummyAccount = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF")
       val subAccount = webTestClient.post()
         .uri("/accounts/${dummyAccount.id}/sub-accounts")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
@@ -284,7 +255,7 @@ class AccountIntegrationTest @Autowired constructor(
 
     @Test
     fun `should return 401 when requesting account without authorisation headers`() {
-      val dummyAccount = seedDummyAccount("TEST_ACCOUNT_REF")
+      val dummyAccount = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF")
       webTestClient.get()
         .uri("/accounts/${dummyAccount.id}")
         .exchange()
@@ -293,7 +264,7 @@ class AccountIntegrationTest @Autowired constructor(
 
     @Test
     fun `should return 403 when requesting account with incorrect role`() {
-      val dummyAccount = seedDummyAccount("TEST_ACCOUNT_REF")
+      val dummyAccount = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF")
       webTestClient.get()
         .uri("/accounts/${dummyAccount.id}")
         .headers(setAuthorisation(roles = listOf("ROLE__WRONG_ROLE")))
@@ -307,7 +278,7 @@ class AccountIntegrationTest @Autowired constructor(
 
     @Test
     fun `should return 200 OK if reference query matches an account`() {
-      val dummyAccount = seedDummyAccount("TEST_ACCOUNT_REF")
+      val dummyAccount = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF")
       val responseBody = webTestClient.get()
         .uri("/accounts?reference=TEST_ACCOUNT_REF")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
@@ -325,7 +296,7 @@ class AccountIntegrationTest @Autowired constructor(
 
     @Test
     fun `should return 200 OK and empty list if reference does not match any accounts`() {
-      seedDummyAccount("TEST_ACCOUNT_REF")
+      integrationTestHelpers.createAccount("TEST_ACCOUNT_REF")
       val responseBody = webTestClient.get()
         .uri("/accounts?reference=NOT_A_MATCH")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
@@ -341,7 +312,7 @@ class AccountIntegrationTest @Autowired constructor(
 
     @Test
     fun `should return 200 OK and any associated subaccounts`() {
-      val dummyAccount = seedDummyAccount("TEST_ACCOUNT_REF")
+      val dummyAccount = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF")
       val subAccount = webTestClient.post()
         .uri("/accounts/${dummyAccount.id}/sub-accounts")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
@@ -369,7 +340,7 @@ class AccountIntegrationTest @Autowired constructor(
 
     @Test
     fun `should return 200 OK if the reference submitted has an associated account in a different casing`() {
-      val dummyAccount = seedDummyAccount("TEST_ACCOUNT_REF")
+      val dummyAccount = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF")
       val responseBody = webTestClient.get()
         .uri("/accounts?reference=${dummyAccount.reference.lowercase()}")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
@@ -413,7 +384,7 @@ class AccountIntegrationTest @Autowired constructor(
 
     @Test
     fun `should return 401 when requesting accounts without authorisation headers`() {
-      seedDummyAccount("TEST_ACCOUNT_REF")
+      integrationTestHelpers.createAccount("TEST_ACCOUNT_REF")
       webTestClient.get()
         .uri("/accounts?reference=TEST_ACCOUNT_REF")
         .exchange()
@@ -422,7 +393,7 @@ class AccountIntegrationTest @Autowired constructor(
 
     @Test
     fun `should return 403 when requesting account with incorrect role`() {
-      seedDummyAccount("TEST_ACCOUNT_REF")
+      integrationTestHelpers.createAccount("TEST_ACCOUNT_REF")
       webTestClient.get()
         .uri("/accounts?reference=TEST_ACCOUNT_REF")
         .headers(setAuthorisation(roles = listOf("ROLE__WRONG_ROLE")))
@@ -435,7 +406,7 @@ class AccountIntegrationTest @Autowired constructor(
   inner class GetBalanceForAccount {
     @Test
     fun `Should return 200 and a balance of 0 for an account with no postings`() {
-      val seededAccount = seedDummyAccount("TEST_ACCOUNT_REF")
+      val seededAccount = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF")
 
       val responseBody = webTestClient.get()
         .uri("/accounts/${seededAccount.id}/balance")
@@ -453,11 +424,11 @@ class AccountIntegrationTest @Autowired constructor(
 
     @Test
     fun `Should return 200 and a balance where an account has postings`() {
-      val accountOne = seedDummyAccount("TEST_ACCOUNT_REF_ONE")
-      val accountOneSubAccount = seedDummySubAccount(accountOne.id, "TEST_SUB_ACCOUNT_REF_ONE")
+      val accountOne = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF_ONE")
+      val accountOneSubAccount = integrationTestHelpers.createSubAccount(accountOne.id, "TEST_SUB_ACCOUNT_REF_ONE")
 
-      val accountTwo = seedDummyAccount("TEST_ACCOUNT_REF_TWO")
-      val accountTwoSubAccount = seedDummySubAccount(accountTwo.id, "TEST_SUB_ACCOUNT_REF_TWO")
+      val accountTwo = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF_TWO")
+      val accountTwoSubAccount = integrationTestHelpers.createSubAccount(accountTwo.id, "TEST_SUB_ACCOUNT_REF_TWO")
 
       val transactionAmount = 1L
 
@@ -482,14 +453,14 @@ class AccountIntegrationTest @Autowired constructor(
 
     @Test
     fun `Should return a 200 and a zero balance for a prisoner when no transactions exist between the queried prison and the prisoner`() {
-      val prisonA = seedDummyAccount("AAA")
-      val prisonASubAccount = seedDummySubAccount(prisonA.id, "AAA:CANTEEN")
+      val prisonA = integrationTestHelpers.createAccount("AAA")
+      val prisonASubAccount = integrationTestHelpers.createSubAccount(prisonA.id, "AAA:CANTEEN")
 
-      val prisonB = seedDummyAccount("BBB")
-      val prisonBSubAccount = seedDummySubAccount(prisonB.id, "BBB:CATALOGUE")
+      val prisonB = integrationTestHelpers.createAccount("BBB")
+      val prisonBSubAccount = integrationTestHelpers.createSubAccount(prisonB.id, "BBB:CATALOGUE")
 
-      val prisoner = seedDummyAccount("123456")
-      val prisonerSubAccount = seedDummySubAccount(prisoner.id, "SPENDS")
+      val prisoner = integrationTestHelpers.createAccount("123456")
+      val prisonerSubAccount = integrationTestHelpers.createSubAccount(prisoner.id, "SPENDS")
 
       val transactionAmount = 1L
 
@@ -514,14 +485,14 @@ class AccountIntegrationTest @Autowired constructor(
 
     @Test
     fun `Should return a 200 and a balance for a prisoner at a single prison when transactions exist between the prisoner and multiple prisons`() {
-      val prisonA = seedDummyAccount("AAA")
-      val prisonASubAccount = seedDummySubAccount(prisonA.id, "AAA:CANTEEN")
+      val prisonA = integrationTestHelpers.createAccount("AAA")
+      val prisonASubAccount = integrationTestHelpers.createSubAccount(prisonA.id, "AAA:CANTEEN")
 
-      val prisonB = seedDummyAccount("BBB")
-      val prisonBSubAccount = seedDummySubAccount(prisonB.id, "BBB:CATALOGUE")
+      val prisonB = integrationTestHelpers.createAccount("BBB")
+      val prisonBSubAccount = integrationTestHelpers.createSubAccount(prisonB.id, "BBB:CATALOGUE")
 
-      val prisoner = seedDummyAccount("123456")
-      val prisonerSubAccount = seedDummySubAccount(prisoner.id, "SPENDS")
+      val prisoner = integrationTestHelpers.createAccount("123456")
+      val prisonerSubAccount = integrationTestHelpers.createSubAccount(prisoner.id, "SPENDS")
 
       seedTransaction(
         debitSubAccountID = prisonerSubAccount.id,
@@ -559,7 +530,7 @@ class AccountIntegrationTest @Autowired constructor(
 
     @Test
     fun `Should return 403 Forbidden if wrong role provided for authorisation`() {
-      val account = seedDummyAccount("TEST_ACCOUNT_REF")
+      val account = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF")
       webTestClient.get().uri("/accounts/${account.id}/balance")
         .headers(setAuthorisation(roles = listOf("WRONG_ROLE")))
         .exchange()

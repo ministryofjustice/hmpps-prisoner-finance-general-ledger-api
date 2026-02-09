@@ -31,6 +31,7 @@ class TransactionIntegrationTest @Autowired constructor(
   var postingsDataRepository: PostingsDataRepository,
   var accountDataRepository: AccountDataRepository,
   var idempotencyKeyDataRepository: IdempotencyKeyDataRepository,
+
 ) : IntegrationTestBase() {
 
   @Transactional
@@ -52,28 +53,12 @@ class TransactionIntegrationTest @Autowired constructor(
     @BeforeEach
     fun setup() {
       for (i in 3 downTo 0 step 1) {
-        val accountResponseBody = webTestClient.post()
-          .uri("/accounts")
-          .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-          .contentType(MediaType.APPLICATION_JSON)
-          .bodyValue(CreateAccountRequest("$i"))
-          .exchange()
-          .expectBody<AccountResponse>()
-          .returnResult()
-          .responseBody!!
+        val accountResponseBody = integrationTestHelpers.createAccount("TEST_ACCOUNT_$i")
         accounts.add(accountResponseBody)
       }
 
       for (account in accounts) {
-        val subAccountResponseBody = webTestClient.post()
-          .uri("/accounts/${account.id}/sub-accounts")
-          .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-          .contentType(MediaType.APPLICATION_JSON)
-          .bodyValue(CreateSubAccountRequest(account.reference))
-          .exchange()
-          .expectBody<SubAccountResponse>()
-          .returnResult()
-          .responseBody!!
+        val subAccountResponseBody = integrationTestHelpers.createSubAccount(account.id, "TEST_SUB_ACCOUNT_$account.id")
         subAccounts.add(subAccountResponseBody)
       }
     }

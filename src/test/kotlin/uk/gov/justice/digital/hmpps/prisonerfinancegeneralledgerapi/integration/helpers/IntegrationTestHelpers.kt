@@ -8,8 +8,11 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateAccountRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateSubAccountRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountResponse
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountResponse
 import uk.gov.justice.hmpps.test.kotlin.auth.JwtAuthorisationHelper
+import java.util.UUID
 
 class IntegrationTestHelpers(
   private val webTestClient: WebTestClient,
@@ -34,6 +37,19 @@ class IntegrationTestHelpers(
       .responseBody!!
 
     return account
+  }
+
+  fun createSubAccount(accountId: UUID, subAccountReference: String): SubAccountResponse {
+    val subAccount = webTestClient.post()
+      .uri("/accounts/$accountId/sub-accounts")
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+      .contentType(MediaType.APPLICATION_JSON)
+      .bodyValue(CreateSubAccountRequest(subAccountReference = subAccountReference))
+      .exchange()
+      .expectBody<SubAccountResponse>()
+      .returnResult()
+      .responseBody!!
+    return subAccount
   }
 }
 
