@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.reposit
 
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.StatementBalanceEntity
 import java.util.UUID
@@ -18,5 +19,5 @@ interface StatementBalanceDataRepository : JpaRepository<StatementBalanceEntity,
     """,
     nativeQuery = true,
   )
-  fun getLatestStatementBalanceForSubAccountId(subAccountId: UUID): StatementBalanceEntity?
+  fun getLatestStatementBalanceForSubAccountId(@Param("subAccountId")subAccountId: UUID): StatementBalanceEntity?
 }
