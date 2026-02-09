@@ -12,6 +12,7 @@ interface StatementBalanceDataRepository : JpaRepository<StatementBalanceEntity,
   @Query(
     """
     SELECT * FROM statement_balances 
+    WHERE statement_balances.sub_account_id = :subAccountId
     ORDER BY balance_date_time DESC 
     LIMIT 1
     """,
