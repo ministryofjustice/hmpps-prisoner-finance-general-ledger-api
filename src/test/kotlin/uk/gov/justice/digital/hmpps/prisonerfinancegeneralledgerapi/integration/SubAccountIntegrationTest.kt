@@ -6,17 +6,10 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.http.ProblemDetail
 import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.IdempotencyKeyDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.StatementBalanceDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.TransactionDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateAccountRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateStatementBalanceRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateSubAccountRequest
@@ -28,26 +21,14 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.respo
 import java.time.LocalDateTime
 import java.util.UUID
 
-class SubAccountIntegrationTest @Autowired constructor(
-  var accountDataRepository: AccountDataRepository,
-  var subAccountDataRepository: SubAccountDataRepository,
-  var transactionDataRepository: TransactionDataRepository,
-  var postingsDataRepository: PostingsDataRepository,
-  val statementBalanceDataRepository: StatementBalanceDataRepository,
-  val idempotencyKeyDataRepository: IdempotencyKeyDataRepository,
-) : IntegrationTestBase() {
+class SubAccountIntegrationTest : IntegrationTestBase() {
 
   lateinit var dummyParentAccountOne: AccountResponse
 
   @Transactional
   @BeforeEach
   fun resetDB() {
-    idempotencyKeyDataRepository.deleteAllInBatch()
-    statementBalanceDataRepository.deleteAllInBatch()
-    postingsDataRepository.deleteAllInBatch()
-    transactionDataRepository.deleteAllInBatch()
-    subAccountDataRepository.deleteAllInBatch()
-    accountDataRepository.deleteAllInBatch()
+    integrationTestHelpers.clearDB()
   }
 
   @Nested
@@ -556,27 +537,8 @@ class SubAccountIntegrationTest @Autowired constructor(
 
     @BeforeEach
     fun seedAccountAndSubAccount() {
-      val responseBody = webTestClient.post()
-        .uri("/accounts")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF"))
-        .exchange()
-        .expectBody<AccountResponse>()
-        .returnResult()
-        .responseBody!!
-
-      dummyParentAccountOne = responseBody
-      val subAccountResponse = webTestClient.post()
-        .uri("/accounts/${dummyParentAccountOne.id}/sub-accounts")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(CreateSubAccountRequest("TEST_SUB_ACCOUNT_REF_1"))
-        .exchange()
-        .expectBody<SubAccountResponse>()
-        .returnResult().responseBody!!
-
-      dummySubAccountOne = subAccountResponse
+      dummyParentAccountOne = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF")
+      dummySubAccountOne = integrationTestHelpers.createSubAccount(dummyParentAccountOne.id, "TEST_SUB_ACCOUNT_REF_1")
     }
 
     @Test

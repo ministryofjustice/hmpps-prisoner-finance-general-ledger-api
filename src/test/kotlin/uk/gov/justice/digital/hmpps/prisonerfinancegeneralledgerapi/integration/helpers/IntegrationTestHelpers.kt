@@ -8,6 +8,12 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.IdempotencyKeyDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.StatementBalanceDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.TransactionDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateAccountRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreatePostingRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateSubAccountRequest
@@ -22,6 +28,12 @@ import java.util.UUID
 class IntegrationTestHelpers(
   private val webTestClient: WebTestClient,
   private val jwtAuthHelper: JwtAuthorisationHelper,
+  private val idempotencyKeyDataRepository: IdempotencyKeyDataRepository,
+  private val statementBalanceDataRepository: StatementBalanceDataRepository,
+  private val postingsDataRepository: PostingsDataRepository,
+  private val transactionDataRepository: TransactionDataRepository,
+  private val subAccountDataRepository: SubAccountDataRepository,
+  private val accountDataRepository: AccountDataRepository,
 ) {
 
   internal fun setAuthorisation(
@@ -96,6 +108,15 @@ class IntegrationTestHelpers(
 
     return transactionResponse
   }
+
+  fun clearDB() {
+    idempotencyKeyDataRepository.deleteAllInBatch()
+    statementBalanceDataRepository.deleteAllInBatch()
+    postingsDataRepository.deleteAllInBatch()
+    transactionDataRepository.deleteAllInBatch()
+    subAccountDataRepository.deleteAllInBatch()
+    accountDataRepository.deleteAllInBatch()
+  }
 }
 
 @TestConfiguration
@@ -104,5 +125,20 @@ class IntegrationTestHelpersTestConfig {
   fun integrationTestHelpers(
     webTestClient: WebTestClient,
     jwtAuthHelper: JwtAuthorisationHelper,
-  ): IntegrationTestHelpers = IntegrationTestHelpers(webTestClient, jwtAuthHelper)
+    idempotencyKeyDataRepository: IdempotencyKeyDataRepository,
+    statementBalanceDataRepository: StatementBalanceDataRepository,
+    postingsDataRepository: PostingsDataRepository,
+    transactionDataRepository: TransactionDataRepository,
+    subAccountDataRepository: SubAccountDataRepository,
+    accountDataRepository: AccountDataRepository,
+  ): IntegrationTestHelpers = IntegrationTestHelpers(
+    webTestClient,
+    jwtAuthHelper,
+    idempotencyKeyDataRepository,
+    statementBalanceDataRepository,
+    postingsDataRepository,
+    transactionDataRepository,
+    subAccountDataRepository,
+    accountDataRepository,
+  )
 }

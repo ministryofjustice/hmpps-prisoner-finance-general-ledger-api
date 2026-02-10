@@ -6,17 +6,11 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.http.ProblemDetail
 import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.IdempotencyKeyDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.TransactionDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateAccountRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreatePostingRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateSubAccountRequest
@@ -28,22 +22,12 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.respo
 import java.time.LocalDateTime
 import java.util.*
 
-class AccountIntegrationTest @Autowired constructor(
-  private val accountDataRepository: AccountDataRepository,
-  private val subAccountDataRepository: SubAccountDataRepository,
-  private val transactionDataRepository: TransactionDataRepository,
-  private val postingsDataRepository: PostingsDataRepository,
-  private val idempotencyKeyDataRepository: IdempotencyKeyDataRepository,
-) : IntegrationTestBase() {
+class AccountIntegrationTest : IntegrationTestBase() {
 
   @Transactional
   @BeforeEach
   fun resetDB() {
-    idempotencyKeyDataRepository.deleteAllInBatch()
-    postingsDataRepository.deleteAllInBatch()
-    transactionDataRepository.deleteAllInBatch()
-    subAccountDataRepository.deleteAllInBatch()
-    accountDataRepository.deleteAllInBatch()
+    integrationTestHelpers.clearDB()
   }
 
   private fun seedTransaction(debitSubAccountID: UUID, creditSubAccountID: UUID, amount: Long): TransactionResponse {
