@@ -11,22 +11,15 @@ import org.springframework.http.HttpHeaders
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration.helpers.IntegrationTestHelpers
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration.helpers.IntegrationTestHelpersTestConfig
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration.wiremock.HmppsAuthApiExtension
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration.wiremock.HmppsAuthApiExtension.Companion.hmppsAuth
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.IdempotencyKeyDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.StatementBalanceDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.TransactionDataRepository
 import uk.gov.justice.hmpps.test.kotlin.auth.JwtAuthorisationHelper
 import java.util.UUID
 
 @ExtendWith(HmppsAuthApiExtension::class)
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @ActiveProfiles("test")
-@Import(IntegrationTestHelpersTestConfig::class)
+@Import(IntegrationTestHelpers::class)
 abstract class IntegrationTestBase {
 
   @LocalServerPort
@@ -39,24 +32,6 @@ abstract class IntegrationTestBase {
   protected lateinit var jwtAuthHelper: JwtAuthorisationHelper
 
   @Autowired
-  protected lateinit var idempotencyKeyDataRepository: IdempotencyKeyDataRepository
-
-  @Autowired
-  protected lateinit var statementBalanceDataRepository: StatementBalanceDataRepository
-
-  @Autowired
-  protected lateinit var postingsDataRepository: PostingsDataRepository
-
-  @Autowired
-  protected lateinit var transactionDataRepository: TransactionDataRepository
-
-  @Autowired
-  protected lateinit var subAccountDataRepository: SubAccountDataRepository
-
-  @Autowired
-  protected lateinit var accountDataRepository: AccountDataRepository
-
-  @Autowired
   protected lateinit var integrationTestHelpers: IntegrationTestHelpers
 
   @BeforeEach
@@ -64,17 +39,7 @@ abstract class IntegrationTestBase {
     webTestClient = WebTestClient.bindToServer()
       .baseUrl("http://localhost:$port")
       .build()
-
-    integrationTestHelpers = IntegrationTestHelpers(
-      webTestClient,
-      jwtAuthHelper,
-      idempotencyKeyDataRepository,
-      statementBalanceDataRepository,
-      postingsDataRepository,
-      transactionDataRepository,
-      subAccountDataRepository,
-      accountDataRepository,
-    )
+    integrationTestHelpers.setWebClient(webTestClient)
   }
 
   fun setAuthorisation(

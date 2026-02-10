@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration.helpers
 
 import org.springframework.boot.test.context.TestConfiguration
-import org.springframework.context.annotation.Bean
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
@@ -25,8 +24,9 @@ import uk.gov.justice.hmpps.test.kotlin.auth.JwtAuthorisationHelper
 import java.time.LocalDateTime
 import java.util.UUID
 
+@TestConfiguration
 class IntegrationTestHelpers(
-  private val webTestClient: WebTestClient,
+  var webTestClient: WebTestClient,
   private val jwtAuthHelper: JwtAuthorisationHelper,
   private val idempotencyKeyDataRepository: IdempotencyKeyDataRepository,
   private val statementBalanceDataRepository: StatementBalanceDataRepository,
@@ -35,6 +35,10 @@ class IntegrationTestHelpers(
   private val subAccountDataRepository: SubAccountDataRepository,
   private val accountDataRepository: AccountDataRepository,
 ) {
+
+  fun setWebClient(webClient: WebTestClient) {
+    webTestClient = webClient
+  }
 
   internal fun setAuthorisation(
     username: String? = "AUTH_ADM",
@@ -117,28 +121,4 @@ class IntegrationTestHelpers(
     subAccountDataRepository.deleteAllInBatch()
     accountDataRepository.deleteAllInBatch()
   }
-}
-
-@TestConfiguration
-class IntegrationTestHelpersTestConfig {
-  @Bean
-  fun integrationTestHelpers(
-    webTestClient: WebTestClient,
-    jwtAuthHelper: JwtAuthorisationHelper,
-    idempotencyKeyDataRepository: IdempotencyKeyDataRepository,
-    statementBalanceDataRepository: StatementBalanceDataRepository,
-    postingsDataRepository: PostingsDataRepository,
-    transactionDataRepository: TransactionDataRepository,
-    subAccountDataRepository: SubAccountDataRepository,
-    accountDataRepository: AccountDataRepository,
-  ): IntegrationTestHelpers = IntegrationTestHelpers(
-    webTestClient,
-    jwtAuthHelper,
-    idempotencyKeyDataRepository,
-    statementBalanceDataRepository,
-    postingsDataRepository,
-    transactionDataRepository,
-    subAccountDataRepository,
-    accountDataRepository,
-  )
 }
