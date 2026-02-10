@@ -10,15 +10,11 @@ import org.springframework.http.MediaType
 import org.springframework.http.ProblemDetail
 import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateAccountRequest
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreatePostingRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateSubAccountRequest
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateTransactionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountBalanceResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountResponse
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.TransactionResponse
 import java.time.LocalDateTime
 import java.util.*
 
@@ -28,35 +24,6 @@ class AccountIntegrationTest : IntegrationTestBase() {
   @BeforeEach
   fun resetDB() {
     integrationTestHelpers.clearDB()
-  }
-
-  private fun seedTransaction(debitSubAccountID: UUID, creditSubAccountID: UUID, amount: Long): TransactionResponse {
-    val createPostingRequests: List<CreatePostingRequest> = listOf(
-      CreatePostingRequest(subAccountId = debitSubAccountID, type = PostingType.DR, amount = amount),
-      CreatePostingRequest(subAccountId = creditSubAccountID, type = PostingType.CR, amount = amount),
-    )
-
-    val transactionResponseBody = webTestClient.post()
-      .uri("/transactions")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-      .headers(setIdempotencyKey(UUID.randomUUID()))
-      .contentType(MediaType.APPLICATION_JSON)
-      .bodyValue(
-        CreateTransactionRequest(
-          reference = UUID.randomUUID().toString(),
-          description = "DESCRIPTION",
-          amount = amount,
-          timestamp = LocalDateTime.now(),
-          postings = createPostingRequests,
-        ),
-      )
-      .exchange()
-      .expectStatus().isCreated
-      .expectBody<TransactionResponse>()
-      .returnResult()
-      .responseBody!!
-
-    return transactionResponseBody
   }
 
   @Nested
@@ -416,10 +383,11 @@ class AccountIntegrationTest : IntegrationTestBase() {
 
       val transactionAmount = 1L
 
-      seedTransaction(
-        debitSubAccountID = accountOneSubAccount.id,
-        creditSubAccountID = accountTwoSubAccount.id,
+      integrationTestHelpers.createOneToOneTransaction(
+        debitSubAccountId = accountOneSubAccount.id,
+        creditSubAccountId = accountTwoSubAccount.id,
         amount = transactionAmount,
+        transactionReference = "VAPES",
       )
 
       val responseBody = webTestClient.get()
@@ -448,10 +416,11 @@ class AccountIntegrationTest : IntegrationTestBase() {
 
       val transactionAmount = 1L
 
-      seedTransaction(
-        debitSubAccountID = prisonerSubAccount.id,
-        creditSubAccountID = prisonBSubAccount.id,
+      integrationTestHelpers.createOneToOneTransaction(
+        debitSubAccountId = prisonerSubAccount.id,
+        creditSubAccountId = prisonBSubAccount.id,
         amount = transactionAmount,
+        transactionReference = "VAPES",
       )
 
       val responseBody = webTestClient.get()
@@ -478,16 +447,18 @@ class AccountIntegrationTest : IntegrationTestBase() {
       val prisoner = integrationTestHelpers.createAccount("123456")
       val prisonerSubAccount = integrationTestHelpers.createSubAccount(prisoner.id, "SPENDS")
 
-      seedTransaction(
-        debitSubAccountID = prisonerSubAccount.id,
-        creditSubAccountID = prisonASubAccount.id,
+      integrationTestHelpers.createOneToOneTransaction(
+        debitSubAccountId = prisonerSubAccount.id,
+        creditSubAccountId = prisonASubAccount.id,
         amount = 1L,
+        transactionReference = "VAPES",
       )
 
-      seedTransaction(
-        debitSubAccountID = prisonerSubAccount.id,
-        creditSubAccountID = prisonBSubAccount.id,
+      integrationTestHelpers.createOneToOneTransaction(
+        debitSubAccountId = prisonerSubAccount.id,
+        creditSubAccountId = prisonBSubAccount.id,
         amount = 2L,
+        transactionReference = "VAPES",
       )
 
       val responseBody = webTestClient.get()
