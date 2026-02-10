@@ -5,19 +5,11 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.IdempotencyKeyDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.TransactionDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateAccountRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreatePostingRequest
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateSubAccountRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateTransactionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountResponse
@@ -25,22 +17,12 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.respo
 import java.time.LocalDateTime
 import java.util.UUID
 
-class TransactionIntegrationTest @Autowired constructor(
-  var transactionDataRepository: TransactionDataRepository,
-  var subAccountDataRepository: SubAccountDataRepository,
-  var postingsDataRepository: PostingsDataRepository,
-  var accountDataRepository: AccountDataRepository,
-  var idempotencyKeyDataRepository: IdempotencyKeyDataRepository,
-) : IntegrationTestBase() {
+class TransactionIntegrationTest : IntegrationTestBase() {
 
   @Transactional
   @BeforeEach
   fun resetDB() {
-    idempotencyKeyDataRepository.deleteAllInBatch()
-    postingsDataRepository.deleteAllInBatch()
-    transactionDataRepository.deleteAllInBatch()
-    subAccountDataRepository.deleteAllInBatch()
-    accountDataRepository.deleteAllInBatch()
+    integrationTestHelpers.clearDB()
   }
 
   @Nested
@@ -52,28 +34,12 @@ class TransactionIntegrationTest @Autowired constructor(
     @BeforeEach
     fun setup() {
       for (i in 3 downTo 0 step 1) {
-        val accountResponseBody = webTestClient.post()
-          .uri("/accounts")
-          .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-          .contentType(MediaType.APPLICATION_JSON)
-          .bodyValue(CreateAccountRequest("$i"))
-          .exchange()
-          .expectBody<AccountResponse>()
-          .returnResult()
-          .responseBody!!
+        val accountResponseBody = integrationTestHelpers.createAccount("TEST_ACCOUNT_$i")
         accounts.add(accountResponseBody)
       }
 
       for (account in accounts) {
-        val subAccountResponseBody = webTestClient.post()
-          .uri("/accounts/${account.id}/sub-accounts")
-          .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-          .contentType(MediaType.APPLICATION_JSON)
-          .bodyValue(CreateSubAccountRequest(account.reference))
-          .exchange()
-          .expectBody<SubAccountResponse>()
-          .returnResult()
-          .responseBody!!
+        val subAccountResponseBody = integrationTestHelpers.createSubAccount(account.id, "TEST_SUB_ACCOUNT_$account.id")
         subAccounts.add(subAccountResponseBody)
       }
     }
@@ -486,55 +452,14 @@ class TransactionIntegrationTest @Autowired constructor(
     @BeforeEach
     fun setUp() {
       for (i in 2 downTo 0 step 1) {
-        val accountResponseBody = webTestClient.post()
-          .uri("/accounts")
-          .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-          .contentType(MediaType.APPLICATION_JSON)
-          .bodyValue(CreateAccountRequest("$i"))
-          .exchange()
-          .expectBody<AccountResponse>()
-          .returnResult()
-          .responseBody!!
-        accounts.add(accountResponseBody)
+        accounts.add(integrationTestHelpers.createAccount("$i"))
       }
 
       for (account in accounts) {
-        val subAccountResponseBody = webTestClient.post()
-          .uri("/accounts/${account.id}/sub-accounts")
-          .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-          .contentType(MediaType.APPLICATION_JSON)
-          .bodyValue(CreateSubAccountRequest(account.reference))
-          .exchange()
-          .expectBody<SubAccountResponse>()
-          .returnResult()
-          .responseBody!!
-        subAccounts.add(subAccountResponseBody)
+        subAccounts.add(integrationTestHelpers.createSubAccount(account.id, account.reference))
       }
 
-      val createPostingRequests: List<CreatePostingRequest> = listOf(
-        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 1L),
-        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = 1L),
-      )
-
-      transaction = webTestClient.post()
-        .uri("/transactions")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .headers(setIdempotencyKey(UUID.randomUUID()))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(
-          CreateTransactionRequest(
-            reference = "TX",
-            description = "DESCRIPTION",
-            amount = 1L,
-            timestamp = LocalDateTime.now(),
-            postings = createPostingRequests,
-          ),
-        )
-        .exchange()
-        .expectStatus().isCreated
-        .expectBody<TransactionResponse>()
-        .returnResult()
-        .responseBody!!
+      transaction = integrationTestHelpers.createOneToOneTransaction(amount = 1L, debitSubAccountId = subAccounts[1].id, creditSubAccountId = subAccounts[0].id, transactionReference = "TX", description = "DESCRIPTION")
     }
 
     @Test

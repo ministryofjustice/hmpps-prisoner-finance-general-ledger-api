@@ -6,23 +6,13 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.http.ProblemDetail
 import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.IdempotencyKeyDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.StatementBalanceDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.TransactionDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateAccountRequest
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreatePostingRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateStatementBalanceRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateSubAccountRequest
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateTransactionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.StatementBalanceResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountBalanceResponse
@@ -31,26 +21,14 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.respo
 import java.time.LocalDateTime
 import java.util.UUID
 
-class SubAccountIntegrationTest @Autowired constructor(
-  var accountDataRepository: AccountDataRepository,
-  var subAccountDataRepository: SubAccountDataRepository,
-  var transactionDataRepository: TransactionDataRepository,
-  var postingsDataRepository: PostingsDataRepository,
-  val statementBalanceDataRepository: StatementBalanceDataRepository,
-  val idempotencyKeyDataRepository: IdempotencyKeyDataRepository,
-) : IntegrationTestBase() {
+class SubAccountIntegrationTest : IntegrationTestBase() {
 
   lateinit var dummyParentAccountOne: AccountResponse
 
   @Transactional
   @BeforeEach
   fun resetDB() {
-    idempotencyKeyDataRepository.deleteAllInBatch()
-    statementBalanceDataRepository.deleteAllInBatch()
-    postingsDataRepository.deleteAllInBatch()
-    transactionDataRepository.deleteAllInBatch()
-    subAccountDataRepository.deleteAllInBatch()
-    accountDataRepository.deleteAllInBatch()
+    integrationTestHelpers.clearDB()
   }
 
   @Nested
@@ -58,17 +36,7 @@ class SubAccountIntegrationTest @Autowired constructor(
 
     @BeforeEach
     fun seedParentAccount() {
-      val responseBody = webTestClient.post()
-        .uri("/accounts")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF"))
-        .exchange()
-        .expectBody<AccountResponse>()
-        .returnResult()
-        .responseBody!!
-
-      dummyParentAccountOne = responseBody
+      dummyParentAccountOne = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF")
     }
 
     @Test
@@ -261,54 +229,12 @@ class SubAccountIntegrationTest @Autowired constructor(
     lateinit var dummySubAccountTwo: SubAccountResponse
 
     @BeforeEach
-    fun seedParentAccountAndSubAccounts() {
-      val dummyParentAccountOneResponseBody = webTestClient.post()
-        .uri("/accounts")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF"))
-        .exchange()
-        .expectBody<AccountResponse>()
-        .returnResult()
-        .responseBody!!
+    fun seedSubAccountsToFind() {
+      dummyParentAccountOne = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF_1")
+      dummySubAccountOne = integrationTestHelpers.createSubAccount(dummyParentAccountOne.id, "TEST_SUB_ACCOUNT_REF_1")
 
-      dummyParentAccountOne = dummyParentAccountOneResponseBody
-
-      val subAccountOneResponseBody = webTestClient.post()
-        .uri("/accounts/${dummyParentAccountOne.id}/sub-accounts")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(CreateSubAccountRequest("TEST_SUB_ACCOUNT_REF_1"))
-        .exchange()
-        .expectBody<SubAccountResponse>()
-        .returnResult()
-        .responseBody!!
-
-      dummySubAccountOne = subAccountOneResponseBody
-
-      val dummyParentAccountTwoResponseBody = webTestClient.post()
-        .uri("/accounts")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF_2"))
-        .exchange()
-        .expectBody<AccountResponse>()
-        .returnResult()
-        .responseBody!!
-
-      dummyParentAccountTwo = dummyParentAccountTwoResponseBody
-
-      val dummySubAccountTwoResponseBody = webTestClient.post()
-        .uri("/accounts/${dummyParentAccountTwo.id}/sub-accounts")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(CreateSubAccountRequest("TEST_SUB_ACCOUNT_REF_1"))
-        .exchange()
-        .expectBody<SubAccountResponse>()
-        .returnResult()
-        .responseBody!!
-
-      dummySubAccountTwo = dummySubAccountTwoResponseBody
+      dummyParentAccountTwo = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF_2")
+      dummySubAccountTwo = integrationTestHelpers.createSubAccount(dummyParentAccountTwo.id, "TEST_SUB_ACCOUNT_REF_1")
     }
 
     @Test
@@ -424,29 +350,8 @@ class SubAccountIntegrationTest @Autowired constructor(
 
     @BeforeEach
     fun seedAccountAndSubAccount() {
-      val dummyParentAccountOneResponseBody = webTestClient.post()
-        .uri("/accounts")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF"))
-        .exchange()
-        .expectBody<AccountResponse>()
-        .returnResult()
-        .responseBody!!
-
-      dummyParentAccountOne = dummyParentAccountOneResponseBody
-
-      val subAccountOneResponseBody = webTestClient.post()
-        .uri("/accounts/${dummyParentAccountOne.id}/sub-accounts")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(CreateSubAccountRequest("TEST_SUB_ACCOUNT_REF_1"))
-        .exchange()
-        .expectBody<SubAccountResponse>()
-        .returnResult()
-        .responseBody!!
-
-      dummySubAccountOne = subAccountOneResponseBody
+      dummyParentAccountOne = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF")
+      dummySubAccountOne = integrationTestHelpers.createSubAccount(dummyParentAccountOne.id, "TEST_SUB_ACCOUNT_REF_1")
     }
 
     @Test
@@ -508,126 +413,30 @@ class SubAccountIntegrationTest @Autowired constructor(
     fun seedAccountAndSubAccount() {
 //      The result of this set up should leave sub account one with a balance of 5
 //      and sub account two with a balance of -5
-      val dummyParentAccountOneResponseBody = webTestClient.post()
-        .uri("/accounts")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF_1"))
-        .exchange()
-        .expectBody<AccountResponse>()
-        .returnResult()
-        .responseBody!!
 
-      dummyParentAccountOne = dummyParentAccountOneResponseBody
+      dummyParentAccountOne = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF_1")
+      dummySubAccountOne = integrationTestHelpers.createSubAccount(dummyParentAccountOne.id, "TEST_SUB_ACCOUNT_REF_1")
 
-      val subAccountOneResponseBody = webTestClient.post()
-        .uri("/accounts/${dummyParentAccountOne.id}/sub-accounts")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(CreateSubAccountRequest("TEST_SUB_ACCOUNT_REF_1"))
-        .exchange()
-        .expectBody<SubAccountResponse>()
-        .returnResult()
-        .responseBody!!
-
-      dummySubAccountOne = subAccountOneResponseBody
-
-      val dummyParentAccountTwoResponseBody = webTestClient.post()
-        .uri("/accounts")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF_2"))
-        .exchange()
-        .expectBody<AccountResponse>()
-        .returnResult()
-        .responseBody!!
-
-      dummyParentAccountTwo = dummyParentAccountTwoResponseBody
-
-      val subAccountTwoResponseBody = webTestClient.post()
-        .uri("/accounts/${dummyParentAccountOne.id}/sub-accounts")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(CreateSubAccountRequest("TEST_SUB_ACCOUNT_REF_2"))
-        .exchange()
-        .expectBody<SubAccountResponse>()
-        .returnResult()
-        .responseBody!!
-
-      dummySubAccountTwo = subAccountTwoResponseBody
+      dummyParentAccountTwo = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF_2")
+      dummySubAccountTwo = integrationTestHelpers.createSubAccount(dummyParentAccountTwo.id, "TEST_SUB_ACCOUNT_REF_2")
 
 //      Send 10 from subAccountTwo to subAccountOne
-      val testPostingsOne = listOf(
-        CreatePostingRequest(
-          subAccountId = dummySubAccountOne.id,
-          amount = 10,
-          type = PostingType
-            .CR,
-        ),
-        CreatePostingRequest(
-          subAccountId = dummySubAccountTwo.id,
-          amount = 10,
-          type = PostingType
-            .DR,
-        ),
+      dummyTransactionOne = integrationTestHelpers.createOneToOneTransaction(
+        amount = 10,
+        debitSubAccountId = dummySubAccountTwo.id,
+        creditSubAccountId = dummySubAccountOne.id,
+        transactionReference = "TEST_TX_REF_1",
+        description = "TESTING",
       )
 
 //      Send 5 back from subAccountOne to subAccountTwo to create varied posting types one each
-      val testPostingsTwo = listOf(
-        CreatePostingRequest(
-          subAccountId = dummySubAccountOne.id,
-          amount = 5,
-          type = PostingType
-            .DR,
-        ),
-        CreatePostingRequest(
-          subAccountId = dummySubAccountTwo.id,
-          amount = 5,
-          type = PostingType
-            .CR,
-        ),
-      )
-
-      val transactionPayloadOne = CreateTransactionRequest(
-        reference = "TEST_TX_REF_1",
-        description = "TESTING",
-        timestamp = LocalDateTime.now(),
-        amount = 10,
-        postings = testPostingsOne,
-      )
-
-      val transactionOneResponseBody = webTestClient.post().uri("/transactions")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .headers(setIdempotencyKey(UUID.randomUUID()))
-        .bodyValue(transactionPayloadOne)
-        .exchange()
-        .expectStatus().isCreated
-        .expectBody<TransactionResponse>()
-        .returnResult()
-        .responseBody!!
-
-      dummyTransactionOne = transactionOneResponseBody
-
-      val transactionPayloadTwo = CreateTransactionRequest(
-        reference = "TEST_TX_REF_2",
-        description = "TESTING",
-        timestamp = LocalDateTime.now(),
+      dummyTransactionTwo = integrationTestHelpers.createOneToOneTransaction(
         amount = 5,
-        postings = testPostingsTwo,
+        debitSubAccountId = dummySubAccountOne.id,
+        creditSubAccountId = dummySubAccountTwo.id,
+        transactionReference = "TEST_TX_REF_2",
+        description = "TESTING",
       )
-
-      val transactionTwoResponseBody = webTestClient.post().uri("/transactions")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .headers(setIdempotencyKey(UUID.randomUUID()))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(transactionPayloadTwo)
-        .exchange()
-        .expectStatus().isCreated
-        .expectBody<TransactionResponse>()
-        .returnResult()
-        .responseBody!!
-
-      dummyTransactionTwo = transactionTwoResponseBody
     }
 
     @Test
@@ -728,27 +537,8 @@ class SubAccountIntegrationTest @Autowired constructor(
 
     @BeforeEach
     fun seedAccountAndSubAccount() {
-      val responseBody = webTestClient.post()
-        .uri("/accounts")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF"))
-        .exchange()
-        .expectBody<AccountResponse>()
-        .returnResult()
-        .responseBody!!
-
-      dummyParentAccountOne = responseBody
-      val subAccountResponse = webTestClient.post()
-        .uri("/accounts/${dummyParentAccountOne.id}/sub-accounts")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(CreateSubAccountRequest("TEST_SUB_ACCOUNT_REF_1"))
-        .exchange()
-        .expectBody<SubAccountResponse>()
-        .returnResult().responseBody!!
-
-      dummySubAccountOne = subAccountResponse
+      dummyParentAccountOne = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF")
+      dummySubAccountOne = integrationTestHelpers.createSubAccount(dummyParentAccountOne.id, "TEST_SUB_ACCOUNT_REF_1")
     }
 
     @Test
