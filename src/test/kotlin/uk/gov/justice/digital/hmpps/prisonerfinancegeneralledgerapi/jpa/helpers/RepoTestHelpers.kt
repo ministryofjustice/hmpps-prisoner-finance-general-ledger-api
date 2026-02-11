@@ -13,7 +13,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.reposito
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.TransactionDataRepository
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.UUID
 
 @TestConfiguration
@@ -42,7 +42,7 @@ class RepoTestHelpers(
     return subAccountEntity
   }
 
-  fun createOneToOneTransaction(transactionAmount: Long, transactionDateTime: LocalDateTime, debitSubAccount: SubAccountEntity, creditSubAccount: SubAccountEntity): TransactionEntity {
+  fun createOneToOneTransaction(transactionAmount: Long, transactionDateTime: Instant, debitSubAccount: SubAccountEntity, creditSubAccount: SubAccountEntity): TransactionEntity {
     val txInThePast = TransactionEntity(
       reference = UUID.randomUUID().toString(),
       description = "TEST_DESCRIPTION_PAST",
@@ -114,7 +114,7 @@ class RepoTestHelpers(
     return transaction
   }
 
-  fun createStatementBalance(subAccount: SubAccountEntity, amount: Long, balanceDateTime: LocalDateTime): StatementBalanceEntity {
+  fun createStatementBalance(subAccount: SubAccountEntity, amount: Long, balanceDateTime: Instant): StatementBalanceEntity {
     val statementBalance = StatementBalanceEntity(amount = amount, balanceDateTime = balanceDateTime, subAccountEntity = subAccount)
     entityManager.persist(statementBalance)
     return statementBalance
