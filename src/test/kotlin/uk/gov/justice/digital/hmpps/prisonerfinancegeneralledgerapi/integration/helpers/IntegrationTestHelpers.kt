@@ -21,7 +21,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.respo
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.TransactionResponse
 import uk.gov.justice.hmpps.test.kotlin.auth.JwtAuthorisationHelper
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.UUID
 
 @TestConfiguration
@@ -95,7 +95,7 @@ class IntegrationTestHelpers(
     val transactionPayload = CreateTransactionRequest(
       reference = transactionReference,
       description = description,
-      timestamp = LocalDateTime.now(),
+      timestamp = Instant.now(),
       amount = amount,
       postings = postings,
     )

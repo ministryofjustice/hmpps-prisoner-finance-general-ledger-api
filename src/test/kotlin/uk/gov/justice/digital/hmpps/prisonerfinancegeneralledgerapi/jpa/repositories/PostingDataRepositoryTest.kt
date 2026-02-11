@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.TransactionEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.helpers.RepoTestHelpers
+import java.time.Instant
 import java.time.LocalDateTime
 
 @DataJpaTest
@@ -69,10 +70,10 @@ class PostingDataRepositoryTest @Autowired constructor(
       accountThreeSubAccountOne = repoTestHelpers.createSubAccount("TEST_SUB_ACCOUNT_REF_3", accountThree)
 
       for (_i in 1..5) {
-        repoTestHelpers.createOneToOneTransaction(1, LocalDateTime.now(), accountTwoSubAccountOne, accountOneSubAccountOne)
+        repoTestHelpers.createOneToOneTransaction(1, Instant.now(), accountTwoSubAccountOne, accountOneSubAccountOne)
       }
 
-      repoTestHelpers.createOneToOneTransaction(1, LocalDateTime.now(), accountOneSubAccountOne, accountTwoSubAccountOne)
+      repoTestHelpers.createOneToOneTransaction(1, Instant.now(), accountOneSubAccountOne, accountTwoSubAccountOne)
     }
 
     @Test
@@ -97,12 +98,12 @@ class PostingDataRepositoryTest @Autowired constructor(
       assertThat(zeroBalance).isEqualTo(0)
 
       // txToIgnoreFromTwoDaysAgo
-      repoTestHelpers.createOneToOneTransaction(100, LocalDateTime.now().minusDays(2), accountOneSubAccountOne, accountWithNoMoney)
+      repoTestHelpers.createOneToOneTransaction(100, LocalDateTime.now().minusDays(2).toInstant(java.time.ZoneOffset.UTC), accountOneSubAccountOne, accountWithNoMoney)
 
-      val statementBalanceFromYesterday = StatementBalanceEntity(amount = 0, subAccountEntity = accountOneSubAccountOne, balanceDateTime = LocalDateTime.now().minusDays(1))
+      val statementBalanceFromYesterday = StatementBalanceEntity(amount = 0, subAccountEntity = accountOneSubAccountOne, balanceDateTime = LocalDateTime.now().minusDays(1).toInstant(java.time.ZoneOffset.UTC))
 
       // txFromTodayToInclude
-      repoTestHelpers.createOneToOneTransaction(50, LocalDateTime.now(), accountOneSubAccountOne, accountWithNoMoney)
+      repoTestHelpers.createOneToOneTransaction(50, Instant.now(), accountOneSubAccountOne, accountWithNoMoney)
 
       val subAccountBalance = postingsDataRepository.getBalanceForSubAccount(accountWithNoMoney.id, latestStatementBalanceDateTime = statementBalanceFromYesterday.balanceDateTime)
 
@@ -131,8 +132,8 @@ class PostingDataRepositoryTest @Autowired constructor(
       val prisonerOne = repoTestHelpers.createAccount("123456")
       val prisonerOneCash = repoTestHelpers.createSubAccount("CASH", prisonerOne)
 
-      repoTestHelpers.createOneToOneTransaction(10, LocalDateTime.now(), prisonerOneCash, prisonACanteen)
-      repoTestHelpers.createOneToOneTransaction(5, LocalDateTime.now(), prisonACanteen, prisonerOneCash)
+      repoTestHelpers.createOneToOneTransaction(10, Instant.now(), prisonerOneCash, prisonACanteen)
+      repoTestHelpers.createOneToOneTransaction(5, Instant.now(), prisonACanteen, prisonerOneCash)
 
       val prisonerBalAtPrison =
         postingsDataRepository.getBalanceForAPrisonerAtAPrison(prisonId = prisonA.id, prisonerId = prisonerOne.id)
@@ -151,8 +152,8 @@ class PostingDataRepositoryTest @Autowired constructor(
       val prisoner = repoTestHelpers.createAccount("123456")
       val prisonerCashAccount = repoTestHelpers.createSubAccount("CASH", prisoner)
 
-      repoTestHelpers.createOneToOneTransaction(15, LocalDateTime.now(), prisonerCashAccount, prisonACanteen)
-      repoTestHelpers.createOneToOneTransaction(1, LocalDateTime.now(), prisonerCashAccount, prisonBCatalogue)
+      repoTestHelpers.createOneToOneTransaction(15, Instant.now(), prisonerCashAccount, prisonACanteen)
+      repoTestHelpers.createOneToOneTransaction(1, Instant.now(), prisonerCashAccount, prisonBCatalogue)
 
       val balanceForPrisonerAtPrison =
         postingsDataRepository.getBalanceForAPrisonerAtAPrison(prisonId = prisonA.id, prisonerId = prisoner.id)
@@ -177,9 +178,9 @@ class PostingDataRepositoryTest @Autowired constructor(
         30,
       )
 
-      repoTestHelpers.createOneToOneTransaction(1, LocalDateTime.now(), prisonerTwoCashAccount, prisonACash)
+      repoTestHelpers.createOneToOneTransaction(1, Instant.now(), prisonerTwoCashAccount, prisonACash)
 
-      repoTestHelpers.createOneToOneTransaction(5, LocalDateTime.now(), prisonACash, prisonerOneCashAccount)
+      repoTestHelpers.createOneToOneTransaction(5, Instant.now(), prisonACash, prisonerOneCashAccount)
 
       val balanceForPrisonerAtPrison =
         postingsDataRepository.getBalanceForAPrisonerAtAPrison(prisonId = prisonA.id, prisonerId = prisonerOne.id)

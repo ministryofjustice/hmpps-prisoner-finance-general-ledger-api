@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.reposito
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.StatementBalanceDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.SubAccountService
+import java.time.Instant
 import java.time.LocalDateTime
 import java.util.UUID
 
@@ -53,7 +54,7 @@ class SubAccountServiceTest {
 
   @BeforeEach
   fun setupDummySubAccount() {
-    val dummyDate = LocalDateTime.of(2025, 12, 25, 0, 0, 0)
+    val dummyDate = LocalDateTime.of(2025, 12, 25, 0, 0, 0).toInstant(java.time.ZoneOffset.UTC)
     dummyParentAccountEntity = AccountEntity(reference = TEST_ACCOUNT_REF, id = dummyParentAccountUUID)
     dummySubAccountEntity = SubAccountEntity(
       reference = TEST_SUB_ACCOUNT_REF,
@@ -187,18 +188,18 @@ class SubAccountServiceTest {
 
     @Test
     fun `should save the balance if the provided sub account exists`() {
-      val dummyStatementBalanceEntity = StatementBalanceEntity(subAccountEntity = dummySubAccountEntity, amount = 10, balanceDateTime = LocalDateTime.now())
+      val dummyStatementBalanceEntity = StatementBalanceEntity(subAccountEntity = dummySubAccountEntity, amount = 10, balanceDateTime = Instant.now())
       whenever(subAccountDataRepositoryMock.getSubAccountEntityById(dummySubAccountUUID)).thenReturn(dummySubAccountEntity)
       whenever(statementBalanceDataRepository.save(any())).thenReturn(dummyStatementBalanceEntity)
 
-      val returnedBalance = subAccountService.createStatementBalance(dummySubAccountUUID, 10, LocalDateTime.now())
+      val returnedBalance = subAccountService.createStatementBalance(dummySubAccountUUID, 10, Instant.now())
       assertThat(returnedBalance).isEqualTo(dummyStatementBalanceEntity)
     }
 
     @Test
     fun `should return null if the provided sub account does not exist`() {
       whenever(subAccountDataRepositoryMock.getSubAccountEntityById(any())).thenReturn(null)
-      val returnedBalance = subAccountService.createStatementBalance(UUID.randomUUID(), 10, LocalDateTime.now())
+      val returnedBalance = subAccountService.createStatementBalance(UUID.randomUUID(), 10, Instant.now())
       assertThat(returnedBalance).isNull()
     }
   }

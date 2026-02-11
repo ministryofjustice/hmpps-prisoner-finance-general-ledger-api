@@ -4,7 +4,7 @@ import jakarta.validation.Valid
 import jakarta.validation.constraints.PositiveOrZero
 import jakarta.validation.constraints.Size
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.validators.ValidTransactionRequest
-import java.time.LocalDateTime
+import java.time.Instant
 
 @Schema(description = "A request to create a transaction within the general ledger")
 @ValidTransactionRequest
@@ -16,7 +16,7 @@ data class CreateTransactionRequest(
   val description: String,
 
   @field:Schema(description = "The local date/time of when the transaction was created")
-  val timestamp: LocalDateTime,
+  val timestamp: Instant,
 
   @field:Schema(description = "The non-negative amount in pence of the transaction, this is the total of all money moved with postings in this transaction")
   @field:PositiveOrZero(message = "transaction amount must be positive")

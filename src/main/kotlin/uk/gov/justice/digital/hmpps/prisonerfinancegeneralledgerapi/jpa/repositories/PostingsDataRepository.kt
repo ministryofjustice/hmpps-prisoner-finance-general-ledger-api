@@ -6,7 +6,7 @@ import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.UUID
 
 @Repository
@@ -16,9 +16,9 @@ interface PostingsDataRepository : JpaRepository<PostingEntity, UUID> {
   fun getPostingsForSubAccountId(@Param("subAccountId") subAccountId: UUID): List<PostingEntity>
 
   @Query("SELECT p FROM PostingEntity p WHERE p.subAccountEntity.id = :subAccountId AND p.createdAt > :dateTime")
-  fun getPostingsForSubAccountIdAfterDateTime(@Param("subAccountId") subAccountId: UUID, @Param("dateTime") dateTime: LocalDateTime): List<PostingEntity>
+  fun getPostingsForSubAccountIdAfterDateTime(@Param("subAccountId") subAccountId: UUID, @Param("dateTime") dateTime: Instant): List<PostingEntity>
 
-  fun getBalanceForSubAccount(subAccountId: UUID, latestStatementBalanceDateTime: LocalDateTime? = null): Long {
+  fun getBalanceForSubAccount(subAccountId: UUID, latestStatementBalanceDateTime: Instant? = null): Long {
     lateinit var postingsForSubAccount: List<PostingEntity>
 
     if (latestStatementBalanceDateTime == null) {

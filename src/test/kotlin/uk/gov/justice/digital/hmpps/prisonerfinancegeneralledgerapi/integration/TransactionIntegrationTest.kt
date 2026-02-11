@@ -14,7 +14,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.reque
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.TransactionResponse
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.UUID
 
 class TransactionIntegrationTest : IntegrationTestBase() {
@@ -61,7 +61,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             reference = "TX",
             description = "DESCRIPTION",
             amount = 1L,
-            timestamp = LocalDateTime.now(),
+            timestamp = Instant.now(),
             postings = createPostingRequests,
           ),
         )
@@ -100,7 +100,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             reference = "TX",
             description = "DESCRIPTION",
             amount = 2L,
-            timestamp = LocalDateTime.now(),
+            timestamp = Instant.now(),
             postings = createPostingRequests,
           ),
         )
@@ -136,7 +136,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             reference = "TX",
             description = "DESCRIPTION",
             amount = 3L,
-            timestamp = LocalDateTime.now(),
+            timestamp = Instant.now(),
             postings = createPostingRequests,
           ),
         )
@@ -173,7 +173,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             reference = "TX",
             description = "DESCRIPTION",
             amount = 1L,
-            timestamp = LocalDateTime.now(),
+            timestamp = Instant.now(),
             postings = createPostingRequests,
           ),
         )
@@ -193,7 +193,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             reference = "TX",
             description = "DESCRIPTION",
             amount = 1L,
-            timestamp = LocalDateTime.now(),
+            timestamp = Instant.now(),
             postings = createPostingRequests,
           ),
         )
@@ -222,7 +222,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             reference = "TX",
             description = "DESCRIPTION",
             amount = 1L,
-            timestamp = LocalDateTime.now(),
+            timestamp = Instant.now(),
             postings = createPostingRequests,
           ),
         )
@@ -249,7 +249,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             reference = "TX",
             description = "DESCRIPTION",
             amount = 2L,
-            timestamp = LocalDateTime.now(),
+            timestamp = Instant.now(),
             postings = createPostingRequests,
           ),
         )
@@ -274,7 +274,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             reference = "TX",
             description = "DESCRIPTION",
             amount = 1L,
-            timestamp = LocalDateTime.now(),
+            timestamp = Instant.now(),
             postings = createPostingRequests,
           ),
         )
@@ -298,7 +298,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             reference = "TX",
             description = "DESCRIPTION",
             amount = 1L,
-            timestamp = LocalDateTime.now(),
+            timestamp = Instant.now(),
             postings = createPostingRequests,
           ),
         )
@@ -323,7 +323,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             reference = "TX",
             description = "DESCRIPTION",
             amount = 1L,
-            timestamp = LocalDateTime.now(),
+            timestamp = Instant.now(),
             postings = createPostingRequests,
           ),
         )
@@ -348,7 +348,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             reference = "TX",
             description = "DESCRIPTION",
             amount = 1L,
-            timestamp = LocalDateTime.now(),
+            timestamp = Instant.now(),
             postings = createPostingRequests,
           ),
         )
@@ -373,7 +373,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             reference = "TX",
             description = "DESCRIPTION",
             amount = -1L,
-            timestamp = LocalDateTime.now(),
+            timestamp = Instant.now(),
             postings = createPostingRequests,
           ),
         )
@@ -399,7 +399,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             reference = "TX",
             description = "DESCRIPTION",
             amount = 1L,
-            timestamp = LocalDateTime.now(),
+            timestamp = Instant.now(),
             postings = createPostingRequests,
           ),
         )
@@ -433,7 +433,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             reference = "TX",
             description = "DESCRIPTION",
             amount = 1L,
-            timestamp = LocalDateTime.now(),
+            timestamp = Instant.now(),
             postings = createPostingRequests,
           ),
         )

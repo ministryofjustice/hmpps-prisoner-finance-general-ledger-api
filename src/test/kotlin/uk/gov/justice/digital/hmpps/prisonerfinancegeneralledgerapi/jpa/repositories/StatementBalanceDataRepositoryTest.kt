@@ -11,6 +11,7 @@ import org.springframework.test.context.TestPropertySource
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.helpers.RepoTestHelpers
+import java.time.Instant
 import java.time.LocalDateTime
 import java.util.UUID
 
@@ -54,7 +55,7 @@ class StatementBalanceDataRepositoryTest @Autowired constructor(
 
     @Test
     fun `Should return a statement balance when one exists`() {
-      val createdStatementBalance = repoTestHelpers.createStatementBalance(amount = 10, balanceDateTime = LocalDateTime.now(), subAccount = testSubAccountOne)
+      val createdStatementBalance = repoTestHelpers.createStatementBalance(amount = 10, balanceDateTime = Instant.now(), subAccount = testSubAccountOne)
 
       val retrievedStatementBalance = statementBalanceDataRepository.getLatestStatementBalanceForSubAccountId(testSubAccountOne.id)
 
@@ -65,7 +66,12 @@ class StatementBalanceDataRepositoryTest @Autowired constructor(
 
     @Test
     fun `Should return the latest statement balance when multiple exist`() {
-      val olderStatementBalance = repoTestHelpers.createStatementBalance(amount = 10, balanceDateTime = LocalDateTime.now().minusDays(1), subAccount = testSubAccountOne)
+      val olderStatementBalance = repoTestHelpers.createStatementBalance(
+        amount = 10,
+        balanceDateTime = LocalDateTime.now().minusDays(1).toInstant(java.time.ZoneOffset.UTC),
+        subAccount =
+        testSubAccountOne,
+      )
 
       val retrievedStatementBalanceOne = statementBalanceDataRepository.getLatestStatementBalanceForSubAccountId(testSubAccountOne.id)
 
@@ -73,7 +79,7 @@ class StatementBalanceDataRepositoryTest @Autowired constructor(
       assertThat(retrievedStatementBalanceOne?.balanceDateTime).isEqualTo(olderStatementBalance.balanceDateTime)
       assertThat(retrievedStatementBalanceOne?.subAccountEntity?.id).isEqualTo(testSubAccountOne.id)
 
-      val latestCreatedStatementBalance = repoTestHelpers.createStatementBalance(amount = 20, balanceDateTime = LocalDateTime.now(), subAccount = testSubAccountOne)
+      val latestCreatedStatementBalance = repoTestHelpers.createStatementBalance(amount = 20, balanceDateTime = Instant.now(), subAccount = testSubAccountOne)
 
       val retrievedStatementBalanceTwo = statementBalanceDataRepository.getLatestStatementBalanceForSubAccountId(testSubAccountOne.id)
 
@@ -84,8 +90,8 @@ class StatementBalanceDataRepositoryTest @Autowired constructor(
 
     @Test
     fun `Should only return the most recent statement balance for the provided sub account`() {
-      val statementBalanceForTestAccountOne = repoTestHelpers.createStatementBalance(amount = 100, balanceDateTime = LocalDateTime.now().minusDays(1), subAccount = testSubAccountOne)
-      val moreRecentBalanceForAnotherAccount = repoTestHelpers.createStatementBalance(amount = 10, balanceDateTime = LocalDateTime.now(), subAccount = testSubAccountTwo)
+      val statementBalanceForTestAccountOne = repoTestHelpers.createStatementBalance(amount = 100, balanceDateTime = LocalDateTime.now().minusDays(1).toInstant(java.time.ZoneOffset.UTC), subAccount = testSubAccountOne)
+      val moreRecentBalanceForAnotherAccount = repoTestHelpers.createStatementBalance(amount = 10, balanceDateTime = Instant.now(), subAccount = testSubAccountTwo)
 
       val latestCreatedStatementBalance = statementBalanceDataRepository.getLatestStatementBalanceForSubAccountId(testSubAccountOne.id)
 

@@ -8,7 +8,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.reposito
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.StatementBalanceDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountBalanceResponse
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.UUID
 
 @Service
@@ -52,10 +52,10 @@ class SubAccountService(
     val postingsBalanceAfterStatementBalance = postingsDataRepository.getBalanceForSubAccount(subAccountId, latestStatementBalanceDatetime)
     val totalBalance = postingsBalanceAfterStatementBalance + (latestStatementBalanceEntity?.amount ?: 0L)
 
-    return SubAccountBalanceResponse(subAccountId, LocalDateTime.now(), totalBalance)
+    return SubAccountBalanceResponse(subAccountId, Instant.now(), totalBalance)
   }
 
-  fun createStatementBalance(subAccountID: UUID, amount: Long, balanceDateTime: LocalDateTime): StatementBalanceEntity? {
+  fun createStatementBalance(subAccountID: UUID, amount: Long, balanceDateTime: Instant): StatementBalanceEntity? {
     val subAccount = subAccountDataRepository.getSubAccountEntityById(subAccountID)
     if (subAccount == null) return null
     val entity = StatementBalanceEntity(subAccountEntity = subAccount, amount = amount, balanceDateTime = balanceDateTime)

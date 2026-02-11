@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreatePostingRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateTransactionRequest
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.UUID
 
 class TransactionValidatorTest {
@@ -26,7 +26,7 @@ class TransactionValidatorTest {
       CreatePostingRequest(subAccountId = UUID.randomUUID(), type = PostingType.DR, amount = 3L),
     )
 
-    val request = CreateTransactionRequest(reference = "TX", description = "DESCRIPTION", amount = 100L, timestamp = LocalDateTime.now(), postings = createPostingRequests)
+    val request = CreateTransactionRequest(reference = "TX", description = "DESCRIPTION", amount = 100L, timestamp = Instant.now(), postings = createPostingRequests)
 
     val ok = validator.isValid(request, null)
     assertThat(ok).isFalse()
@@ -40,7 +40,7 @@ class TransactionValidatorTest {
       CreatePostingRequest(subAccountId = UUID.randomUUID(), type = PostingType.DR, amount = 100L),
     )
 
-    val request = CreateTransactionRequest(reference = "TX", description = "DESCRIPTION", amount = 3L, timestamp = LocalDateTime.now(), postings = createPostingRequests)
+    val request = CreateTransactionRequest(reference = "TX", description = "DESCRIPTION", amount = 3L, timestamp = Instant.now(), postings = createPostingRequests)
 
     val ok = validator.isValid(request, null)
     assertThat(ok).isFalse()
@@ -54,7 +54,7 @@ class TransactionValidatorTest {
       CreatePostingRequest(subAccountId = UUID.randomUUID(), type = PostingType.DR, amount = 3L),
     )
 
-    val request = CreateTransactionRequest(reference = "TX", description = "DESCRIPTION", amount = 3L, timestamp = LocalDateTime.now(), postings = createPostingRequests)
+    val request = CreateTransactionRequest(reference = "TX", description = "DESCRIPTION", amount = 3L, timestamp = Instant.now(), postings = createPostingRequests)
 
     val ok = validator.isValid(request, null)
     assertThat(ok).isTrue()

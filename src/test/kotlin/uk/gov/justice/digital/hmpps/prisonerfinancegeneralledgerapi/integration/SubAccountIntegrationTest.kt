@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.respo
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountBalanceResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.TransactionResponse
+import java.time.Instant
 import java.time.LocalDateTime
 import java.util.UUID
 
@@ -55,7 +56,7 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
       assertThat(responseBody.id).isInstanceOf(UUID::class.java)
       assertThat(responseBody.reference).isEqualTo("TEST_SUB_ACCOUNT_REF")
       assertThat(responseBody.createdBy).isEqualTo("AUTH_ADM")
-      assertThat(responseBody.createdAt).isInstanceOf(LocalDateTime::class.java)
+      assertThat(responseBody.createdAt).isInstanceOf(Instant::class.java)
       assertThat(responseBody.parentAccountId).isEqualTo(dummyParentAccountOne.id)
     }
 
@@ -75,7 +76,7 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
       assertThat(subAccountOne.id).isInstanceOf(UUID::class.java)
       assertThat(subAccountOne.reference).isEqualTo("TEST_SUB_ACCOUNT_REF_1")
       assertThat(subAccountOne.createdBy).isEqualTo("AUTH_ADM")
-      assertThat(subAccountOne.createdAt).isInstanceOf(LocalDateTime::class.java)
+      assertThat(subAccountOne.createdAt).isInstanceOf(Instant::class.java)
       assertThat(subAccountOne.parentAccountId).isEqualTo(dummyParentAccountOne.id)
 
       val subAccountTwo = webTestClient.post()
@@ -92,7 +93,7 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
       assertThat(subAccountTwo.id).isInstanceOf(UUID::class.java)
       assertThat(subAccountTwo.reference).isEqualTo("TEST_SUB_ACCOUNT_REF_2")
       assertThat(subAccountTwo.createdBy).isEqualTo("AUTH_ADM")
-      assertThat(subAccountTwo.createdAt).isInstanceOf(LocalDateTime::class.java)
+      assertThat(subAccountTwo.createdAt).isInstanceOf(Instant::class.java)
       assertThat(subAccountTwo.parentAccountId).isEqualTo(dummyParentAccountOne.id)
 
       webTestClient.get()
@@ -470,7 +471,7 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
       assertThat(subAccountOneOriginalBalance.subAccountId).isEqualTo(dummySubAccountOne.id)
       assertThat(subAccountOneOriginalBalance.balanceDateTime).isInThePast
 
-      val balanceDateTimeTomorrow = LocalDateTime.now().plusDays(1)
+      val balanceDateTimeTomorrow = LocalDateTime.now().plusDays(1).toInstant(java.time.ZoneOffset.UTC)
       val statementBalanceResponse = webTestClient.post()
         .uri("/sub-accounts/${dummySubAccountOne.id}/balance")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
@@ -543,7 +544,7 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `should return 201 and the created statement balance`() {
-      val balanceDateTime = LocalDateTime.now()
+      val balanceDateTime = Instant.now()
       val statementBalanceResponse = webTestClient.post()
         .uri("/sub-accounts/${dummySubAccountOne.id}/balance")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
@@ -591,7 +592,7 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
         .uri("/sub-accounts/${dummySubAccountOne.id}/balance")
         .headers(setAuthorisation(roles = listOf("WRONG_ROLE")))
         .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(CreateStatementBalanceRequest(amount = 10, balanceDateTime = LocalDateTime.now()))
+        .bodyValue(CreateStatementBalanceRequest(amount = 10, balanceDateTime = Instant.now()))
         .exchange()
         .expectStatus().isForbidden
     }
@@ -602,7 +603,7 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
         .uri("/sub-accounts/${UUID.randomUUID()}/balance")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(CreateStatementBalanceRequest(amount = 10, balanceDateTime = LocalDateTime.now()))
+        .bodyValue(CreateStatementBalanceRequest(amount = 10, balanceDateTime = Instant.now()))
         .exchange()
         .expectStatus().isNotFound
     }

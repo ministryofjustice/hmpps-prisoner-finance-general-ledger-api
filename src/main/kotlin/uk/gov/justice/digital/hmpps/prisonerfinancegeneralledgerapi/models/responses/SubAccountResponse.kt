@@ -2,7 +2,7 @@ package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.resp
 
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.UUID
 
 @Schema(description = "A sub-account of an account")
@@ -16,7 +16,7 @@ class SubAccountResponse(
   @field:Schema(description = "The principal users name when the sub-account was created")
   val createdBy: String,
   @field:Schema(description = "The local date/time when the sub-account was created")
-  val createdAt: LocalDateTime,
+  val createdAt: Instant,
 ) {
 
   companion object {
