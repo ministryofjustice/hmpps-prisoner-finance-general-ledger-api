@@ -5,7 +5,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountBalanceResponse
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.UUID
 
 @Service
@@ -41,7 +41,7 @@ class AccountService(
       balance += subAccountService.getSubAccountBalance(subAccount.id)?.amount ?: 0
     }
 
-    return AccountBalanceResponse(accountId, LocalDateTime.now(), balance)
+    return AccountBalanceResponse(accountId, Instant.now(), balance)
   }
 
   fun calculatePrisonerBalanceAtAPrison(prisonerId: UUID, prisonReference: String): AccountBalanceResponse? {
@@ -49,10 +49,10 @@ class AccountService(
     if (prisonerAccount == null) return null
 
     val prisonAccount = accountDataRepository.findAccountByReference(prisonReference)
-    if (prisonAccount == null) return AccountBalanceResponse(prisonerId, LocalDateTime.now(), 0)
+    if (prisonAccount == null) return AccountBalanceResponse(prisonerId, Instant.now(), 0)
 
     val balance = postingsDataRepository.getBalanceForAPrisonerAtAPrison(prisonerId = prisonerAccount.id, prisonId = prisonAccount.id)
 
-    return AccountBalanceResponse(prisonerId, LocalDateTime.now(), balance)
+    return AccountBalanceResponse(prisonerId, Instant.now(), balance)
   }
 }

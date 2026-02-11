@@ -53,8 +53,8 @@ class TransactionServiceTest {
   lateinit var postingEntities: List<PostingEntity>
 
   val transactionUUID: UUID = UUID.fromString("00000000-0000-0000-0000-000000000000")
-  val date = LocalDateTime.of(2025, 1, 1, 0, 0, 0)
-  val timeStamp = LocalDateTime.of(2025, 12, 24, 0, 0, 0)
+  val date = LocalDateTime.of(2025, 1, 1, 0, 0, 0).toInstant(java.time.ZoneOffset.UTC)
+  val timeStamp = LocalDateTime.of(2025, 12, 24, 0, 0, 0).toInstant(java.time.ZoneOffset.UTC)
   val transactionDescription = "TX"
   val transactionAmount: Long = 1
   val createPostingRequests: List<CreatePostingRequest> = listOf(

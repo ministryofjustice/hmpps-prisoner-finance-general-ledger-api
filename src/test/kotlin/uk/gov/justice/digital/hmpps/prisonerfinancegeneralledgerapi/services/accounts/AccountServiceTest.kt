@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.reposito
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountBalanceResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.AccountService
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.SubAccountService
+import java.time.Instant
 import java.time.LocalDateTime
 import java.util.UUID
 
@@ -46,7 +47,7 @@ class AccountServiceTest {
 
   @BeforeEach
   fun setupDummyAccount() {
-    val dummyDate = LocalDateTime.of(2025, 12, 25, 0, 0, 0)
+    val dummyDate = LocalDateTime.of(2025, 12, 25, 0, 0, 0).toInstant(java.time.ZoneOffset.UTC)
     dummyAccountEntity =
       AccountEntity(reference = TEST_ACCOUNT_REF, createdBy = TEST_USERNAME, id = dummyUUID, createdAt = dummyDate)
   }
@@ -132,7 +133,14 @@ class AccountServiceTest {
       whenever(accountDataRepositoryMock.findAccountById(dummyAccountEntity.id)).thenReturn(dummyAccountEntity)
       dummyAccountEntity.subAccounts.add(SubAccountEntity(reference = "123456", parentAccountEntity = dummyAccountEntity))
 
-      whenever(subAccountServiceMock.getSubAccountBalance(dummyAccountEntity.subAccounts[0].id)).thenReturn(SubAccountBalanceResponse(subAccountId = dummyAccountEntity.subAccounts[0].id, amount = 10, balanceDateTime = LocalDateTime.now()))
+      whenever(subAccountServiceMock.getSubAccountBalance(dummyAccountEntity.subAccounts[0].id)).thenReturn(
+        SubAccountBalanceResponse(
+          subAccountId = dummyAccountEntity.subAccounts[0].id,
+          amount =
+          10,
+          balanceDateTime = Instant.now(),
+        ),
+      )
 
       val accountBalance = accountService.calculateAccountBalance(dummyAccountEntity.id)
 
@@ -148,9 +156,9 @@ class AccountServiceTest {
       dummyAccountEntity.subAccounts.add(SubAccountEntity(reference = "123456", parentAccountEntity = dummyAccountEntity))
       dummyAccountEntity.subAccounts.add(SubAccountEntity(reference = "654321", parentAccountEntity = dummyAccountEntity))
 
-      whenever(subAccountServiceMock.getSubAccountBalance(dummyAccountEntity.subAccounts[0].id)).thenReturn(SubAccountBalanceResponse(subAccountId = dummyAccountEntity.subAccounts[0].id, amount = 10, balanceDateTime = LocalDateTime.now()))
+      whenever(subAccountServiceMock.getSubAccountBalance(dummyAccountEntity.subAccounts[0].id)).thenReturn(SubAccountBalanceResponse(subAccountId = dummyAccountEntity.subAccounts[0].id, amount = 10, balanceDateTime = Instant.now()))
 
-      whenever(subAccountServiceMock.getSubAccountBalance(dummyAccountEntity.subAccounts[1].id)).thenReturn(SubAccountBalanceResponse(subAccountId = dummyAccountEntity.subAccounts[0].id, amount = 100, balanceDateTime = LocalDateTime.now()))
+      whenever(subAccountServiceMock.getSubAccountBalance(dummyAccountEntity.subAccounts[1].id)).thenReturn(SubAccountBalanceResponse(subAccountId = dummyAccountEntity.subAccounts[0].id, amount = 100, balanceDateTime = Instant.now()))
 
       val accountBalance = accountService.calculateAccountBalance(dummyAccountEntity.id)
 
