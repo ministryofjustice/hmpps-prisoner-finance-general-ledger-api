@@ -2,7 +2,7 @@ package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.resp
 
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.UUID
 
 @Schema(description = "An account within the general ledger")
@@ -14,7 +14,7 @@ class AccountResponse(
   @field:Schema(description = "The principal users name when the account was created")
   val createdBy: String,
   @field:Schema(description = "The local date/time of when the account was created")
-  val createdAt: LocalDateTime,
+  val createdAt: Instant,
   @field:Schema(description = "The collection of sub-accounts within the account")
   val subAccounts: List<SubAccountResponse> = emptyList(),
 ) {
