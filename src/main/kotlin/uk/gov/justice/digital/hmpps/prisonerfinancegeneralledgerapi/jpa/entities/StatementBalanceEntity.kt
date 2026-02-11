@@ -7,7 +7,7 @@ import jakarta.persistence.Index
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.UUID
 
 @Entity
@@ -26,7 +26,7 @@ class StatementBalanceEntity(
   val subAccountEntity: SubAccountEntity,
 
   @Column(name = "balance_date_time", nullable = false)
-  val balanceDateTime: LocalDateTime = LocalDateTime.now(),
+  val balanceDateTime: Instant = Instant.now(),
 
   @Column(name = "amount", nullable = false)
   val amount: Long,

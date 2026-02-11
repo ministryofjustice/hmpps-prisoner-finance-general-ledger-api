@@ -6,7 +6,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.Index
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.UUID
 
 @Entity
@@ -21,7 +21,7 @@ class TransactionEntity(
   val createdBy: String = "",
 
   @Column(name = "created_at", nullable = false)
-  val createdAt: LocalDateTime = LocalDateTime.now(),
+  val createdAt: Instant = Instant.now(),
 
   @Column(name = "reference", nullable = false)
   val reference: String = "",
@@ -30,7 +30,7 @@ class TransactionEntity(
   val description: String = "",
 
   @Column(name = "timestamp", nullable = false)
-  val timestamp: LocalDateTime = LocalDateTime.now(),
+  val timestamp: Instant = Instant.now(),
 
   @Column(name = "amount", nullable = false)
   val amount: Long = 0,

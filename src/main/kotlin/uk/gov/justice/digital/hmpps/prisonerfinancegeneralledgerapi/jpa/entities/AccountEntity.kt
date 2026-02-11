@@ -6,7 +6,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.Index
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.UUID
 
 @Entity
@@ -26,7 +26,7 @@ class AccountEntity(
   val createdBy: String = "",
 
   @Column(name = "created_at", nullable = false)
-  val createdAt: LocalDateTime = LocalDateTime.now(),
+  val createdAt: Instant = Instant.now(),
 
   @Column(name = "reference", nullable = false, unique = true)
   val reference: String = "",
