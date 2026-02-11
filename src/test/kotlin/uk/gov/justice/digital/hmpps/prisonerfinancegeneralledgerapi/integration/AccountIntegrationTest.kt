@@ -15,7 +15,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.reque
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountBalanceResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountResponse
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.*
 
 class AccountIntegrationTest : IntegrationTestBase() {
@@ -43,7 +43,7 @@ class AccountIntegrationTest : IntegrationTestBase() {
 
       assertThat(responseBody.reference).isEqualTo("TEST_ACCOUNT_REF")
       assertThat(responseBody.createdBy).isEqualTo("AUTH_ADM")
-      assertThat(responseBody.createdAt).isInstanceOf(LocalDateTime::class.java)
+      assertThat(responseBody.createdAt).isInstanceOf(Instant::class.java)
       assertThat(responseBody.id).isInstanceOf(UUID::class.java)
       assertThat(responseBody.subAccounts).isInstanceOf(List::class.java)
       assertThat(responseBody.subAccounts).isEmpty()
@@ -64,7 +64,7 @@ class AccountIntegrationTest : IntegrationTestBase() {
 
       assertThat(responseBody.reference).isEqualTo("TEST_ACCOUNT_REF")
       assertThat(responseBody.createdBy).isEqualTo("AUTH_ADM")
-      assertThat(responseBody.createdAt).isInstanceOf(LocalDateTime::class.java)
+      assertThat(responseBody.createdAt).isInstanceOf(Instant::class.java)
       assertThat(responseBody.id).isInstanceOf(UUID::class.java)
 
       webTestClient.post()
@@ -91,7 +91,7 @@ class AccountIntegrationTest : IntegrationTestBase() {
 
       assertThat(responseBody.reference).isEqualTo("TEST_ACCOUNT_REF")
       assertThat(responseBody.createdBy).isEqualTo("AUTH_ADM")
-      assertThat(responseBody.createdAt).isInstanceOf(LocalDateTime::class.java)
+      assertThat(responseBody.createdAt).isInstanceOf(Instant::class.java)
       assertThat(responseBody.id).isInstanceOf(UUID::class.java)
 
       webTestClient.post()
@@ -153,7 +153,7 @@ class AccountIntegrationTest : IntegrationTestBase() {
 
       assertThat(responseBody.reference).isEqualTo("TEST_ACCOUNT_REF")
       assertThat(responseBody.createdBy).isEqualTo("AUTH_ADM")
-      assertThat(responseBody.createdAt).isInstanceOf(LocalDateTime::class.java)
+      assertThat(responseBody.createdAt).isInstanceOf(Instant::class.java)
       assertThat(responseBody.id).isEqualTo(dummyAccount.id)
     }
 
@@ -241,7 +241,7 @@ class AccountIntegrationTest : IntegrationTestBase() {
       assertThat(responseBody).hasSize(1)
       assertThat(responseBody[0].reference).isEqualTo("TEST_ACCOUNT_REF")
       assertThat(responseBody[0].createdBy).isEqualTo("AUTH_ADM")
-      assertThat(responseBody[0].createdAt).isInstanceOf(LocalDateTime::class.java)
+      assertThat(responseBody[0].createdAt).isInstanceOf(Instant::class.java)
       assertThat(responseBody[0].id).isEqualTo(dummyAccount.id)
     }
 
