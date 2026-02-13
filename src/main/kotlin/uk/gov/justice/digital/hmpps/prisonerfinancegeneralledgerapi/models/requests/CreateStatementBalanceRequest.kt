@@ -7,6 +7,6 @@ import java.time.Instant
 data class CreateStatementBalanceRequest(
   @field:Schema(description = "The balance in pence")
   val amount: Long,
-  @field:Schema(description = "The local date/time of a statement balance as defined by SYNC (Note: This will override any existing balance prior to this date/time)")
+  @field:Schema(description = "The date/time of a statement balance in UTC/Instant format as defined by SYNC (Note: This will override any existing balance prior to this date/time)")
   val balanceDateTime: Instant,
 )

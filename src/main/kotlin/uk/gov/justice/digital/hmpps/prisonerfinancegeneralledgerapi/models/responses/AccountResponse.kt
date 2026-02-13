@@ -13,7 +13,7 @@ class AccountResponse(
   val reference: String,
   @field:Schema(description = "The principal users name when the account was created")
   val createdBy: String,
-  @field:Schema(description = "The local date/time of when the account was created")
+  @field:Schema(description = "The date/time of when the account was created in UTC/Instant format")
   val createdAt: Instant,
   @field:Schema(description = "The collection of sub-accounts within the account")
   val subAccounts: List<SubAccountResponse> = emptyList(),

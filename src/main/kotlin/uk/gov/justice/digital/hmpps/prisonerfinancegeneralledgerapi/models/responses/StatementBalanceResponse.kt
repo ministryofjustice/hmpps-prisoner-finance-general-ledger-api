@@ -11,7 +11,7 @@ data class StatementBalanceResponse(
   val amount: Long,
   @field:Schema(description = "The unique ID for the sub-account")
   val subAccountId: UUID,
-  @field:Schema(description = "A local date/time of when the statement balance was created")
+  @field:Schema(description = "A date/time of when the statement balance was created in UTC/Instant format")
   val balanceDateTime: Instant,
 ) {
   companion object {

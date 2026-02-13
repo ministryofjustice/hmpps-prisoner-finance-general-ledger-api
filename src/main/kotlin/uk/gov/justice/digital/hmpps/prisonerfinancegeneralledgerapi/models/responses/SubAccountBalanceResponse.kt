@@ -8,7 +8,7 @@ import java.util.UUID
 data class SubAccountBalanceResponse(
   @field:Schema(description = "The unique ID for the sub-account")
   val subAccountId: UUID,
-  @field:Schema(description = "The local date/time when requesting the sub-account balance")
+  @field:Schema(description = "The date/time when requesting the sub-account balance in UTC/Instant format")
   val balanceDateTime: Instant,
   @field:Schema(description = "The calculated sum of the latest statement balance and the sub-account balance for postings, made after the latest statement balance date/time.")
   val amount: Long,

@@ -11,7 +11,7 @@ class PostingResponse(
   val id: UUID,
   @field:Schema(description = "The user who created the transaction")
   val createdBy: String,
-  @field:Schema(description = "The local date/time of when the posting was created")
+  @field:Schema(description = "The date/time of when the posting was created in UTC/Instant format")
   val createdAt: Instant,
   @field:Schema(description = "Enumeration of PostingType either CR or DR")
   val type: PostingType,
