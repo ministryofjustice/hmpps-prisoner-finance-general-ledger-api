@@ -10,13 +10,13 @@ class TransactionResponse(
   val id: UUID,
   @field:Schema(description = "The user who created the transaction")
   val createdBy: String,
-  @field:Schema(description = "The local date/time of when the transaction record was created in the ledger")
+  @field:Schema(description = "The date/time of when the transaction record was created in the ledger in UTC/Instant format")
   val createdAt: Instant,
   @field:Schema(description = "A reference for the transaction")
   val reference: String,
   @field:Schema(description = "A description for the transaction")
   val description: String,
-  @field:Schema(description = "The local date/time of when the transaction is created")
+  @field:Schema(description = "The time of when the transaction is created in UTC/Instant format")
   val timestamp: Instant,
   @field:Schema(description = "The total transaction monetary amount in pence")
   val amount: Long,

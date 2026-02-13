@@ -15,7 +15,7 @@ class SubAccountResponse(
   val parentAccountId: UUID,
   @field:Schema(description = "The principal users name when the sub-account was created")
   val createdBy: String,
-  @field:Schema(description = "The local date/time when the sub-account was created")
+  @field:Schema(description = "The date/time when the sub-account was created in UTC/Instant format")
   val createdAt: Instant,
 ) {
 
