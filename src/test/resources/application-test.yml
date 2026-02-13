@@ -13,11 +13,5 @@ spring:
     enabled: true
     locations: classpath:/db/migrations/common
 
-  datasource:
-    url: 'jdbc:h2:mem:./general_ledger;MODE=PostgreSQL'
-    username: sa
-    password:
-    driver-class-name: org.h2.Driver
-
 hmpps-auth:
   url: "http://localhost:8090/auth"

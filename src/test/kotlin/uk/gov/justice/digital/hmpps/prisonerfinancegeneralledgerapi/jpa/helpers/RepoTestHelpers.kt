@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.helpers
 
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager
 import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.context.annotation.Import
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.ContainersConfig
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.StatementBalanceEntity
@@ -16,6 +18,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.reposito
 import java.time.Instant
 import java.util.UUID
 
+@Import(ContainersConfig::class)
 @TestConfiguration
 class RepoTestHelpers(
   private val entityManager: TestEntityManager,
