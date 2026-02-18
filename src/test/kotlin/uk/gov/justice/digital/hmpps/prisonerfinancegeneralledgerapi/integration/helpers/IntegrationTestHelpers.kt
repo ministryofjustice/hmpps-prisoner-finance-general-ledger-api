@@ -26,7 +26,7 @@ import java.util.UUID
 
 @TestConfiguration
 class IntegrationTestHelpers(
-  var webTestClient: WebTestClient,
+
   private val jwtAuthHelper: JwtAuthorisationHelper,
   private val idempotencyKeyDataRepository: IdempotencyKeyDataRepository,
   private val statementBalanceDataRepository: StatementBalanceDataRepository,
@@ -35,6 +35,8 @@ class IntegrationTestHelpers(
   private val subAccountDataRepository: SubAccountDataRepository,
   private val accountDataRepository: AccountDataRepository,
 ) {
+
+  lateinit var webTestClient: WebTestClient
 
   fun setWebClient(webClient: WebTestClient) {
     webTestClient = webClient

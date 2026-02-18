@@ -1,7 +1,9 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services
 
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.CustomException
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.IdempotencyEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.TransactionEntity
@@ -33,7 +35,7 @@ class TransactionService(
         createdAt = transactionEntity.createdAt,
         type = it.type,
         amount = it.amount,
-        subAccountEntity = subAccountDataRepository.getReferenceById(it.subAccountId),
+        subAccountEntity = subAccountDataRepository.getSubAccountEntityById(it.subAccountId) ?: throw CustomException("Invalid sub account ID", HttpStatus.BAD_REQUEST),
         transactionEntity = transactionEntity,
       )
     }

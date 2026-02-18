@@ -1,20 +1,20 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration
 
-import com.fasterxml.jackson.module.kotlin.jsonMapper
 import jakarta.transaction.Transactional
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
-import org.springframework.http.ProblemDetail
 import org.springframework.test.web.reactive.server.expectBody
+import tools.jackson.module.kotlin.jsonMapper
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateAccountRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateSubAccountRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountBalanceResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountResponse
+import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.time.Instant
 import java.util.*
 
@@ -312,11 +312,11 @@ class AccountIntegrationTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .exchange()
         .expectStatus().isBadRequest
-        .expectBody<ProblemDetail>()
+        .expectBody<ErrorResponse>()
         .returnResult()
         .responseBody!!
 
-      assertThat(responseBody.properties?.get("userMessage")).isEqualTo("Query parameters must be provided")
+      assertThat(responseBody.userMessage).isEqualTo("Query parameters must be provided")
     }
 
     @Test
@@ -326,11 +326,11 @@ class AccountIntegrationTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .exchange()
         .expectStatus().isBadRequest
-        .expectBody<ProblemDetail>()
+        .expectBody<ErrorResponse>()
         .returnResult()
         .responseBody!!
 
-      assertThat(responseBody.properties?.get("userMessage")).isEqualTo("Query parameters must be provided")
+      assertThat(responseBody.userMessage).isEqualTo("Query parameters must be provided")
     }
 
     @Test

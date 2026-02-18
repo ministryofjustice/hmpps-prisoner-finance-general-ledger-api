@@ -5,9 +5,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest
 import org.springframework.context.annotation.Import
-import org.springframework.test.context.TestPropertySource
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.helpers.RepoTestHelpers
@@ -16,11 +15,6 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 @DataJpaTest
-@TestPropertySource(
-  properties = [
-    "spring.flyway.locations=classpath:/db/migrations/common,classpath:/db/migrations/h2",
-  ],
-)
 @Import(RepoTestHelpers::class)
 class StatementBalanceDataRepositoryTest @Autowired constructor(
   val statementBalanceDataRepository: StatementBalanceDataRepository,

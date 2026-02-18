@@ -26,7 +26,6 @@ abstract class IntegrationTestBase {
   @LocalServerPort
   private var port: Int = 0
 
-  @Autowired
   protected lateinit var webTestClient: WebTestClient
 
   @Autowired

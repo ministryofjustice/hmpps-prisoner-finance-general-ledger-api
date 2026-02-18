@@ -1,14 +1,13 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration
 
-import com.fasterxml.jackson.module.kotlin.jsonMapper
 import jakarta.transaction.Transactional
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
-import org.springframework.http.ProblemDetail
 import org.springframework.test.web.reactive.server.expectBody
+import tools.jackson.module.kotlin.jsonMapper
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateAccountRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateStatementBalanceRequest
@@ -18,6 +17,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.respo
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountBalanceResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.TransactionResponse
+import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.time.Instant
 import java.time.LocalDateTime
 import java.util.UUID
@@ -524,11 +524,11 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .exchange()
         .expectStatus().isNotFound
-        .expectBody<ProblemDetail>()
+        .expectBody<ErrorResponse>()
         .returnResult()
         .responseBody!!
 
-      assertThat(responseBody.properties?.get("userMessage")).isEqualTo("Sub Account not found")
+      assertThat(responseBody.userMessage).isEqualTo("Sub Account not found")
     }
   }
 

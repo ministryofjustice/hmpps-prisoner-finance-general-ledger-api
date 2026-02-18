@@ -70,7 +70,7 @@ class SubAccountServiceTest {
 
     @Test
     fun `Should call the repository to save the sub account and return it`() {
-      whenever(accountDataRepository.getReferenceById(dummyParentAccountUUID)).thenReturn(dummyParentAccountEntity)
+      whenever(accountDataRepository.findAccountById(dummyParentAccountUUID)).thenReturn(dummyParentAccountEntity)
       whenever(subAccountDataRepositoryMock.save(any())).thenReturn(dummySubAccountEntity)
       val createdSubAccount = subAccountService.createSubAccount(
         reference = TEST_SUB_ACCOUNT_REF,

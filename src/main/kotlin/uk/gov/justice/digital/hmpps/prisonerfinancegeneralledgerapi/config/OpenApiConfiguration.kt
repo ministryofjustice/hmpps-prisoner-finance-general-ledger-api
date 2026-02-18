@@ -16,7 +16,7 @@ const val ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW = "ROLE_PRISONER_FINANCE__GE
 
 @Configuration
 class OpenApiConfiguration(buildProperties: BuildProperties) {
-  private val version: String = buildProperties.version
+  private val version: String = buildProperties.version!!
 
   @Bean
   fun customOpenAPI(): OpenAPI = OpenAPI()

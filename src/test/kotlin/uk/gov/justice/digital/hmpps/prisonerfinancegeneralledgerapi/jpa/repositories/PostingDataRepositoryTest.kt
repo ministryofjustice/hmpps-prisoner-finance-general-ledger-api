@@ -5,9 +5,9 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest
 import org.springframework.context.annotation.Import
-import org.springframework.test.context.TestPropertySource
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.ContainersConfig
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.StatementBalanceEntity
@@ -19,12 +19,7 @@ import java.time.Instant
 import java.time.LocalDateTime
 
 @DataJpaTest
-@TestPropertySource(
-  properties = [
-    "spring.flyway.locations=classpath:/db/migrations/common,classpath:/db/migrations/h2",
-  ],
-)
-@Import(RepoTestHelpers::class)
+@Import(RepoTestHelpers::class, ContainersConfig::class)
 class PostingDataRepositoryTest @Autowired constructor(
   val postingsDataRepository: PostingsDataRepository,
   val repoTestHelpers: RepoTestHelpers,
@@ -69,7 +64,7 @@ class PostingDataRepositoryTest @Autowired constructor(
       accountThree = repoTestHelpers.createAccount("TEST_ACCOUNT_REF_3")
       accountThreeSubAccountOne = repoTestHelpers.createSubAccount("TEST_SUB_ACCOUNT_REF_3", accountThree)
 
-      for (_i in 1..5) {
+      repeat(5) {
         repoTestHelpers.createOneToOneTransaction(1, Instant.now(), accountTwoSubAccountOne, accountOneSubAccountOne)
       }
 
