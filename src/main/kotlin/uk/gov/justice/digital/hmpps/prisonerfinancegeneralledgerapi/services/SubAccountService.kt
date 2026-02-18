@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services
 
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.CustomException
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.StatementBalanceEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
@@ -19,7 +21,7 @@ class SubAccountService(
   private val statementBalanceDataRepository: StatementBalanceDataRepository,
 ) {
   fun createSubAccount(reference: String, createdBy: String, parentAccountId: UUID): SubAccountEntity {
-    val parentAccount = accountDataRepository.getReferenceById(parentAccountId)
+    val parentAccount = accountDataRepository.findAccountById(parentAccountId) ?: throw CustomException("Account not found", HttpStatus.NOT_FOUND)
 
     val subAccountEntity = SubAccountEntity(parentAccountEntity = parentAccount, reference = reference, createdBy = createdBy)
 

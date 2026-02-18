@@ -84,7 +84,7 @@ class TransactionServiceTest {
       val idempotencyKey = UUID.randomUUID()
       whenever(transactionDataRepository.save(any())).thenReturn(transactionEntity)
       whenever(postingsDataRepository.saveAll(any<Iterable<PostingEntity>>())).thenReturn(postingEntities)
-      whenever(subAccountDataRepository.getReferenceById(any<UUID>())).thenAnswer { SubAccountEntity(id = it.getArgument(0)) }
+      whenever(subAccountDataRepository.getSubAccountEntityById(any<UUID>())).thenAnswer { SubAccountEntity(id = it.getArgument(0)) }
 
       val txnReq = CreateTransactionRequest(reference = TEST_TREF, description = transactionDescription, amount = transactionAmount, timestamp = timeStamp, postings = createPostingRequests)
 
