@@ -56,11 +56,6 @@ class SubAccountController(
         ],
       ),
       ApiResponse(
-        responseCode = "400",
-        description = "Bad Request",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-      ApiResponse(
         responseCode = "401",
         description = "Unauthorized - requires a valid OAuth2 token",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
@@ -73,6 +68,11 @@ class SubAccountController(
       ApiResponse(
         responseCode = "404",
         description = "Resource not found - Parent account not found",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "409",
+        description = "Conflict - sub-account already exists",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
@@ -102,7 +102,7 @@ class SubAccountController(
       if (e is DataIntegrityViolationException) {
         throw CustomException(
           message = "Sub account reference exists in account already",
-          status = HttpStatus.BAD_REQUEST,
+          status = HttpStatus.CONFLICT,
         )
       }
       if (e is JpaObjectRetrievalFailureException) {

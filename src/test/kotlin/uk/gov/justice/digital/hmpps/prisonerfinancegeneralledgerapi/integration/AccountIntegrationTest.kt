@@ -5,6 +5,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.expectBody
 import tools.jackson.module.kotlin.jsonMapper
@@ -50,7 +51,7 @@ class AccountIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should return 400 Bad Request if the reference submitted already has an associated account`() {
+    fun `should return 409 conflict if the reference submitted already has an associated account`() {
       val responseBody = webTestClient.post()
         .uri("/accounts")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
@@ -73,11 +74,11 @@ class AccountIntegrationTest : IntegrationTestBase() {
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF"))
         .exchange()
-        .expectStatus().isBadRequest
+        .expectStatus().isEqualTo(HttpStatus.CONFLICT)
     }
 
     @Test
-    fun `should return 400 Bad Request if the reference submitted already has an associated account in a different casing`() {
+    fun `should return 409 conflict if the reference submitted already has an associated account in a different casing`() {
       val responseBody = webTestClient.post()
         .uri("/accounts")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
@@ -100,7 +101,7 @@ class AccountIntegrationTest : IntegrationTestBase() {
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(CreateAccountRequest("test_account_ref"))
         .exchange()
-        .expectStatus().isBadRequest
+        .expectStatus().isEqualTo(HttpStatus.CONFLICT)
     }
 
     @Test

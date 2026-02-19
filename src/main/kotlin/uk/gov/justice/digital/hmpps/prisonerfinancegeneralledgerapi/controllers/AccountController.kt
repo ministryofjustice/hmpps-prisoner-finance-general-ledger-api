@@ -49,11 +49,6 @@ class AccountController(
         content = [Content(mediaType = "application/json", schema = Schema(implementation = AccountResponse::class))],
       ),
       ApiResponse(
-        responseCode = "400",
-        description = "Bad Request",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-      ApiResponse(
         responseCode = "401",
         description = "Unauthorized - requires a valid OAuth2 token",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
@@ -61,6 +56,11 @@ class AccountController(
       ApiResponse(
         responseCode = "403",
         description = "Forbidden - requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "409",
+        description = "Conflict - account already exists",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
@@ -81,7 +81,7 @@ class AccountController(
       )
     } catch (e: Exception) {
       if (e is DataIntegrityViolationException) {
-        throw CustomException(status = BAD_REQUEST, message = "Duplicate account reference: ${body.accountReference}")
+        throw CustomException(status = HttpStatus.CONFLICT, message = "Duplicate account reference: ${body.accountReference}")
       }
       throw e
     }
