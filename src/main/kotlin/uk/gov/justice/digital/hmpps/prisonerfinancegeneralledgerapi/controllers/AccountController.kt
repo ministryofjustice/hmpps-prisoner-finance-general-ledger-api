@@ -64,6 +64,11 @@ class AccountController(
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
+        responseCode = "409",
+        description = "Conflict - account already exists",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
         responseCode = "500",
         description = "Internal Server Error - An unexpected error occurred.",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
@@ -81,7 +86,7 @@ class AccountController(
       )
     } catch (e: Exception) {
       if (e is DataIntegrityViolationException) {
-        throw CustomException(status = BAD_REQUEST, message = "Duplicate account reference: ${body.accountReference}")
+        throw CustomException(status = HttpStatus.CONFLICT, message = "Duplicate account reference: ${body.accountReference}")
       }
       throw e
     }

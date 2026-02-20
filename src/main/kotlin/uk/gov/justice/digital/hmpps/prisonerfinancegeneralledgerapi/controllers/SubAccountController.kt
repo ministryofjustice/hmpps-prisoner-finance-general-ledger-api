@@ -76,6 +76,11 @@ class SubAccountController(
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
+        responseCode = "409",
+        description = "Conflict - sub-account already exists",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
         responseCode = "500",
         description = "Internal Server Error - An unexpected error occurred.",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
@@ -101,8 +106,8 @@ class SubAccountController(
     } catch (e: Exception) {
       if (e is DataIntegrityViolationException) {
         throw CustomException(
-          message = "Sub account reference exists in account already",
-          status = HttpStatus.BAD_REQUEST,
+          message = "Duplicate sub-account reference: ${request.subAccountReference.uppercase()}",
+          status = HttpStatus.CONFLICT,
         )
       }
       if (e is JpaObjectRetrievalFailureException) {
