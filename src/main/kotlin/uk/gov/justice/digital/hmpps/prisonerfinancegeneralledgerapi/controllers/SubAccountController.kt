@@ -106,7 +106,7 @@ class SubAccountController(
     } catch (e: Exception) {
       if (e is DataIntegrityViolationException) {
         throw CustomException(
-          message = "Sub account reference exists in account already",
+          message = "Duplicate sub-account reference: ${request.subAccountReference.uppercase()}",
           status = HttpStatus.CONFLICT,
         )
       }

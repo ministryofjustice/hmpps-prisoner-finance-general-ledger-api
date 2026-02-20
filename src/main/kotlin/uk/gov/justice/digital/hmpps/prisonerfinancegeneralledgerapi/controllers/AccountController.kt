@@ -50,7 +50,7 @@ class AccountController(
       ),
       ApiResponse(
         responseCode = "400",
-        description = "Bad Request - Invalid UUID for accountId",
+        description = "Bad Request",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
