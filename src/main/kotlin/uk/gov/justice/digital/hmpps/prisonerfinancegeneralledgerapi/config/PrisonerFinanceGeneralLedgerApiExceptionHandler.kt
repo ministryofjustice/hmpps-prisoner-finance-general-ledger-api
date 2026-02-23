@@ -91,10 +91,10 @@ class PrisonerFinanceGeneralLedgerApiExceptionHandler {
     .body(
       ErrorResponse(
         status = HttpStatus.INTERNAL_SERVER_ERROR,
-        userMessage = "Unexpected error: ${e.message}",
-        developerMessage = e.message,
+        userMessage = "Internal server error",
+        developerMessage = "Internal server error",
       ),
-    ).also { log.error("Unexpected exception", e) }
+    ).also { log.error("Internal server error", e) }
 
   private companion object {
     private val log = LoggerFactory.getLogger(this::class.java)

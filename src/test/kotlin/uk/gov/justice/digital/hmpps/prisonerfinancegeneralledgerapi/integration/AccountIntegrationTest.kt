@@ -325,6 +325,20 @@ class AccountIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `should return 200 OK if the reference submitted contains a null byte`() {
+      val dummyAccount = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF")
+      val responseBody = webTestClient.get()
+        .uri("/accounts?reference=${dummyAccount.reference}\u0000")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<List<AccountResponse>>()
+        .returnResult()
+        .responseBody!!
+      assertThat(responseBody).hasSize(0)
+    }
+
+    @Test
     fun `should return 400 Bad request if no query parameters are provided`() {
       val responseBody = webTestClient.get()
         .uri("/accounts")
