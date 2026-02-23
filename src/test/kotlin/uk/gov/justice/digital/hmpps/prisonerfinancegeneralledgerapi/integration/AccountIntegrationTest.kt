@@ -105,6 +105,24 @@ class AccountIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `should return bad request if the reference contains null byte`() {
+      val nullByte = '\u0000'
+
+      val responseBody = webTestClient.post()
+        .uri("/accounts")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF" + nullByte))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody<ErrorResponse>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(responseBody.userMessage).isEqualTo("Malformed body")
+    }
+
+    @Test
     fun `createAccount should return 401 without authorisation headers`() {
       webTestClient.post()
         .uri("/accounts")

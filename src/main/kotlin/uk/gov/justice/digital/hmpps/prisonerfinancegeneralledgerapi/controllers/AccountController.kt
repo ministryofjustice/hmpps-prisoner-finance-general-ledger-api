@@ -10,9 +10,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
-import org.springframework.dao.DataIntegrityViolationException
+import org.hibernate.exception.ConstraintViolationException
+import org.hibernate.exception.DataException
 import org.springframework.http.HttpStatus
-import org.springframework.http.HttpStatus.BAD_REQUEST
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -85,8 +85,10 @@ class AccountController(
         AccountResponse.fromEntity(accountEntity = accountEntity),
       )
     } catch (e: Exception) {
-      if (e is DataIntegrityViolationException) {
+      if (e.cause is ConstraintViolationException) {
         throw CustomException(status = HttpStatus.CONFLICT, message = "Duplicate account reference: ${body.accountReference}")
+      } else if (e.cause is DataException) {
+        throw CustomException(status = HttpStatus.BAD_REQUEST, message = "Malformed body")
       }
       throw e
     }
@@ -188,7 +190,7 @@ class AccountController(
 //    If no params are provided, return 400. In future updates, this needs to account for all params (&&).
     if (reference.isNullOrEmpty()) {
       throw CustomException(
-        status = BAD_REQUEST,
+        status = HttpStatus.BAD_REQUEST,
         message = "Query parameters must be provided",
       )
     }
