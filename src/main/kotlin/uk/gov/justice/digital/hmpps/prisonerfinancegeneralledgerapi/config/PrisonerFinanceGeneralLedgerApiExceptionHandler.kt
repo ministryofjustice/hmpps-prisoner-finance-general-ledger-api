@@ -11,6 +11,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.MissingRequestHeaderException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.method.annotation.HandlerMethodValidationException
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 import org.springframework.web.servlet.resource.NoResourceFoundException
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.CustomException
@@ -36,7 +37,7 @@ class PrisonerFinanceGeneralLedgerApiExceptionHandler {
     .body(
       ErrorResponse(
         status = HttpStatus.BAD_REQUEST,
-        userMessage = "Invalid parameter type failure: ${e.message}",
+        userMessage = "Invalid parameter type failure",
         developerMessage = e.message,
       ),
     ).also { log.info("Invalid parameter type exception: {}", e.message) }
@@ -47,8 +48,18 @@ class PrisonerFinanceGeneralLedgerApiExceptionHandler {
     .body(
       ErrorResponse(
         status = HttpStatus.BAD_REQUEST,
-        userMessage = "Validation failure: ${e.message}",
-        developerMessage = e.message,
+        userMessage = "Validation failure",
+      ),
+    ).also { log.info("Validation exception") }
+
+  @ExceptionHandler(value = [HandlerMethodValidationException::class])
+  fun handleMethodValidationException(e: HandlerMethodValidationException): ResponseEntity<ErrorResponse> = ResponseEntity
+    .status(HttpStatus.BAD_REQUEST)
+    .body(
+      ErrorResponse(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "Validation failure",
+        developerMessage = "Validation failure",
       ),
     ).also { log.info("Validation exception: {}", e.message) }
 
@@ -58,7 +69,7 @@ class PrisonerFinanceGeneralLedgerApiExceptionHandler {
     .body(
       ErrorResponse(
         status = HttpStatus.NOT_FOUND,
-        userMessage = "No resource found failure: ${e.message}",
+        userMessage = "No resource found failure",
         developerMessage = e.message,
       ),
     ).also { log.info("No resource found exception: {}", e.message) }
@@ -69,7 +80,7 @@ class PrisonerFinanceGeneralLedgerApiExceptionHandler {
     .body(
       ErrorResponse(
         status = HttpStatus.FORBIDDEN,
-        userMessage = "Forbidden: ${e.message}",
+        userMessage = "Forbidden",
         developerMessage = e.message,
       ),
     ).also { log.debug("Forbidden (403) returned: {}", e.message) }
@@ -80,7 +91,7 @@ class PrisonerFinanceGeneralLedgerApiExceptionHandler {
     .body(
       ErrorResponse(
         status = HttpStatus.METHOD_NOT_ALLOWED,
-        userMessage = "Method Not Allowed: ${e.message}",
+        userMessage = "Method Not Allowed",
         developerMessage = e.message,
       ),
     ).also { log.debug("Method Not Allowed: {}", e.message) }

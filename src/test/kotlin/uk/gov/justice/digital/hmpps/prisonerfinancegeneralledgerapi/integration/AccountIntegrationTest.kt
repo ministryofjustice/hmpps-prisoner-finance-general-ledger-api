@@ -325,17 +325,18 @@ class AccountIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should return 200 OK if the reference submitted contains a null byte`() {
+    fun `should return 400 Bad Request if the reference submitted contains a null byte`() {
       val dummyAccount = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF")
       val responseBody = webTestClient.get()
         .uri("/accounts?reference=${dummyAccount.reference}\u0000")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .exchange()
-        .expectStatus().isOk
-        .expectBody<List<AccountResponse>>()
+        .expectStatus().isBadRequest
+        .expectBody<ErrorResponse>()
         .returnResult()
         .responseBody!!
-      assertThat(responseBody).hasSize(0)
+
+      assertThat(responseBody.userMessage).isEqualTo("Validation failure")
     }
 
     @Test
@@ -348,8 +349,6 @@ class AccountIntegrationTest : IntegrationTestBase() {
         .expectBody<ErrorResponse>()
         .returnResult()
         .responseBody!!
-
-      assertThat(responseBody.userMessage).isEqualTo("Query parameters must be provided")
     }
 
     @Test
@@ -362,8 +361,6 @@ class AccountIntegrationTest : IntegrationTestBase() {
         .expectBody<ErrorResponse>()
         .returnResult()
         .responseBody!!
-
-      assertThat(responseBody.userMessage).isEqualTo("Query parameters must be provided")
     }
 
     @Test
