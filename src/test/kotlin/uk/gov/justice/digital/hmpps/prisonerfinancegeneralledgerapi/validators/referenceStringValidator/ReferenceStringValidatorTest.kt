@@ -15,10 +15,10 @@ class ReferenceStringValidatorTest {
   }
 
   @Test
-  fun `Should fail when the string is null`() {
+  fun `Should pass when the string is null`() {
     val refString = null
     val ok = validator.isValid(refString, null)
-    Assertions.assertThat(ok).isFalse()
+    Assertions.assertThat(ok).isTrue()
   }
 
   @Test

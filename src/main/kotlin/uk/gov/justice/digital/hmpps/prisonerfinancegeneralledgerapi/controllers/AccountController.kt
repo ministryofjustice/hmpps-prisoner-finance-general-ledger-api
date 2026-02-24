@@ -237,8 +237,8 @@ class AccountController(
   @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW])
   @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
   @GetMapping("/accounts/{accountId}/balance")
-  fun getAccountBalance(@PathVariable accountId: UUID, @RequestParam prisonRef: String?): ResponseEntity<AccountBalanceResponse> {
-    var accountBalanceResponse: AccountBalanceResponse? = null
+  fun getAccountBalance(@PathVariable accountId: UUID, @ValidReferenceString @RequestParam prisonRef: String?): ResponseEntity<AccountBalanceResponse> {
+    var accountBalanceResponse: AccountBalanceResponse?
     if (prisonRef == null) {
       accountBalanceResponse = accountService.calculateAccountBalance(accountId)
     } else {
