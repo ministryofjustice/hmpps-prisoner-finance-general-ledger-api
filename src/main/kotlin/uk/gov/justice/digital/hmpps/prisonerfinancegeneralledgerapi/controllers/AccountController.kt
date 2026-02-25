@@ -10,9 +10,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
-import org.springframework.dao.DataIntegrityViolationException
+import org.hibernate.exception.ConstraintViolationException
+import org.hibernate.exception.DataException
 import org.springframework.http.HttpStatus
-import org.springframework.http.HttpStatus.BAD_REQUEST
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -28,6 +28,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.reque
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountBalanceResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.AccountService
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.validators.referenceStringValidator.ValidReferenceString
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.security.Principal
 import java.util.UUID
@@ -64,6 +65,11 @@ class AccountController(
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
+        responseCode = "409",
+        description = "Conflict - account already exists",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
         responseCode = "500",
         description = "Internal Server Error - An unexpected error occurred.",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
@@ -80,8 +86,10 @@ class AccountController(
         AccountResponse.fromEntity(accountEntity = accountEntity),
       )
     } catch (e: Exception) {
-      if (e is DataIntegrityViolationException) {
-        throw CustomException(status = BAD_REQUEST, message = "Duplicate account reference: ${body.accountReference}")
+      if (e.cause is ConstraintViolationException) {
+        throw CustomException(status = HttpStatus.CONFLICT, message = "Duplicate account reference: ${body.accountReference}")
+      } else if (e.cause is DataException) {
+        throw CustomException(status = HttpStatus.BAD_REQUEST, message = "Malformed body")
       }
       throw e
     }
@@ -179,11 +187,11 @@ class AccountController(
   @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW])
   @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
   @GetMapping("/accounts")
-  fun getAccount(@RequestParam reference: String?): ResponseEntity<List<AccountResponse>> {
+  fun getAccounts(@ValidReferenceString @RequestParam reference: String?): ResponseEntity<List<AccountResponse>> {
 //    If no params are provided, return 400. In future updates, this needs to account for all params (&&).
     if (reference.isNullOrEmpty()) {
       throw CustomException(
-        status = BAD_REQUEST,
+        status = HttpStatus.BAD_REQUEST,
         message = "Query parameters must be provided",
       )
     }
@@ -229,8 +237,8 @@ class AccountController(
   @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW])
   @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
   @GetMapping("/accounts/{accountId}/balance")
-  fun getAccountBalance(@PathVariable accountId: UUID, @RequestParam prisonRef: String?): ResponseEntity<AccountBalanceResponse> {
-    var accountBalanceResponse: AccountBalanceResponse? = null
+  fun getAccountBalance(@PathVariable accountId: UUID, @ValidReferenceString @RequestParam prisonRef: String?): ResponseEntity<AccountBalanceResponse> {
+    var accountBalanceResponse: AccountBalanceResponse?
     if (prisonRef == null) {
       accountBalanceResponse = accountService.calculateAccountBalance(accountId)
     } else {

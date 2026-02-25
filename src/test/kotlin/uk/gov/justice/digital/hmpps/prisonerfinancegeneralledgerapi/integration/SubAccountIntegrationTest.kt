@@ -5,6 +5,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.expectBody
 import tools.jackson.module.kotlin.jsonMapper
@@ -142,7 +143,7 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should return 400 bad request if sub account reference exists`() {
+    fun `should return 409 conflict if sub account reference exists`() {
       val testSubAccountRef = "TEST_SUB_ACCOUNT_REF"
 
       webTestClient.post()
@@ -160,11 +161,11 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(CreateSubAccountRequest(testSubAccountRef))
         .exchange()
-        .expectStatus().isBadRequest
+        .expectStatus().isEqualTo(HttpStatus.CONFLICT)
     }
 
     @Test
-    fun `should return 400 bad request if sub account exists with same reference in a different casing within the same account`() {
+    fun `should return 409 conflict if sub account exists with same reference in a different casing within the same account`() {
       val testSubAccountRefUpper = "TEST_SUB_ACCOUNT_REF"
       val testSubAccountRefLower = "test_sub_account_ref"
 
@@ -183,7 +184,7 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(CreateSubAccountRequest(testSubAccountRefLower))
         .exchange()
-        .expectStatus().isBadRequest
+        .expectStatus().isEqualTo(HttpStatus.CONFLICT)
     }
 
     @Test

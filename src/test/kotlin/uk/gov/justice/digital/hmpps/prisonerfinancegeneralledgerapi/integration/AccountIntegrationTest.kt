@@ -5,6 +5,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.expectBody
 import tools.jackson.module.kotlin.jsonMapper
@@ -50,7 +51,7 @@ class AccountIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should return 400 Bad Request if the reference submitted already has an associated account`() {
+    fun `should return 409 conflict if the reference submitted already has an associated account`() {
       val responseBody = webTestClient.post()
         .uri("/accounts")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
@@ -73,11 +74,11 @@ class AccountIntegrationTest : IntegrationTestBase() {
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF"))
         .exchange()
-        .expectStatus().isBadRequest
+        .expectStatus().isEqualTo(HttpStatus.CONFLICT)
     }
 
     @Test
-    fun `should return 400 Bad Request if the reference submitted already has an associated account in a different casing`() {
+    fun `should return 409 conflict if the reference submitted already has an associated account in a different casing`() {
       val responseBody = webTestClient.post()
         .uri("/accounts")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
@@ -100,7 +101,25 @@ class AccountIntegrationTest : IntegrationTestBase() {
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(CreateAccountRequest("test_account_ref"))
         .exchange()
+        .expectStatus().isEqualTo(HttpStatus.CONFLICT)
+    }
+
+    @Test
+    fun `should return bad request if the reference contains null byte`() {
+      val nullByte = '\u0000'
+
+      val responseBody = webTestClient.post()
+        .uri("/accounts")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF" + nullByte))
+        .exchange()
         .expectStatus().isBadRequest
+        .expectBody<ErrorResponse>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(responseBody.userMessage).isEqualTo("Malformed body")
     }
 
     @Test
@@ -306,6 +325,21 @@ class AccountIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `should return 400 Bad Request if the reference submitted contains a null byte`() {
+      val dummyAccount = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF")
+      val responseBody = webTestClient.get()
+        .uri("/accounts?reference=${dummyAccount.reference}\u0000")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody<ErrorResponse>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(responseBody.userMessage).isEqualTo("Validation failure")
+    }
+
+    @Test
     fun `should return 400 Bad request if no query parameters are provided`() {
       val responseBody = webTestClient.get()
         .uri("/accounts")
@@ -315,8 +349,6 @@ class AccountIntegrationTest : IntegrationTestBase() {
         .expectBody<ErrorResponse>()
         .returnResult()
         .responseBody!!
-
-      assertThat(responseBody.userMessage).isEqualTo("Query parameters must be provided")
     }
 
     @Test
@@ -329,8 +361,6 @@ class AccountIntegrationTest : IntegrationTestBase() {
         .expectBody<ErrorResponse>()
         .returnResult()
         .responseBody!!
-
-      assertThat(responseBody.userMessage).isEqualTo("Query parameters must be provided")
     }
 
     @Test

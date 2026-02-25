@@ -30,6 +30,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.respo
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountBalanceResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.SubAccountService
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.validators.referenceStringValidator.ValidReferenceString
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.security.Principal
 import java.util.UUID
@@ -76,6 +77,11 @@ class SubAccountController(
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
+        responseCode = "409",
+        description = "Conflict - sub-account already exists",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
         responseCode = "500",
         description = "Internal Server Error - An unexpected error occurred.",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
@@ -101,8 +107,8 @@ class SubAccountController(
     } catch (e: Exception) {
       if (e is DataIntegrityViolationException) {
         throw CustomException(
-          message = "Sub account reference exists in account already",
-          status = HttpStatus.BAD_REQUEST,
+          message = "Duplicate sub-account reference: ${request.subAccountReference.uppercase()}",
+          status = HttpStatus.CONFLICT,
         )
       }
       if (e is JpaObjectRetrievalFailureException) {
@@ -158,7 +164,7 @@ class SubAccountController(
   @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW])
   @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
   @GetMapping("/sub-accounts")
-  fun findSubAccounts(@RequestParam reference: String?, @RequestParam accountReference: String?): ResponseEntity<List<SubAccountResponse>> {
+  fun findSubAccounts(@ValidReferenceString @RequestParam reference: String?, @ValidReferenceString @RequestParam accountReference: String?): ResponseEntity<List<SubAccountResponse>> {
     if (reference == null || accountReference == null) {
       throw CustomException(
         message = "Both reference and subAccount reference must be provided",

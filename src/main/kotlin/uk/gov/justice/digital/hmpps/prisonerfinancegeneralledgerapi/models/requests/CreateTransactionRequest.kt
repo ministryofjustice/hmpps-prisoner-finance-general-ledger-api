@@ -4,14 +4,17 @@ import jakarta.validation.Valid
 import jakarta.validation.constraints.PositiveOrZero
 import jakarta.validation.constraints.Size
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.validators.ValidTransactionRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.validators.textFieldValidator.ValidTextField
 import java.time.Instant
 
 @Schema(description = "A request to create a transaction within the general ledger")
 @ValidTransactionRequest
 data class CreateTransactionRequest(
+  @ValidTextField
   @field:Schema(description = "A reference for the transaction")
   val reference: String,
 
+  @ValidTextField
   @field:Schema(description = "A description for the transaction")
   val description: String,
 
