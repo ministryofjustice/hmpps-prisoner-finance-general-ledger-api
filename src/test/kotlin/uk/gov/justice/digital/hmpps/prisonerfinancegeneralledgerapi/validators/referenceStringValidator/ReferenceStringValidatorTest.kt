@@ -8,8 +8,8 @@ class ReferenceStringValidatorTest {
   private val validator = ReferenceStringValidator()
 
   @Test
-  fun `Should pass when the string contains only letters and numbers and colons`() {
-    val refString = "ABC:123"
+  fun `Should pass when the string contains only valid characters`() {
+    val refString = "ABC:123_-"
     val ok = validator.isValid(refString, null)
     Assertions.assertThat(ok).isTrue()
   }

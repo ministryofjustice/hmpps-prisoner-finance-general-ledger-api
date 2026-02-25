@@ -3,10 +3,10 @@ package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.validators.
 import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext
 
-class TextFieldValidator : ConstraintValidator<ValidTextField, String> {
+class TextFieldValidator : ConstraintValidator<ValidText, String> {
 
   val textFieldRegex = Regex(
-    """^[^\x00-\x1F\x7F]+$""",
+    """^[^\u0000]+$""",
   )
 
   override fun isValid(textField: String?, p1: ConstraintValidatorContext?): Boolean {
