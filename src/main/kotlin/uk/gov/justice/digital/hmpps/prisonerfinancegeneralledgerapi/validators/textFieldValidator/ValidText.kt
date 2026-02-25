@@ -8,7 +8,7 @@ import kotlin.reflect.KClass
 @Retention(AnnotationRetention.RUNTIME)
 @MustBeDocumented
 @Constraint(validatedBy = [])
-annotation class ValidTextField(
+annotation class ValidText(
   val message: String = "Invalid Text Field",
   val groups: Array<KClass<*>> = [],
   val payload: Array<KClass<out Payload>> = [],
