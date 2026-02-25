@@ -496,6 +496,33 @@ class TransactionIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `returns a 400 when the transaction description contains control characters`() {
+      val createPostingRequests: List<CreatePostingRequest> = listOf(
+        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 1L),
+        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = 1L),
+      )
+
+      val idempotencyKey = UUID.randomUUID()
+
+      val transactionResponseBody = webTestClient.post()
+        .uri("/transactions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .headers(setIdempotencyKey(idempotencyKey))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(
+          CreateTransactionRequest(
+            reference = "TX",
+            description = "DESCRIPTION\u0000continued",
+            amount = 1L,
+            timestamp = Instant.now(),
+            postings = createPostingRequests,
+          ),
+        )
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
     fun `should return 404 when sent a valid UUID that doesn't exist`() {
       val uuid = UUID.randomUUID()
       webTestClient.get()
