@@ -10,6 +10,7 @@ import java.time.Instant
 @Schema(description = "A request to create a transaction within the general ledger")
 @ValidTransactionRequest
 data class CreateTransactionRequest(
+  @ValidTextField
   @field:Schema(description = "A reference for the transaction")
   val reference: String,
 
