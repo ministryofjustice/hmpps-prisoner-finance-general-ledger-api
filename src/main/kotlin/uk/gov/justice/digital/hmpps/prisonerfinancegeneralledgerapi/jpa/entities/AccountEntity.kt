@@ -35,7 +35,7 @@ class AccountEntity(
   val reference: String = "",
 
   @Enumerated(EnumType.STRING)
-  @Column(name = "type", nullable = true)
+  @Column(name = "type", nullable = false)
   val type: AccountType = AccountType.PRISON,
 
 ) {
