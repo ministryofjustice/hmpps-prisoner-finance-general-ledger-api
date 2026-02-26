@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.CustomException
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateAccountRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountBalanceResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountResponse
@@ -81,7 +82,7 @@ class AccountController(
   @PostMapping(value = ["/accounts"], consumes = [MediaType.APPLICATION_JSON_VALUE])
   fun createAccount(@Valid @RequestBody body: CreateAccountRequest, user: Principal): ResponseEntity<AccountResponse> {
     try {
-      val accountEntity = accountService.createAccount(body.accountReference.uppercase(), createdBy = user.name)
+      val accountEntity = accountService.createAccount(body.accountReference.uppercase(), createdBy = user.name, accountType = AccountType.PRISONER)
       return ResponseEntity<AccountResponse>.status(HttpStatus.CREATED).body(
         AccountResponse.fromEntity(accountEntity = accountEntity),
       )

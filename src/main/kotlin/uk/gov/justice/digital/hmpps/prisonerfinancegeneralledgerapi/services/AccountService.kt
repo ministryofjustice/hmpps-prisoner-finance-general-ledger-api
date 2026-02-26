@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services
 
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountBalanceResponse
@@ -16,8 +17,8 @@ class AccountService(
 
 ) {
 
-  fun createAccount(reference: String, createdBy: String): AccountEntity {
-    val createdAccountEntity = accountDataRepository.save(AccountEntity(reference = reference, createdBy = createdBy))
+  fun createAccount(reference: String, createdBy: String, accountType: AccountType): AccountEntity {
+    val createdAccountEntity = accountDataRepository.save(AccountEntity(reference = reference, createdBy = createdBy, type = accountType))
     return createdAccountEntity
   }
 
