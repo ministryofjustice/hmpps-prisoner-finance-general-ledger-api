@@ -306,6 +306,7 @@ class AccountIntegrationTest : IntegrationTestBase() {
       assertThat(responseBody[0].createdBy).isEqualTo("AUTH_ADM")
       assertThat(responseBody[0].createdAt).isInstanceOf(Instant::class.java)
       assertThat(responseBody[0].id).isEqualTo(dummyAccount.id)
+      assertThat(responseBody[0].type).isEqualTo(AccountType.PRISONER)
     }
 
     @Test
@@ -326,7 +327,7 @@ class AccountIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `should return 200 OK and any associated subaccounts`() {
-      val dummyAccount = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF", AccountType.PRISONER)
+      val dummyAccount = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF", AccountType.PRISON)
       val subAccount = webTestClient.post()
         .uri("/accounts/${dummyAccount.id}/sub-accounts")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
@@ -350,7 +351,7 @@ class AccountIntegrationTest : IntegrationTestBase() {
       assertThat(responseBody.subAccounts).hasSize(1)
       assertThat(responseBody.subAccounts.first().id).isEqualTo(subAccount.id)
       assertThat(responseBody.subAccounts.first().parentAccountId).isEqualTo(dummyAccount.id)
-      assertThat(responseBody.type).isEqualTo(AccountType.PRISONER)
+      assertThat(responseBody.type).isEqualTo(AccountType.PRISON)
     }
 
     @Test
@@ -367,6 +368,7 @@ class AccountIntegrationTest : IntegrationTestBase() {
       assertThat(responseBody).hasSize(1)
       assertThat(responseBody[0].reference).isEqualTo(dummyAccount.reference)
       assertThat(responseBody[0].id).isEqualTo(dummyAccount.id)
+      assertThat(responseBody[0].type).isEqualTo(AccountType.PRISONER)
     }
 
     @Test
