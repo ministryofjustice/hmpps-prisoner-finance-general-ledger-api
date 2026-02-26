@@ -50,7 +50,7 @@ class HelloController {
   @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
   @GetMapping(path = ["/hello"], produces = [TEXT_PLAIN_VALUE])
   fun hello(user: Principal): ResponseEntity<String> {
-    val environmentString = System.getenv("ENVIRONMENT") ?: "not-set"
+    val environmentString = System.getenv("ENV_STRING") ?: "not-set"
     log.info("Environment: $environmentString")
     return ResponseEntity.ok().body("Hello ${user.name}!")
   }
