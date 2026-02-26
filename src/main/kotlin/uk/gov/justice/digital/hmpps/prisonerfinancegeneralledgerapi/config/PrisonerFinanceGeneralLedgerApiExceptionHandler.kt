@@ -20,7 +20,7 @@ import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 @RestControllerAdvice
 class PrisonerFinanceGeneralLedgerApiExceptionHandler {
 
-  private val envIsProd = System.getenv("ENV_STRING") == "dev"
+  private val envIsProd = System.getenv("ENV_STRING") == "prod"
 
   @ExceptionHandler(CustomException::class)
   fun handleCustomException(e: CustomException): ResponseEntity<ErrorResponse> = ResponseEntity
