@@ -20,6 +20,8 @@ import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 @RestControllerAdvice
 class PrisonerFinanceGeneralLedgerApiExceptionHandler {
 
+  private val envIsProd = System.getenv("ENV_STRING") == "dev"
+
   @ExceptionHandler(CustomException::class)
   fun handleCustomException(e: CustomException): ResponseEntity<ErrorResponse> = ResponseEntity
     .status(e.status)
@@ -27,7 +29,7 @@ class PrisonerFinanceGeneralLedgerApiExceptionHandler {
       ErrorResponse(
         status = e.status.value(),
         userMessage = e.message,
-        developerMessage = e.message,
+        developerMessage = if (envIsProd) null else e.message,
       ),
     ).also { log.info("CustomExceptionThrown: {}", e.message) }
 
@@ -38,7 +40,7 @@ class PrisonerFinanceGeneralLedgerApiExceptionHandler {
       ErrorResponse(
         status = HttpStatus.BAD_REQUEST,
         userMessage = "Invalid parameter type failure",
-        developerMessage = e.message,
+        developerMessage = if (envIsProd) null else e.message,
       ),
     ).also { log.info("Invalid parameter type exception: {}", e.message) }
 
@@ -49,6 +51,7 @@ class PrisonerFinanceGeneralLedgerApiExceptionHandler {
       ErrorResponse(
         status = HttpStatus.BAD_REQUEST,
         userMessage = "Validation failure",
+        developerMessage = if (envIsProd) null else e.message,
       ),
     ).also { log.info("Validation exception") }
 
@@ -59,7 +62,7 @@ class PrisonerFinanceGeneralLedgerApiExceptionHandler {
       ErrorResponse(
         status = HttpStatus.BAD_REQUEST,
         userMessage = "Validation failure",
-        developerMessage = "Validation failure",
+        developerMessage = if (envIsProd) null else e.message,
       ),
     ).also { log.info("Validation exception: {}", e.message) }
 
@@ -70,7 +73,7 @@ class PrisonerFinanceGeneralLedgerApiExceptionHandler {
       ErrorResponse(
         status = HttpStatus.NOT_FOUND,
         userMessage = "No resource found failure",
-        developerMessage = e.message,
+        developerMessage = if (envIsProd) null else e.message,
       ),
     ).also { log.info("No resource found exception: {}", e.message) }
 
@@ -81,7 +84,7 @@ class PrisonerFinanceGeneralLedgerApiExceptionHandler {
       ErrorResponse(
         status = HttpStatus.FORBIDDEN,
         userMessage = "Forbidden",
-        developerMessage = e.message,
+        developerMessage = if (envIsProd) null else e.message,
       ),
     ).also { log.debug("Forbidden (403) returned: {}", e.message) }
 
@@ -92,7 +95,7 @@ class PrisonerFinanceGeneralLedgerApiExceptionHandler {
       ErrorResponse(
         status = HttpStatus.METHOD_NOT_ALLOWED,
         userMessage = "Method Not Allowed",
-        developerMessage = e.message,
+        developerMessage = if (envIsProd) null else e.message,
       ),
     ).also { log.debug("Method Not Allowed: {}", e.message) }
 
@@ -103,7 +106,7 @@ class PrisonerFinanceGeneralLedgerApiExceptionHandler {
       ErrorResponse(
         status = HttpStatus.INTERNAL_SERVER_ERROR,
         userMessage = "Internal server error",
-        developerMessage = "Internal server error",
+        developerMessage = if (envIsProd) null else e.message,
       ),
     ).also { log.error("Internal server error", e) }
 
