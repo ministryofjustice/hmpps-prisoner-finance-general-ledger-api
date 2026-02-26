@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.resp
 
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import java.time.Instant
 import java.util.UUID
 
@@ -15,6 +16,8 @@ class AccountResponse(
   val createdBy: String,
   @field:Schema(description = "The date/time of when the account was created in UTC/Instant format")
   val createdAt: Instant,
+  @field:Schema(description = "The type of account (PRISONER or PRISON)", example = "PRISONER", required = true)
+  val type: AccountType,
   @field:Schema(description = "The collection of sub-accounts within the account")
   val subAccounts: List<SubAccountResponse> = emptyList(),
 ) {
@@ -24,6 +27,7 @@ class AccountResponse(
       accountEntity.reference,
       accountEntity.createdBy,
       accountEntity.createdAt,
+      accountEntity.type,
       accountEntity.subAccounts.map { SubAccountResponse.fromEntity(it) },
     )
   }

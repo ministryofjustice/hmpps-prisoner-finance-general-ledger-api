@@ -36,7 +36,7 @@ class AccountEntity(
 
   @Enumerated(EnumType.STRING)
   @Column(name = "type", nullable = true)
-  val type: AccountType = AccountType.PRISONER,
+  val type: AccountType = AccountType.PRISON,
 
 ) {
   @OneToMany(mappedBy = "parentAccountEntity")
