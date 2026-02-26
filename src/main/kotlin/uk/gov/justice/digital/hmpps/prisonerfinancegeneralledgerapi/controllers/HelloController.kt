@@ -52,7 +52,7 @@ class HelloController {
   fun hello(user: Principal): ResponseEntity<String> {
     val environmentString = System.getenv("ENVIRONMENT") ?: "not-set"
     log.info("Environment: $environmentString")
-    return ResponseEntity.ok().body("Hello ${user.name}")
+    return ResponseEntity.ok().body("Hello ${user.name}!")
   }
 
   private companion object {
