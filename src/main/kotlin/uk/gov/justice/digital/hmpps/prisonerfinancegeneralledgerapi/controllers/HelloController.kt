@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.slf4j.LoggerFactory
 import org.springframework.http.MediaType.TEXT_PLAIN_VALUE
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -48,5 +49,13 @@ class HelloController {
   @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW])
   @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
   @GetMapping(path = ["/hello"], produces = [TEXT_PLAIN_VALUE])
-  fun hello(user: Principal): ResponseEntity<String> = ResponseEntity.ok().body("Hello ${user.name}!")
+  fun hello(user: Principal): ResponseEntity<String> {
+    val environmentString = System.getenv("ENVIRONMENT") ?: "not-set"
+    log.info("Environment: $environmentString")
+    return ResponseEntity.ok().body("Hello ${user.name}!")
+  }
+
+  private companion object {
+    private val log = LoggerFactory.getLogger(this::class.java)
+  }
 }
