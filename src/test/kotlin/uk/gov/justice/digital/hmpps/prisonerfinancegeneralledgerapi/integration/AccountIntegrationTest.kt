@@ -11,11 +11,14 @@ import org.springframework.test.web.reactive.server.expectBody
 import tools.jackson.module.kotlin.jsonMapper
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateAccountRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateSubAccountRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountBalanceResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountResponse
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.PrisonerTransactionListResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountResponse
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.transactions.TransactionServiceTest
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.time.Instant
 import java.util.*
@@ -576,6 +579,45 @@ class AccountIntegrationTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .exchange()
         .expectStatus().isNotFound
+    }
+  }
+
+  @Nested
+  inner class GetTransactionsForAccount {
+    @Test
+    fun `Should return 200 and a list of transactions for a prisoner`() {
+      val prisonAccount = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF", AccountType.PRISONER)
+      val prisonCanteen = integrationTestHelpers.createSubAccount(prisonAccount.id, "`1021:CANT")
+
+      val prisonerAccount = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF", AccountType.PRISONER)
+      val prisonerCash = integrationTestHelpers.createSubAccount(prisonAccount.id, "CASH")
+
+
+      val transaction = integrationTestHelpers.createOneToOneTransaction(amount = 10L,
+        debitSubAccountId = prisonerCash.id,
+        creditSubAccountId = prisonCanteen.id,
+        transactionReference = "VAPES",
+        description = "test"
+      )
+
+
+      val responseBody = webTestClient.get()
+        .uri("/accounts/${prisonerAccount.id}/transactions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<List<PrisonerTransactionListResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(responseBody[0].id).isEqualTo(transaction.id)
+      assertThat(responseBody[0].postings).hasSize(2)
+      assertThat(responseBody).hasSize(1)
+
+
+      responseBody[0].postings.any {
+        posting -> posting.type == PostingType.DR
+      }
     }
   }
 }
