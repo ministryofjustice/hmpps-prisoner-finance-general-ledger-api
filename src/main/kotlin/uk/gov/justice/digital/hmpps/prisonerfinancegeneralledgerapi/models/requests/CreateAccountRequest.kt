@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests
 
+import jakarta.validation.constraints.NotNull
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.validators.referenceStringValidator.ValidReferenceString
@@ -10,6 +11,7 @@ data class CreateAccountRequest(
   @field:Schema(description = "A unique reference to identify an account, example LEI or 123456")
   val accountReference: String,
 
+  @field:NotNull
   @field:Schema(description = "A account type to signify if the account is a PRISONER or PRISON", example = "PRISONER", required = true)
-  val type: AccountType,
+  var type: AccountType,
 )
