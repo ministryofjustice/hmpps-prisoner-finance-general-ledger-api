@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses
 
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.Valid
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.TransactionEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
@@ -14,7 +15,7 @@ data class PrisonerTransactionListResponse(
   val description: String,
   @field:Schema(description = "The time of when the transaction is created in UTC/Instant format")
   val timestamp: Instant,
-  // @field:Valid
+  @field:Valid
   @field:Schema(description = "A collection of postings for the transaction")
   val postings: List<PrisonerPostingListResponse>,
 ) {
@@ -55,7 +56,7 @@ data class PrisonerPostingListResponse(
   val type: PostingType,
   @field:Schema(description = "The posting monetary amount in pence")
   val amount: Long,
-  // @field:Valid
+  @field:Valid
   @field:Schema(description = "The sub account associated with the posting")
   val subAccount: SubAccountListResponse,
 )
@@ -65,7 +66,7 @@ data class SubAccountListResponse(
   val id: UUID,
   @field:Schema(description = "A reference to identify the sub-account")
   val subAccountReference: String,
-  // @field:Valid
+  @field:Valid
   @field:Schema(description = "The parent account associated with the sub-account")
   val parentAccount: ParentAccountListResponse,
 )
