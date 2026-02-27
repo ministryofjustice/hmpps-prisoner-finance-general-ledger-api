@@ -20,11 +20,6 @@ class TransactionDataRepositoryTest @Autowired constructor(
 
   lateinit var testAccount: AccountEntity
 
-  // TO-DO
-  // 1 - Account has no transactions
-  // 2 - Account has transactions for one sub-account
-  // 3 - Account has transactions for multiple sub-accounts
-
   @BeforeEach
   fun setup() {
     testAccount = repoTestHelpers.createAccount("TEST_ACCOUNT_REF")
