@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.reposito
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.TransactionDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateTransactionRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.PrisonerTransactionListResponse
 import java.util.UUID
 
 @Service
@@ -49,5 +50,11 @@ class TransactionService(
   fun readTransaction(transactionId: UUID): TransactionEntity? {
     val transactionEntity = transactionDataRepository.findTransactionById(transactionId)
     return transactionEntity
+  }
+
+  fun listTransactionsForPrisoner(accountId: UUID): List<PrisonerTransactionListResponse> {
+    val transactionEntityList = transactionDataRepository.findTransactionsByAccountId(accountId)
+
+    return transactionEntityList.map { PrisonerTransactionListResponse.fromEntity(it, accountId) }
   }
 }

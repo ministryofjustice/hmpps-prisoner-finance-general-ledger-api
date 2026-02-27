@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreatePostingRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateTransactionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountResponse
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.PrisonerTransactionListResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.TransactionResponse
 import java.time.Instant
@@ -460,7 +461,13 @@ class TransactionIntegrationTest : IntegrationTestBase() {
         subAccounts.add(integrationTestHelpers.createSubAccount(account.id, account.reference))
       }
 
-      transaction = integrationTestHelpers.createOneToOneTransaction(amount = 1L, debitSubAccountId = subAccounts[1].id, creditSubAccountId = subAccounts[0].id, transactionReference = "TX", description = "DESCRIPTION")
+      transaction = integrationTestHelpers.createOneToOneTransaction(
+        amount = 1L,
+        debitSubAccountId = subAccounts[1].id,
+        creditSubAccountId = subAccounts[0].id,
+        transactionReference = "TX",
+        description = "DESCRIPTION",
+      )
     }
 
     @Test
@@ -548,6 +555,156 @@ class TransactionIntegrationTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf("ROLE__WRONG_ROLE")))
         .exchange()
         .expectStatus().isForbidden
+    }
+  }
+
+  @Nested
+  inner class GetTransactionsForAccount {
+
+    @Test
+    fun `Should return 200 and an empty list when there are no transactions`() {
+      val prisonerAccount = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF_PRISONER", AccountType.PRISONER)
+
+      val responseBody = webTestClient.get()
+        .uri("/accounts/${prisonerAccount.id}/transactions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<List<PrisonerTransactionListResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(responseBody).hasSize(0)
+    }
+
+    @Test
+    fun `Should return 200 and a list of transactions`() {
+      val prisonAccount = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF_PRISON", AccountType.PRISON)
+      val prisonCanteen = integrationTestHelpers.createSubAccount(prisonAccount.id, "`1021:CANT")
+
+      val prisonerAccount = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF_PRISONER", AccountType.PRISONER)
+      val prisonerCash = integrationTestHelpers.createSubAccount(prisonerAccount.id, "CASH")
+
+      val transaction = integrationTestHelpers.createOneToOneTransaction(
+        amount = 10L,
+        debitSubAccountId = prisonerCash.id,
+        creditSubAccountId = prisonCanteen.id,
+        transactionReference = "VAPES",
+        description = "test",
+      )
+
+      val responseBody = webTestClient.get()
+        .uri("/accounts/${prisonerAccount.id}/transactions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<List<PrisonerTransactionListResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(responseBody).hasSize(1)
+      assertThat(responseBody[0].id).isEqualTo(transaction.id)
+      assertThat(responseBody[0].description).isEqualTo(transaction.description)
+      responseBody[0].postings.forEach { posting ->
+        if (posting.subAccount.id == prisonerCash.id) {
+          assertThat(posting.amount).isEqualTo(transaction.amount)
+        } else {
+          assertThat(posting.amount).isEqualTo(transaction.amount)
+        }
+      }
+
+      assertThat(responseBody[0].postings).hasSize(2)
+      responseBody[0].postings.any { posting ->
+        posting.type == PostingType.CR
+      }
+      responseBody[0].postings.any { posting ->
+        posting.type == PostingType.DR
+      }
+    }
+
+    @Test
+    fun `Should return 200 and a list of transactions only for that prisoner order by timestamp descending`() {
+      val prisonAccount = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF_PRISON", AccountType.PRISON)
+      val prisonCanteen = integrationTestHelpers.createSubAccount(prisonAccount.id, "`1021:CANT")
+
+      val prisonerOneAccount = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF_PRISONER_ONE", AccountType.PRISONER)
+      val prisonerOneCash = integrationTestHelpers.createSubAccount(prisonerOneAccount.id, "CASH")
+
+      val prisonerTwoAccount = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF_PRISONER_TWO", AccountType.PRISONER)
+      val prisonerTwoCash = integrationTestHelpers.createSubAccount(prisonerTwoAccount.id, "CASH")
+
+      val oneToOneTransaction = integrationTestHelpers.createOneToOneTransaction(
+        amount = 10L,
+        debitSubAccountId = prisonerOneCash.id,
+        creditSubAccountId = prisonCanteen.id,
+        transactionReference = "VAPES",
+        description = "BLUEBERRY",
+      )
+
+      val oneToManyTransaction = integrationTestHelpers.createOneToManyTransaction(
+        10L,
+        prisonCanteen.id,
+        listOf(prisonerOneCash.id, prisonerTwoCash.id),
+        "CANTEEN_REFUND",
+      )
+
+      val responseBody = webTestClient.get()
+        .uri("/accounts/${prisonerOneAccount.id}/transactions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<List<PrisonerTransactionListResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(responseBody).hasSize(2)
+      assertThat(responseBody[0].id).isEqualTo(oneToManyTransaction.id)
+      assertThat(responseBody[0].description).isEqualTo(oneToManyTransaction.description)
+
+      val returnedOneToManyTransaction = responseBody[0]
+
+      assertThat(returnedOneToManyTransaction.postings).hasSize(2)
+
+      returnedOneToManyTransaction.postings.forEach { posting ->
+        if (posting.subAccount.id == prisonerOneCash.id) {
+          assertThat(posting.type).isEqualTo(PostingType.CR)
+          assertThat(posting.amount).isEqualTo(10L)
+        } else {
+          assertThat(posting.type).isEqualTo(PostingType.DR)
+          assertThat(posting.amount).isEqualTo(20L)
+        }
+      }
+
+      assertThat(responseBody[1].id).isEqualTo(oneToOneTransaction.id)
+      assertThat(responseBody[1].description).isEqualTo(oneToOneTransaction.description)
+    }
+
+    @Test
+    fun `should return 400 when invalid UUID is provided`() {
+      webTestClient.get()
+        .uri("/accounts/NOT_A_VALID_UUID/transactions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    fun `should return 403 when requesting transaction with incorrect role`() {
+      webTestClient.get()
+        .uri("/accounts/${UUID.randomUUID()}/transactions")
+        .headers(setAuthorisation(roles = listOf("ROLE__WRONG_ROLE")))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `should return 404 when sent a valid UUID that doesn't exist`() {
+      val uuid = UUID.randomUUID()
+      webTestClient.get()
+        .uri("/accounts/$uuid/transactions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isNotFound
     }
   }
 }

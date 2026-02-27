@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.TransactionEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.IdempotencyKeyDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
@@ -25,6 +26,8 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.reposito
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreatePostingRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateTransactionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.TransactionService
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.helpers.ServiceTestHelpers
+import java.time.Instant
 import java.time.LocalDateTime
 import java.util.UUID
 
@@ -50,9 +53,12 @@ class TransactionServiceTest {
   lateinit var transactionService: TransactionService
 
   lateinit var transactionEntity: TransactionEntity
-  lateinit var postingEntities: List<PostingEntity>
 
+  var serviceTestHelpers = ServiceTestHelpers()
+
+  lateinit var postingEntities: List<PostingEntity>
   val transactionUUID: UUID = UUID.fromString("00000000-0000-0000-0000-000000000000")
+
   val date = LocalDateTime.of(2025, 1, 1, 0, 0, 0).toInstant(java.time.ZoneOffset.UTC)
   val timeStamp = LocalDateTime.of(2025, 12, 24, 0, 0, 0).toInstant(java.time.ZoneOffset.UTC)
   val transactionDescription = "TX"
@@ -145,11 +151,109 @@ class TransactionServiceTest {
     }
   }
 
-  @Test
-  fun `Should call the data repository and return null if transaction is not found`() {
-    val incorrectUUID = UUID.fromString("00000000-0000-0000-0000-000000000001")
-    whenever(transactionDataRepository.findTransactionById(incorrectUUID)).thenReturn(null)
-    val retrievedTransaction = transactionService.readTransaction(incorrectUUID)
-    assertThat(retrievedTransaction).isNull()
+  @Nested
+  inner class FindTransactionById {
+
+    @Test
+    fun `Should call the data repository and return null if transaction is not found`() {
+      val incorrectUUID = UUID.fromString("00000000-0000-0000-0000-000000000001")
+      whenever(transactionDataRepository.findTransactionById(incorrectUUID)).thenReturn(null)
+      val retrievedTransaction = transactionService.readTransaction(incorrectUUID)
+      assertThat(retrievedTransaction).isNull()
+    }
+  }
+
+  @Nested
+  inner class ListTransactionsForPrisoner {
+
+    @Test
+    fun `should return empty list if there are no transactions`() {
+      whenever(transactionDataRepository.findTransactionsByAccountId(any())).thenReturn(emptyList())
+      val txns = transactionService.listTransactionsForPrisoner(UUID.randomUUID())
+      assertThat(txns).isEmpty()
+    }
+
+    @Test
+    fun `should return a transaction when it exists`() {
+      val accountEntity = serviceTestHelpers.createAccount("parent1", AccountType.PRISONER)
+      val subAccountEntity1 = serviceTestHelpers.createSubAccount("sub1", accountEntity)
+      val subAccountEntity2 = serviceTestHelpers.createSubAccount("sub2", accountEntity)
+
+      val description = "description1"
+      val transactionDateTime = Instant.now()
+      val amount = 10L
+      val transactionEntity = serviceTestHelpers.createOneToOneTransaction(
+        amount,
+        transactionDateTime,
+        subAccountEntity1,
+        subAccountEntity2,
+        description = description,
+      )
+
+      whenever(transactionDataRepository.findTransactionsByAccountId(any()))
+        .thenReturn(listOf(transactionEntity))
+
+      val txns = transactionService.listTransactionsForPrisoner(accountEntity.id)
+
+      assertThat(txns).hasSize(1)
+      assertThat(txns[0].id).isEqualTo(transactionEntity.id)
+      assertThat(txns[0].description).isEqualTo(description)
+      txns[0].postings.forEach { posting ->
+        assertThat(posting.amount).isEqualTo(amount)
+      }
+
+      assertThat(txns[0].postings).hasSize(2)
+      txns[0].postings.any { posting ->
+        posting.type == PostingType.CR
+      }
+      txns[0].postings.any { posting ->
+        posting.type == PostingType.DR
+      }
+    }
+
+    @Test
+    fun `should return one credit and one debit per transaction`() {
+      val prisonEntity = serviceTestHelpers.createAccount("LEI", AccountType.PRISON)
+      val prisoner1Entity = serviceTestHelpers.createAccount("prisoner1", AccountType.PRISONER)
+      val prisoner2Entity = serviceTestHelpers.createAccount("prisoner2", AccountType.PRISONER)
+
+      val subAccountPrisonEntity = serviceTestHelpers.createSubAccount("subPrison", prisonEntity)
+      val subAccountPrisoner1Entity = serviceTestHelpers.createSubAccount("subPrisoner1", prisoner1Entity)
+      val subAccountPrisoner2Entity = serviceTestHelpers.createSubAccount("subPrisoner2", prisoner2Entity)
+
+      val description = "description1"
+      val amount = 10L
+      val transactionEntity = serviceTestHelpers.createOneToManyTransaction(
+        ref = "Canteen",
+        subAccountPrisonEntity,
+        listOf(subAccountPrisoner1Entity, subAccountPrisoner2Entity),
+        amount,
+        description = description,
+      )
+
+      whenever(transactionDataRepository.findTransactionsByAccountId(any()))
+        .thenReturn(listOf(transactionEntity))
+
+      val txns = transactionService.listTransactionsForPrisoner(prisoner1Entity.id)
+
+      assertThat(txns).hasSize(1)
+      assertThat(txns[0].id).isEqualTo(transactionEntity.id)
+      assertThat(txns[0].description).isEqualTo(description)
+      txns[0].postings.forEach { posting ->
+        if (posting.subAccount.id == subAccountPrisoner1Entity.id) {
+          assertThat(posting.amount).isEqualTo(amount)
+        } else {
+          assertThat(posting.amount).isEqualTo(amount * 2)
+        }
+      }
+
+      assertThat(txns[0].postings).hasSize(2)
+      txns[0].postings.any { posting ->
+        posting.type == PostingType.CR
+      }
+      txns[0].postings.any { posting ->
+        posting.type == PostingType.DR
+      }
+    }
   }
 }

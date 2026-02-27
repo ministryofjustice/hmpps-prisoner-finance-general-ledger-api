@@ -26,7 +26,10 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.CustomException
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateTransactionRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountBalanceResponse
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.PrisonerTransactionListResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.TransactionResponse
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.AccountService
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.IdempotencyService
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.TransactionService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
@@ -38,6 +41,7 @@ import java.util.UUID
 class TransactionController(
   private val transactionService: TransactionService,
   private val idempotencyService: IdempotencyService,
+  private val accountService: AccountService,
 ) {
   @Operation(
     summary = "Create a new transaction",
@@ -173,5 +177,46 @@ class TransactionController(
     return ResponseEntity<TransactionResponse>.status(HttpStatus.OK).body(
       TransactionResponse.fromEntity(transactionEntity = transactionEntity),
     )
+  }
+
+  @Operation(
+    summary = "Get list of transaction for an account",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Retrieved the account balance",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = AccountBalanceResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Bad Request - Invalid UUID for accountId",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized - requires a valid OAuth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden - requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "500",
+        description = "Internal Server Error - An unexpected error occurred.",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW])
+  @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
+  @GetMapping("/accounts/{accountId}/transactions")
+  fun getListOfTransactionsByAccountId(@PathVariable accountId: UUID): ResponseEntity<List<PrisonerTransactionListResponse>> {
+    accountService.readAccount(accountId) ?: throw CustomException(message = "Account not found", status = HttpStatus.NOT_FOUND)
+    val transactions = transactionService.listTransactionsForPrisoner(accountId)
+    return ResponseEntity.ok(transactions)
   }
 }
