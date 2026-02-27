@@ -80,6 +80,47 @@ class IntegrationTestHelpers(
     return subAccount
   }
 
+  fun createOneToManyTransaction(amountToCreditEachAccount: Long, debitSubAccountId: UUID, creditSubAccountIds: List<UUID>, transactionReference: String, description: String = ""): TransactionResponse {
+    val postings = mutableListOf<CreatePostingRequest>(
+      CreatePostingRequest(
+        subAccountId = debitSubAccountId,
+        amount = amountToCreditEachAccount * creditSubAccountIds.size,
+        type = PostingType
+          .DR,
+      ),
+    )
+    for (creditSubAccountId in creditSubAccountIds) {
+      postings.add(
+        CreatePostingRequest(
+          subAccountId = creditSubAccountId,
+          amount = amountToCreditEachAccount,
+          type = PostingType
+            .CR,
+        ),
+      )
+    }
+
+    val transactionPayload = CreateTransactionRequest(
+      reference = transactionReference,
+      description = description,
+      timestamp = Instant.now(),
+      amount = amountToCreditEachAccount * creditSubAccountIds.size,
+      postings = postings,
+    )
+
+    val transactionResponse = webTestClient.post().uri("/transactions")
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+      .headers(setIdempotencyKey(UUID.randomUUID()))
+      .bodyValue(transactionPayload)
+      .exchange()
+      .expectStatus().isCreated
+      .expectBody<TransactionResponse>()
+      .returnResult()
+      .responseBody!!
+
+    return transactionResponse
+  }
+
   fun createOneToOneTransaction(amount: Long, debitSubAccountId: UUID, creditSubAccountId: UUID, transactionReference: String, description: String = ""): TransactionResponse {
     val postings = listOf(
       CreatePostingRequest(
