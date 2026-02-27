@@ -186,7 +186,7 @@ class TransactionController(
     value = [
       ApiResponse(
         responseCode = "200",
-        description = "Retrieved the account balance",
+        description = "Retrieved a list of transactions for the account",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = AccountBalanceResponse::class))],
       ),
       ApiResponse(
