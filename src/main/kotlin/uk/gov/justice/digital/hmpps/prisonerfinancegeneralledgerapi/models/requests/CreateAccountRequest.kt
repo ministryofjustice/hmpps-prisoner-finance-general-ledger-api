@@ -1,7 +1,7 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests
 
-import jakarta.validation.constraints.NotNull
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.NotNull
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.validators.referenceStringValidator.ValidReferenceString
 
