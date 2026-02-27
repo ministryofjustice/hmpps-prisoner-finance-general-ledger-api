@@ -76,6 +76,6 @@ data class ParentAccountListResponse(
   val id: UUID,
   @field:Schema(description = "A reference to identify the parent account")
   val reference: String,
-  @field:Schema(description = "The type of parent account, either Prison or Prisoner (TODO rebase)")
+  @field:Schema(description = "The type of parent account, either Prison or Prisoner")
   val type: AccountType,
 )
