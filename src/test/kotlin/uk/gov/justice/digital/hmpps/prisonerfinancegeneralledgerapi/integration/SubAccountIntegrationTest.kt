@@ -10,6 +10,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.expectBody
 import tools.jackson.module.kotlin.jsonMapper
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateAccountRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateStatementBalanceRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateSubAccountRequest
@@ -38,7 +39,7 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
 
     @BeforeEach
     fun seedParentAccount() {
-      dummyParentAccountOne = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF")
+      dummyParentAccountOne = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF", AccountType.PRISONER)
     }
 
     @Test
@@ -109,7 +110,7 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
         .uri("/accounts")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF_2"))
+        .bodyValue(CreateAccountRequest("TEST_ACCOUNT_REF_2", AccountType.PRISONER))
         .exchange()
         .expectBody<AccountResponse>()
         .returnResult()
@@ -232,10 +233,10 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
 
     @BeforeEach
     fun seedSubAccountsToFind() {
-      dummyParentAccountOne = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF_1")
+      dummyParentAccountOne = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF_1", AccountType.PRISONER)
       dummySubAccountOne = integrationTestHelpers.createSubAccount(dummyParentAccountOne.id, "TEST_SUB_ACCOUNT_REF_1")
 
-      dummyParentAccountTwo = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF_2")
+      dummyParentAccountTwo = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF_2", AccountType.PRISONER)
       dummySubAccountTwo = integrationTestHelpers.createSubAccount(dummyParentAccountTwo.id, "TEST_SUB_ACCOUNT_REF_1")
     }
 
@@ -352,7 +353,7 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
 
     @BeforeEach
     fun seedAccountAndSubAccount() {
-      dummyParentAccountOne = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF")
+      dummyParentAccountOne = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF", AccountType.PRISONER)
       dummySubAccountOne = integrationTestHelpers.createSubAccount(dummyParentAccountOne.id, "TEST_SUB_ACCOUNT_REF_1")
     }
 
@@ -416,10 +417,10 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
 //      The result of this set up should leave sub account one with a balance of 5
 //      and sub account two with a balance of -5
 
-      dummyParentAccountOne = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF_1")
+      dummyParentAccountOne = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF_1", AccountType.PRISONER)
       dummySubAccountOne = integrationTestHelpers.createSubAccount(dummyParentAccountOne.id, "TEST_SUB_ACCOUNT_REF_1")
 
-      dummyParentAccountTwo = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF_2")
+      dummyParentAccountTwo = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF_2", AccountType.PRISONER)
       dummySubAccountTwo = integrationTestHelpers.createSubAccount(dummyParentAccountTwo.id, "TEST_SUB_ACCOUNT_REF_2")
 
 //      Send 10 from subAccountTwo to subAccountOne
@@ -539,7 +540,7 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
 
     @BeforeEach
     fun seedAccountAndSubAccount() {
-      dummyParentAccountOne = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF")
+      dummyParentAccountOne = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF", AccountType.PRISONER)
       dummySubAccountOne = integrationTestHelpers.createSubAccount(dummyParentAccountOne.id, "TEST_SUB_ACCOUNT_REF_1")
     }
 

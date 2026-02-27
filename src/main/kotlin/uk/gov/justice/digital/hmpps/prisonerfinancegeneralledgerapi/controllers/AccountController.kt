@@ -81,7 +81,7 @@ class AccountController(
   @PostMapping(value = ["/accounts"], consumes = [MediaType.APPLICATION_JSON_VALUE])
   fun createAccount(@Valid @RequestBody body: CreateAccountRequest, user: Principal): ResponseEntity<AccountResponse> {
     try {
-      val accountEntity = accountService.createAccount(body.accountReference.uppercase(), createdBy = user.name)
+      val accountEntity = accountService.createAccount(body.accountReference.uppercase(), createdBy = user.name, accountType = body.type)
       return ResponseEntity<AccountResponse>.status(HttpStatus.CREATED).body(
         AccountResponse.fromEntity(accountEntity = accountEntity),
       )

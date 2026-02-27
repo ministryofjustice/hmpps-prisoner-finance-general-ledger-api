@@ -6,6 +6,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.IdempotencyKeyDataRepository
@@ -52,12 +53,12 @@ class IntegrationTestHelpers(
     key: UUID,
   ): (HttpHeaders) -> Unit = { it.set("Idempotency-Key", key.toString()) }
 
-  fun createAccount(reference: String): AccountResponse {
+  fun createAccount(reference: String, accountType: AccountType): AccountResponse {
     val account = webTestClient.post()
       .uri("/accounts")
       .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
       .contentType(MediaType.APPLICATION_JSON)
-      .bodyValue(CreateAccountRequest(reference))
+      .bodyValue(CreateAccountRequest(reference, accountType))
       .exchange()
       .expectBody<AccountResponse>()
       .returnResult()

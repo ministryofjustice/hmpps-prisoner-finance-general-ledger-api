@@ -15,6 +15,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountBalanceResponse
@@ -49,7 +50,7 @@ class AccountServiceTest {
   fun setupDummyAccount() {
     val dummyDate = LocalDateTime.of(2025, 12, 25, 0, 0, 0).toInstant(java.time.ZoneOffset.UTC)
     dummyAccountEntity =
-      AccountEntity(reference = TEST_ACCOUNT_REF, createdBy = TEST_USERNAME, id = dummyUUID, createdAt = dummyDate)
+      AccountEntity(reference = TEST_ACCOUNT_REF, createdBy = TEST_USERNAME, id = dummyUUID, createdAt = dummyDate, type = AccountType.PRISON)
   }
 
   @Nested
@@ -59,7 +60,7 @@ class AccountServiceTest {
     fun `Should call the repository to save the account and return it`() {
       whenever(accountDataRepositoryMock.save(any())).thenReturn(dummyAccountEntity)
       val createdAccountEntity: AccountEntity =
-        accountService.createAccount(reference = TEST_ACCOUNT_REF, createdBy = TEST_USERNAME)
+        accountService.createAccount(reference = TEST_ACCOUNT_REF, createdBy = TEST_USERNAME, accountType = AccountType.PRISON)
       assertThat(createdAccountEntity).isEqualTo(dummyAccountEntity)
 
       verify(accountDataRepositoryMock, times(1)).save(any())
@@ -68,6 +69,7 @@ class AccountServiceTest {
       val accountToSave = captor.firstValue
       assertThat(accountToSave.reference).isEqualTo(TEST_ACCOUNT_REF)
       assertThat(accountToSave.createdBy).isEqualTo(TEST_USERNAME)
+      assertThat(accountToSave.type).isEqualTo(AccountType.PRISON)
     }
   }
 
@@ -177,8 +179,8 @@ class AccountServiceTest {
 
     @BeforeEach
     fun setUp() {
-      dummyPrisonAccount = AccountEntity(reference = "LEI")
-      dummyPrisonerAccount = AccountEntity(reference = "123456")
+      dummyPrisonAccount = AccountEntity(reference = "LEI", type = AccountType.PRISON)
+      dummyPrisonerAccount = AccountEntity(reference = "123456", type = AccountType.PRISONER)
     }
 
     @Test

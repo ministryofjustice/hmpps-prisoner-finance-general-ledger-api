@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreatePostingRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateTransactionRequest
@@ -33,8 +34,8 @@ class TransactionIntegrationTest : IntegrationTestBase() {
 
     @BeforeEach
     fun setup() {
-      for (i in 3 downTo 0 step 1) {
-        val accountResponseBody = integrationTestHelpers.createAccount("TEST_ACCOUNT_$i")
+      for (i in 0..3) {
+        val accountResponseBody = integrationTestHelpers.createAccount("TEST_ACCOUNT_$i", AccountType.PRISONER)
         accounts.add(accountResponseBody)
       }
 
@@ -452,7 +453,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
     @BeforeEach
     fun setUp() {
       for (i in 2 downTo 0 step 1) {
-        accounts.add(integrationTestHelpers.createAccount("$i"))
+        accounts.add(integrationTestHelpers.createAccount("$i", AccountType.PRISONER))
       }
 
       for (account in accounts) {
