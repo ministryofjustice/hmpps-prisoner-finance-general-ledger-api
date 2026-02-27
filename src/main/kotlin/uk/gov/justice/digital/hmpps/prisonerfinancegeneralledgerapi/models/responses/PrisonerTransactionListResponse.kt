@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.resp
 
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.TransactionEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import java.time.Instant
 import java.util.UUID
@@ -17,24 +18,29 @@ data class PrisonerTransactionListResponse(
   val postings: List<PrisonerPostingListResponse> = emptyList(),
 ) {
   companion object {
-    fun fromEntity(transactionEntity: TransactionEntity): PrisonerTransactionListResponse = PrisonerTransactionListResponse(
+    fun fromEntity(transactionEntity: TransactionEntity, prisonerAccountId: UUID): PrisonerTransactionListResponse = PrisonerTransactionListResponse(
       transactionEntity.id,
       transactionEntity.description,
       transactionEntity.timestamp,
-      transactionEntity.postings.map {
-        PrisonerPostingListResponse(
-          it.id,
-          it.type,
-          it.amount,
-          SubAccountListResponse(
-            it.subAccountEntity.id,
-            it.subAccountEntity.reference,
-            ParentAccountListResponse(
-              it.subAccountEntity.parentAccountEntity.id,
-              it.subAccountEntity.parentAccountEntity.reference,
+      transactionEntity.postings
+        .filter {
+          it.subAccountEntity.parentAccountEntity.id == prisonerAccountId ||
+          it.subAccountEntity.parentAccountEntity.type == AccountType.PRISON
+        }
+        .map {
+          PrisonerPostingListResponse(
+            it.id,
+            it.type,
+            it.amount,
+            SubAccountListResponse(
+              it.subAccountEntity.id,
+              it.subAccountEntity.reference,
+              ParentAccountListResponse(
+                it.subAccountEntity.parentAccountEntity.id,
+                it.subAccountEntity.parentAccountEntity.reference,
+              ),
             ),
-          ),
-        )
+          )
       },
     )
   }

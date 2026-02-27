@@ -54,6 +54,7 @@ class TransactionService(
 
   fun listTransactionsForPrisoner(accountId: UUID): List<PrisonerTransactionListResponse> {
     val transactionEntityList = transactionDataRepository.findTransactionsByAccountId(accountId)
-    return transactionEntityList.map { PrisonerTransactionListResponse.fromEntity(it) }
+
+    return transactionEntityList.map { PrisonerTransactionListResponse.fromEntity(it, accountId) }
   }
 }

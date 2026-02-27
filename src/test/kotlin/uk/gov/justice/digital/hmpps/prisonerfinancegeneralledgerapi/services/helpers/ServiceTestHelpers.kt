@@ -5,14 +5,16 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.StatementBalanceEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.TransactionEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import java.time.Instant
 import java.util.UUID
 
 class ServiceTestHelpers {
-  fun createAccount(ref: String): AccountEntity {
+  fun createAccount(ref: String, type: AccountType): AccountEntity {
     val account = AccountEntity(
       reference = ref,
+      type = type,
     )
     return account
   }

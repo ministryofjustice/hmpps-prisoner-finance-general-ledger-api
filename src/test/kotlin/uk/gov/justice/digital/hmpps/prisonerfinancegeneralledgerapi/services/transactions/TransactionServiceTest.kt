@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.TransactionEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.IdempotencyKeyDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
@@ -176,7 +177,7 @@ class TransactionServiceTest {
 
     @Test
     fun `should return a transaction when it exists`() {
-      val accountEntity = serviceTestHelpers.createAccount("parent1")
+      val accountEntity = serviceTestHelpers.createAccount("parent1", AccountType.PRISONER)
       val subAccountEntity1 = serviceTestHelpers.createSubAccount("sub1", accountEntity)
       val subAccountEntity2 = serviceTestHelpers.createSubAccount("sub2", accountEntity)
 
@@ -214,9 +215,9 @@ class TransactionServiceTest {
 
     @Test
     fun `should return one credit and one debit per transaction`() {
-      val prisonEntity = serviceTestHelpers.createAccount("LEI")
-      val prisoner1Entity = serviceTestHelpers.createAccount("prisoner1")
-      val prisoner2Entity = serviceTestHelpers.createAccount("prisoner2")
+      val prisonEntity = serviceTestHelpers.createAccount("LEI", AccountType.PRISON)
+      val prisoner1Entity = serviceTestHelpers.createAccount("prisoner1", AccountType.PRISONER)
+      val prisoner2Entity = serviceTestHelpers.createAccount("prisoner2", AccountType.PRISONER)
 
       val subAccountPrisonEntity = serviceTestHelpers.createSubAccount("subPrison", prisonEntity)
       val subAccountPrisoner1Entity = serviceTestHelpers.createSubAccount("subPrisoner1", prisoner1Entity)
