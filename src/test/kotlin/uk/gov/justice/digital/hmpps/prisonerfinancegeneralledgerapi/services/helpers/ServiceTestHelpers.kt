@@ -1,38 +1,19 @@
-package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.helpers
+package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.helpers
 
-import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager
-import org.springframework.boot.test.context.TestConfiguration
-import org.springframework.context.annotation.Import
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.ContainersConfig
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.StatementBalanceEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.TransactionEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.IdempotencyKeyDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.TransactionDataRepository
 import java.time.Instant
 import java.util.UUID
 
-@Import(ContainersConfig::class)
-@TestConfiguration
-class RepoTestHelpers(
-  private val entityManager: TestEntityManager,
-  private val postingsDataRepository: PostingsDataRepository,
-  private val transactionDataRepository: TransactionDataRepository,
-  private val subAccountDataRepository: SubAccountDataRepository,
-  private val accountDataRepository: AccountDataRepository,
-  private val idempotencyKeyDataRepository: IdempotencyKeyDataRepository,
-) {
+class ServiceTestHelpers {
   fun createAccount(ref: String): AccountEntity {
     val account = AccountEntity(
       reference = ref,
     )
-    entityManager.persist(account)
     return account
   }
 
@@ -41,14 +22,13 @@ class RepoTestHelpers(
       reference = ref,
       parentAccountEntity = account,
     )
-    entityManager.persist(subAccountEntity)
     return subAccountEntity
   }
 
-  fun createOneToOneTransaction(transactionAmount: Long, transactionDateTime: Instant, debitSubAccount: SubAccountEntity, creditSubAccount: SubAccountEntity, timeStamp: Instant? = null): TransactionEntity {
+  fun createOneToOneTransaction(transactionAmount: Long, transactionDateTime: Instant, debitSubAccount: SubAccountEntity, creditSubAccount: SubAccountEntity, timeStamp: Instant? = null, description: String = "TEST_DESCRIPTION_PAST"): TransactionEntity {
     val txInThePast = TransactionEntity(
       reference = UUID.randomUUID().toString(),
-      description = "TEST_DESCRIPTION_PAST",
+      description = description,
       amount = transactionAmount,
       timestamp = timeStamp ?: transactionDateTime,
     )
@@ -70,9 +50,6 @@ class RepoTestHelpers(
     )
 
     txInThePast.postings.addAll(postingsInThePast)
-    entityManager.persist(txInThePast)
-    entityManager.persist(postingsInThePast[0])
-    entityManager.persist(postingsInThePast[1])
 
     return txInThePast
   }
@@ -82,12 +59,14 @@ class RepoTestHelpers(
     debitSubAccount: SubAccountEntity,
     creditSubAccounts: List<SubAccountEntity>,
     amountToCreditEachSubAccount: Long,
+    description: String = "TEST_DESCRIPTION_PAST",
   ): TransactionEntity {
     val overallDebitAmount = amountToCreditEachSubAccount * creditSubAccounts.size
 
     val transaction = TransactionEntity(
       reference = ref,
       amount = overallDebitAmount,
+      description = description,
     )
 
     val postings = mutableListOf<PostingEntity>(
@@ -110,26 +89,12 @@ class RepoTestHelpers(
     }
 
     transaction.postings.addAll(postings)
-    entityManager.persist(transaction)
-    postings.forEach { postingEntity ->
-      entityManager.persist(postingEntity)
-    }
 
     return transaction
   }
 
   fun createStatementBalance(subAccount: SubAccountEntity, amount: Long, balanceDateTime: Instant): StatementBalanceEntity {
     val statementBalance = StatementBalanceEntity(amount = amount, balanceDateTime = balanceDateTime, subAccountEntity = subAccount)
-    entityManager.persist(statementBalance)
     return statementBalance
-  }
-
-  fun clearDb() {
-    idempotencyKeyDataRepository.deleteAll()
-    postingsDataRepository.deleteAll()
-    transactionDataRepository.deleteAll()
-    subAccountDataRepository.deleteAll()
-    accountDataRepository.deleteAll()
-    entityManager.clear()
   }
 }
