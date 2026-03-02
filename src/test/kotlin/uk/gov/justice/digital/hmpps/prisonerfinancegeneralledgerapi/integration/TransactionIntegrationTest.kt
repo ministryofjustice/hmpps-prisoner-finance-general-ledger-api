@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.expectBody
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
@@ -567,7 +568,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
 
       val responseBody = webTestClient.get()
         .uri("/accounts/${prisonerAccount.id}/transactions")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO)))
         .exchange()
         .expectStatus().isOk
         .expectBody<List<PrisonerTransactionListResponse>>()
@@ -595,7 +596,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
 
       val responseBody = webTestClient.get()
         .uri("/accounts/${prisonerAccount.id}/transactions")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO)))
         .exchange()
         .expectStatus().isOk
         .expectBody<List<PrisonerTransactionListResponse>>()
@@ -650,7 +651,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
 
       val responseBody = webTestClient.get()
         .uri("/accounts/${prisonerOneAccount.id}/transactions")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO)))
         .exchange()
         .expectStatus().isOk
         .expectBody<List<PrisonerTransactionListResponse>>()
@@ -683,16 +684,17 @@ class TransactionIntegrationTest : IntegrationTestBase() {
     fun `should return 400 when invalid UUID is provided`() {
       webTestClient.get()
         .uri("/accounts/NOT_A_VALID_UUID/transactions")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO)))
         .exchange()
         .expectStatus().isBadRequest
     }
 
     @Test
     fun `should return 403 when requesting transaction with incorrect role`() {
+      // ENDPOINT IS READ-ONLY
       webTestClient.get()
         .uri("/accounts/${UUID.randomUUID()}/transactions")
-        .headers(setAuthorisation(roles = listOf("ROLE__WRONG_ROLE")))
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .exchange()
         .expectStatus().isForbidden
     }
@@ -702,7 +704,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
       val uuid = UUID.randomUUID()
       webTestClient.get()
         .uri("/accounts/$uuid/transactions")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO)))
         .exchange()
         .expectStatus().isNotFound
     }
