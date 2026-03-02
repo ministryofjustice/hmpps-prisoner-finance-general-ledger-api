@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.controllers
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
+import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -27,7 +28,6 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.CustomExcept
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateTransactionRequest
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountBalanceResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.PrisonerTransactionListResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.TransactionResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.AccountService
@@ -188,7 +188,7 @@ class TransactionController(
       ApiResponse(
         responseCode = "200",
         description = "Retrieved the account balance",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = AccountBalanceResponse::class))],
+        content = [Content(mediaType = "application/json", array = ArraySchema(schema = Schema(implementation = PrisonerTransactionListResponse::class)))],
       ),
       ApiResponse(
         responseCode = "400",
