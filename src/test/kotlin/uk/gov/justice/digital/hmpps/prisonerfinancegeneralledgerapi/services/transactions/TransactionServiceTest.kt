@@ -88,7 +88,7 @@ class TransactionServiceTest {
     @Test
     fun `Save transaction, postings, and idempotency key with the created transaction ID and return it if the idempotency key does not already exist`() {
       val idempotencyKey = UUID.randomUUID()
-      whenever(transactionDataRepository.save(any())).thenReturn(transactionEntity)
+      whenever(transactionDataRepository.save<TransactionEntity>(any())).thenReturn(transactionEntity)
       whenever(postingsDataRepository.saveAll(any<Iterable<PostingEntity>>())).thenReturn(postingEntities)
       whenever(subAccountDataRepository.getSubAccountEntityById(any<UUID>())).thenAnswer { SubAccountEntity(id = it.getArgument(0)) }
 

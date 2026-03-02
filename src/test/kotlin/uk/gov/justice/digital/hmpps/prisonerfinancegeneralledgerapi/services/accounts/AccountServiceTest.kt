@@ -58,7 +58,7 @@ class AccountServiceTest {
 
     @Test
     fun `Should call the repository to save the account and return it`() {
-      whenever(accountDataRepositoryMock.save(any())).thenReturn(dummyAccountEntity)
+      whenever(accountDataRepositoryMock.save<AccountEntity>(any())).thenReturn(dummyAccountEntity)
       val createdAccountEntity: AccountEntity =
         accountService.createAccount(reference = TEST_ACCOUNT_REF, createdBy = TEST_USERNAME, accountType = AccountType.PRISON)
       assertThat(createdAccountEntity).isEqualTo(dummyAccountEntity)

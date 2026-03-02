@@ -71,7 +71,7 @@ class SubAccountServiceTest {
     @Test
     fun `Should call the repository to save the sub account and return it`() {
       whenever(accountDataRepository.findAccountById(dummyParentAccountUUID)).thenReturn(dummyParentAccountEntity)
-      whenever(subAccountDataRepositoryMock.save(any())).thenReturn(dummySubAccountEntity)
+      whenever(subAccountDataRepositoryMock.save<SubAccountEntity>(any())).thenReturn(dummySubAccountEntity)
       val createdSubAccount = subAccountService.createSubAccount(
         reference = TEST_SUB_ACCOUNT_REF,
         createdBy = TEST_USERNAME,
@@ -190,7 +190,7 @@ class SubAccountServiceTest {
     fun `should save the balance if the provided sub account exists`() {
       val dummyStatementBalanceEntity = StatementBalanceEntity(subAccountEntity = dummySubAccountEntity, amount = 10, balanceDateTime = Instant.now())
       whenever(subAccountDataRepositoryMock.getSubAccountEntityById(dummySubAccountUUID)).thenReturn(dummySubAccountEntity)
-      whenever(statementBalanceDataRepository.save(any())).thenReturn(dummyStatementBalanceEntity)
+      whenever(statementBalanceDataRepository.save<StatementBalanceEntity>(any())).thenReturn(dummyStatementBalanceEntity)
 
       val returnedBalance = subAccountService.createStatementBalance(dummySubAccountUUID, 10, Instant.now())
       assertThat(returnedBalance).isEqualTo(dummyStatementBalanceEntity)
