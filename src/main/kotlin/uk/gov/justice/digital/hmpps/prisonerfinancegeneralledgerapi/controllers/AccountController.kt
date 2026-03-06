@@ -136,8 +136,8 @@ class AccountController(
       ),
     ],
   )
-  @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW])
-  @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
+  @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO, ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW])
+  @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO','$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
   @GetMapping("/accounts/{accountUUID}")
   fun getAccount(@PathVariable accountUUID: UUID): ResponseEntity<AccountResponse> {
     val accountEntity = accountService.readAccount(accountUUID)
@@ -185,8 +185,8 @@ class AccountController(
       ),
     ],
   )
-  @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO])
-  @PreAuthorize("hasRole('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO') || hasRole('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
+  @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO, ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW])
+  @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO','$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
   @GetMapping("/accounts")
   fun getAccounts(@ValidReferenceString @RequestParam reference: String?): ResponseEntity<List<AccountResponse>> {
 //    If no params are provided, return 400. In future updates, this needs to account for all params (&&).
@@ -235,8 +235,8 @@ class AccountController(
       ),
     ],
   )
-  @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW])
-  @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
+  @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO, ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW])
+  @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO','$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
   @GetMapping("/accounts/{accountId}/balance")
   fun getAccountBalance(@PathVariable accountId: UUID, @ValidReferenceString @RequestParam prisonRef: String?): ResponseEntity<AccountBalanceResponse> {
     var accountBalanceResponse: AccountBalanceResponse?

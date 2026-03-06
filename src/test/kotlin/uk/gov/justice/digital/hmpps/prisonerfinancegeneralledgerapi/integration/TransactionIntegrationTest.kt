@@ -694,7 +694,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
       // ENDPOINT IS READ-ONLY
       webTestClient.get()
         .uri("/accounts/${UUID.randomUUID()}/transactions")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .headers(setAuthorisation(roles = listOf("ROLE__WRONG_ROLE")))
         .exchange()
         .expectStatus().isForbidden
     }

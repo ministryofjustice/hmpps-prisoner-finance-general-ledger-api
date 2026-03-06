@@ -315,7 +315,7 @@ class AccountIntegrationTest : IntegrationTestBase() {
       integrationTestHelpers.createAccount("TEST_ACCOUNT_REF", AccountType.PRISONER)
       val responseBody = webTestClient.get()
         .uri("/accounts?reference=NOT_A_MATCH")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO)))
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .exchange()
         .expectStatus().isOk
         .expectBody<List<AccountResponse>>()
