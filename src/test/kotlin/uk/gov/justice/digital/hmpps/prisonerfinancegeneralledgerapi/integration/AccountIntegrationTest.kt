@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.expectBody
 import tools.jackson.module.kotlin.jsonMapper
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateAccountRequest
@@ -314,7 +315,7 @@ class AccountIntegrationTest : IntegrationTestBase() {
       integrationTestHelpers.createAccount("TEST_ACCOUNT_REF", AccountType.PRISONER)
       val responseBody = webTestClient.get()
         .uri("/accounts?reference=NOT_A_MATCH")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO)))
         .exchange()
         .expectStatus().isOk
         .expectBody<List<AccountResponse>>()
@@ -341,7 +342,7 @@ class AccountIntegrationTest : IntegrationTestBase() {
 
       val responseBody = webTestClient.get()
         .uri("/accounts?reference=${dummyAccount.reference}")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO)))
         .exchange()
         .expectStatus().isOk
         .expectBody<List<AccountResponse>>()
@@ -359,7 +360,7 @@ class AccountIntegrationTest : IntegrationTestBase() {
       val dummyAccount = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF", AccountType.PRISONER)
       val responseBody = webTestClient.get()
         .uri("/accounts?reference=${dummyAccount.reference.lowercase()}")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO)))
         .exchange()
         .expectStatus().isOk
         .expectBody<List<AccountResponse>>()
@@ -390,7 +391,7 @@ class AccountIntegrationTest : IntegrationTestBase() {
     fun `should return 400 Bad request if no query parameters are provided`() {
       val responseBody = webTestClient.get()
         .uri("/accounts")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO)))
         .exchange()
         .expectStatus().isBadRequest
         .expectBody<ErrorResponse>()
@@ -402,7 +403,7 @@ class AccountIntegrationTest : IntegrationTestBase() {
     fun `should return 400 Bad request if query parameters is an empty string`() {
       val responseBody = webTestClient.get()
         .uri("/accounts?reference=")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO)))
         .exchange()
         .expectStatus().isBadRequest
         .expectBody<ErrorResponse>()
