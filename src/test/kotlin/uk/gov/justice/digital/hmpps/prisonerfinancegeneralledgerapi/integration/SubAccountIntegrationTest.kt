@@ -5,10 +5,13 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.expectBody
 import tools.jackson.module.kotlin.jsonMapper
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateAccountRequest
@@ -238,6 +241,29 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
 
       dummyParentAccountTwo = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF_2", AccountType.PRISONER)
       dummySubAccountTwo = integrationTestHelpers.createSubAccount(dummyParentAccountTwo.id, "TEST_SUB_ACCOUNT_REF_1")
+    }
+
+    @ParameterizedTest
+    @ValueSource(
+      strings = [
+        ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO,
+        ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW,
+      ],
+    )
+    fun `Should return 200 when using a valid role and a list with only one subAccount matching the references provided`(role: String) {
+      val responseBody = webTestClient.get()
+        .uri("/sub-accounts?reference=${dummySubAccountOne.reference}&accountReference=${dummyParentAccountOne.reference}")
+        .headers(setAuthorisation(roles = listOf(role)))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<List<SubAccountResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(responseBody).hasSize(1)
+      assertThat(responseBody.first().id).isEqualTo(dummySubAccountOne.id)
+      assertThat(responseBody.first().reference).isEqualTo(dummySubAccountOne.reference)
+      assertThat(responseBody.first().parentAccountId).isEqualTo(dummySubAccountOne.parentAccountId)
     }
 
     @Test
