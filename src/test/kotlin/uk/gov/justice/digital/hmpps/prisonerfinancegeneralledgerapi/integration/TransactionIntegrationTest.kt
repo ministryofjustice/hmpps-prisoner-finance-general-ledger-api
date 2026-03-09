@@ -5,6 +5,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO
@@ -469,6 +471,36 @@ class TransactionIntegrationTest : IntegrationTestBase() {
         transactionReference = "TX",
         description = "DESCRIPTION",
       )
+    }
+
+    @ParameterizedTest
+    @ValueSource(
+      strings = [
+        ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO,
+        ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW,
+      ],
+    )
+    fun `should return 200 transaction with postings when sent a valid id when using either role`(role: String) {
+      val transactionResponse = webTestClient.get()
+        .uri("/transactions/${transaction.id}")
+        .headers(setAuthorisation(roles = listOf(role)))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<TransactionResponse>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(transactionResponse.amount).isEqualTo(1L)
+      assertThat(transactionResponse.description).isEqualTo("DESCRIPTION")
+      assertThat(transactionResponse.reference).isEqualTo("TX")
+      assertThat(transactionResponse.postings).hasSize(2)
+      assertThat(transactionResponse.postings[0].amount).isEqualTo(1L)
+      assertThat(transactionResponse.postings[0].subAccountID).isEqualTo(subAccounts[0].id)
+      assertThat(transactionResponse.postings[0].type).isEqualTo(PostingType.CR)
+
+      assertThat(transactionResponse.postings[1].amount).isEqualTo(1L)
+      assertThat(transactionResponse.postings[1].subAccountID).isEqualTo(subAccounts[1].id)
+      assertThat(transactionResponse.postings[1].type).isEqualTo(PostingType.DR)
     }
 
     @Test

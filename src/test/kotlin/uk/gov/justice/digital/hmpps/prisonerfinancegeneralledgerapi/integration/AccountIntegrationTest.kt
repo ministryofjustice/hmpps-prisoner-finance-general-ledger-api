@@ -5,6 +5,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.expectBody
@@ -290,6 +292,31 @@ class AccountIntegrationTest : IntegrationTestBase() {
 
   @Nested
   inner class FindAccounts {
+
+    @ParameterizedTest
+    @ValueSource(
+      strings = [
+        ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO,
+        ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW,
+      ],
+    )
+    fun `should return 200 OK when using a valid role and reference query matches an account`(role: String) {
+      val dummyAccount = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF", AccountType.PRISONER)
+      val responseBody = webTestClient.get()
+        .uri("/accounts?reference=TEST_ACCOUNT_REF")
+        .headers(setAuthorisation(roles = listOf(role)))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<List<AccountResponse>>()
+        .returnResult()
+        .responseBody!!
+      assertThat(responseBody).hasSize(1)
+      assertThat(responseBody[0].reference).isEqualTo("TEST_ACCOUNT_REF")
+      assertThat(responseBody[0].createdBy).isEqualTo("AUTH_ADM")
+      assertThat(responseBody[0].createdAt).isInstanceOf(Instant::class.java)
+      assertThat(responseBody[0].id).isEqualTo(dummyAccount.id)
+      assertThat(responseBody[0].type).isEqualTo(AccountType.PRISONER)
+    }
 
     @Test
     fun `should return 200 OK if reference query matches an account`() {
