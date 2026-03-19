@@ -35,6 +35,5 @@ class PostingsIntegrationTest : IntegrationTestBase() {
 
       assertThat(postingsListResponse).hasSize(0)
     }
-
   }
 }

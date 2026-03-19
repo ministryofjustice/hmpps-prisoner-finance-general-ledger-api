@@ -47,7 +47,8 @@ class PostingServiceTest {
       val subAccountCashEntity = serviceTestHelpers.createSubAccount("CASH", accountEntity)
       val subAccountSpendsEntity = serviceTestHelpers.createSubAccount("SPENDS", accountEntity)
 
-      val transactionEntity = serviceTestHelpers.createOneToOneTransaction(1L, Instant.now(), subAccountCashEntity, subAccountSpendsEntity)
+      val transactionEntity =
+        serviceTestHelpers.createOneToOneTransaction(1L, Instant.now(), subAccountCashEntity, subAccountSpendsEntity)
 
       val posting1 = serviceTestHelpers.createPostingEntity(subAccountCashEntity, transactionEntity)
       val posting2 = serviceTestHelpers.createPostingEntity(subAccountSpendsEntity, transactionEntity)
@@ -63,16 +64,10 @@ class PostingServiceTest {
       val postings = postingService.listPostingsForPrisoner(prisonerId)
 
       assertThat(postings).hasSize(2)
-    }
-
-    @Test
-    fun `should return list of postings for a transaction`() {
-
-      val prisonerId = UUID.randomUUID()
-
-      val prisonerPostingResponseList = postingService.transformTransactionIntoPostingsForPrisoner(prisonerId)
-
-      assertThat(prisonerPostingResponseList).hasSize(1)
+      assertThat(postings[0].sourcePosting).isEqualTo(posting1)
+      assertThat(postings[0].oppositePosting).isEqualTo(posting2)
+      assertThat(postings[1].sourcePosting).isEqualTo(posting2)
+      assertThat(postings[1].oppositePosting).isEqualTo(posting1)
     }
   }
 }
