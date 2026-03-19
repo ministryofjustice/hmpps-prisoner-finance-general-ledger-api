@@ -19,7 +19,7 @@ interface PostingsDataRepository : JpaRepository<PostingEntity, UUID> {
         JOIN p.subAccountEntity sa
             ON p.subAccountEntity.id = sa.id
         JOIN sa.parentAccountEntity a
-            ON a.id = :accountId 
+            ON a.id = :accountId
   """,
   )
   fun getPostingsByAccountId(accountId: UUID): List<PostingEntity>

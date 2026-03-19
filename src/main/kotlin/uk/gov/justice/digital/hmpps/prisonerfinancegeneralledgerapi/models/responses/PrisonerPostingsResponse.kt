@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.resp
 
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import java.time.Instant
 import java.util.UUID
 
@@ -21,15 +22,21 @@ data class PrisonerPostingsResponse(
   val location: String?,
 ) {
   companion object {
-    fun fromEntity(postingEntity: PostingEntity) = PrisonerPostingsResponse(
-      id = postingEntity.id,
-      createdAt = postingEntity.createdAt,
-      description = "",
-      sourcePosting = postingEntity,
-      oppositePosting = postingEntity.transactionEntity.postings.find
-        { posting -> posting.id != postingEntity.id }
-        ?: throw Exception("Unexpected exception opposite posting not found"),
-      location = "",
-    )
+    fun fromEntity(sourcePostingEntity: PostingEntity) : PrisonerPostingsResponse {
+
+      val oppositePosting = sourcePostingEntity.transactionEntity.postings.find { posting -> posting.type != sourcePostingEntity.type}
+        ?: throw Exception("Unexpected exception not found opposite posting type")
+      val locationOrNull = if (oppositePosting.subAccountEntity.parentAccountEntity.type == AccountType.PRISON)
+        oppositePosting.subAccountEntity.parentAccountEntity.reference else null
+
+      return PrisonerPostingsResponse(
+        id = sourcePostingEntity.id,
+        createdAt = sourcePostingEntity.createdAt,
+        description = sourcePostingEntity.transactionEntity.description,
+        sourcePosting = sourcePostingEntity,
+        oppositePosting = oppositePosting,
+        location = locationOrNull,
+      )
+    }
   }
 }
