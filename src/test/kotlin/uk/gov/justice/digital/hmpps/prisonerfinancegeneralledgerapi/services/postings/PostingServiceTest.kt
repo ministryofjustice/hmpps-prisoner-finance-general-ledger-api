@@ -64,7 +64,7 @@ class PostingServiceTest {
       val postings = postingService.listPostingsForPrisoner(prisonerId)
 
       assertThat(postings).hasSize(2)
-      
+
       assertThat(postings[0].sourcePosting).isEqualTo(posting1)
       assertThat(postings[0].oppositePosting).isEqualTo(posting2)
       assertThat(postings[0].description).isEqualTo(transactionEntity.description)

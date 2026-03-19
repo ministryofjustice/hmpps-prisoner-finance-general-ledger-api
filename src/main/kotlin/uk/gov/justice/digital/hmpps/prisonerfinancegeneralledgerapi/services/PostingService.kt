@@ -11,5 +11,6 @@ class PostingService(
 ) {
   fun listPostingsForPrisoner(accountId: UUID): List<PrisonerPostingsResponse> = postingsDataRepository.getPostingsByAccountId(accountId).map {
     PrisonerPostingsResponse.fromEntity(it)
+
   }
 }
