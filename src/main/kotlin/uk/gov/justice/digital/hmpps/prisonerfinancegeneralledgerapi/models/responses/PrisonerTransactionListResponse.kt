@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses
 
 import io.swagger.v3.oas.annotations.media.Schema
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.TransactionEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
@@ -36,7 +37,7 @@ data class PrisonerTransactionListResponse(
             SubAccountListResponse(
               it.subAccountEntity.id,
               it.subAccountEntity.reference,
-              ParentAccountListResponse(
+              ParentAccountResponse(
                 it.subAccountEntity.parentAccountEntity.id,
                 it.subAccountEntity.parentAccountEntity.reference,
                 it.subAccountEntity.parentAccountEntity.type,
@@ -58,7 +59,24 @@ data class PrisonerPostingListResponse(
   // @field:Valid
   @field:Schema(description = "The sub account associated with the posting")
   val subAccount: SubAccountListResponse,
-)
+) {
+  companion object {
+    fun fromEntity(postingEntity: PostingEntity): PrisonerPostingListResponse = PrisonerPostingListResponse(
+      id = postingEntity.id,
+      type = postingEntity.type,
+      amount = postingEntity.amount,
+      subAccount = SubAccountListResponse(
+        id = postingEntity.subAccountEntity.id,
+        subAccountReference = postingEntity.subAccountEntity.reference,
+        parentAccount = ParentAccountResponse(
+          id = postingEntity.subAccountEntity.parentAccountEntity.id,
+          reference = postingEntity.subAccountEntity.parentAccountEntity.reference,
+          type = postingEntity.subAccountEntity.parentAccountEntity.type,
+        ),
+      ),
+    )
+  }
+}
 
 data class SubAccountListResponse(
   @field:Schema(description = "A unique ID for the sub-account")
@@ -67,10 +85,10 @@ data class SubAccountListResponse(
   val subAccountReference: String,
   // @field:Valid
   @field:Schema(description = "The parent account associated with the sub-account")
-  val parentAccount: ParentAccountListResponse,
+  val parentAccount: ParentAccountResponse,
 )
 
-data class ParentAccountListResponse(
+data class ParentAccountResponse(
   @field:Schema(description = "A unique ID for the parent account")
   val id: UUID,
   @field:Schema(description = "A reference to identify the parent account")
