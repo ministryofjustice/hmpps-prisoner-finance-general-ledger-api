@@ -30,7 +30,6 @@ class PostingDataRepositoryTest @Autowired constructor(
   private lateinit var accountOneSubAccountOne: SubAccountEntity
   private lateinit var accountOneSubAccountTwo: SubAccountEntity
 
-
   private lateinit var accountTwo: AccountEntity
   private lateinit var accountTwoSubAccountOne: SubAccountEntity
 
@@ -43,7 +42,7 @@ class PostingDataRepositoryTest @Autowired constructor(
   }
 
   @Nested
-  inner class GetPostingsForAccount(){
+  inner class GetPostingsForAccount {
     @Test
     fun `Should return an empty list of postings`() {
       val parentAccountId = UUID.randomUUID()
@@ -53,40 +52,39 @@ class PostingDataRepositoryTest @Autowired constructor(
 
     @Test
     fun `Should return a single sub account posting for a prisoner when is a single posting`() {
-      accountOne = repoTestHelpers.createAccount(ref="ABC123XX")
-      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref="CASH", account=accountOne)
+      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
+      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
 
-      accountTwo = repoTestHelpers.createAccount(ref="LEI")
-      accountTwoSubAccountOne = repoTestHelpers.createSubAccount(ref="1001:CANT", account=accountTwo)
+      accountTwo = repoTestHelpers.createAccount(ref = "LEI")
+      accountTwoSubAccountOne = repoTestHelpers.createSubAccount(ref = "1001:CANT", account = accountTwo)
 
       repoTestHelpers.createOneToOneTransaction(
         transactionAmount = 1,
         transactionDateTime = Instant.now(),
         debitSubAccount = accountOneSubAccountOne,
-        creditSubAccount = accountTwoSubAccountOne
+        creditSubAccount = accountTwoSubAccountOne,
       )
 
-      val postings = postingsDataRepository.getPostingsByAccountId(accountId=accountOne.id)
+      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id)
       assertThat(postings).hasSize(1)
     }
 
     @Test
     fun `Should return all postings across multiple sub accounts `() {
-      accountOne = repoTestHelpers.createAccount(ref="ABC123XX")
-      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref="CASH", account=accountOne)
-      accountOneSubAccountTwo = repoTestHelpers.createSubAccount(ref="SPENDS", account=accountOne)
+      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
+      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
+      accountOneSubAccountTwo = repoTestHelpers.createSubAccount(ref = "SPENDS", account = accountOne)
 
       repoTestHelpers.createOneToOneTransaction(
         transactionAmount = 1,
         transactionDateTime = Instant.now(),
         debitSubAccount = accountOneSubAccountOne,
-        creditSubAccount = accountOneSubAccountTwo
+        creditSubAccount = accountOneSubAccountTwo,
       )
 
       val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id)
       assertThat(postings).hasSize(2)
     }
-
   }
 
   @Nested

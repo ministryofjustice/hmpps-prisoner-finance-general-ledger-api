@@ -12,14 +12,16 @@ import java.util.UUID
 @Repository
 interface PostingsDataRepository : JpaRepository<PostingEntity, UUID> {
 
-  @Query("""
+  @Query(
+    """
           SELECT p
         FROM PostingEntity p
         JOIN p.subAccountEntity sa
             ON p.subAccountEntity.id = sa.id
         JOIN sa.parentAccountEntity a
             ON a.id = :accountId 
-  """)
+  """,
+  )
   fun getPostingsByAccountId(accountId: UUID): List<PostingEntity>
 
   @Query("SELECT p FROM PostingEntity p WHERE p.subAccountEntity.id = :subAccountId")

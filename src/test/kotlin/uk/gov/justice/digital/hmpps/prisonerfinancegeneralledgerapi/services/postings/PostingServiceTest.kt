@@ -12,8 +12,8 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.PostingService
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.helpers.ServiceTestHelpers
-import java.util.UUID
 import java.time.Instant
+import java.util.UUID
 
 @ExtendWith(MockitoExtension::class)
 class PostingServiceTest {
@@ -24,18 +24,15 @@ class PostingServiceTest {
   @InjectMocks
   lateinit var postingService: PostingService
 
-
   private val serviceTestHelpers = ServiceTestHelpers()
-
-
 
   @Nested
   inner class GetPostings {
 
     @Test
-    fun `should return empty list when no postings for prisoner`(){
+    fun `should return empty list when no postings for prisoner`() {
       val prisonerId = UUID.randomUUID()
-      whenever{postingsDataRepository.getPostingsByAccountId(prisonerId) }.thenReturn(emptyList())
+      whenever { postingsDataRepository.getPostingsByAccountId(prisonerId) }.thenReturn(emptyList())
 
       val postings = postingService.listPostingsForPrisoner(prisonerId)
 
@@ -43,7 +40,7 @@ class PostingServiceTest {
     }
 
     @Test
-    fun `should return list of postings for prisoner`(){
+    fun `should return list of postings for prisoner`() {
       val prisonerId = UUID.randomUUID()
 
       val accountEntity = serviceTestHelpers.createAccount("ABC123XX", AccountType.PRISONER)
@@ -55,11 +52,12 @@ class PostingServiceTest {
       val posting1 = serviceTestHelpers.createPostingEntity(subAccountCashEntity, transactionEntity)
       val posting2 = serviceTestHelpers.createPostingEntity(subAccountSpendsEntity, transactionEntity)
 
-      whenever{postingsDataRepository.getPostingsByAccountId(prisonerId) }
+      whenever { postingsDataRepository.getPostingsByAccountId(prisonerId) }
         .thenReturn(
           listOf(
-            posting1, posting2
-            )
+            posting1,
+            posting2,
+          ),
         )
 
       val postings = postingService.listPostingsForPrisoner(prisonerId)
@@ -67,5 +65,14 @@ class PostingServiceTest {
       assertThat(postings).hasSize(2)
     }
 
+    @Test
+    fun `should return list of postings for a transaction`() {
+
+      val prisonerId = UUID.randomUUID()
+
+      val prisonerPostingResponseList = postingService.transformTransactionIntoPostingsForPrisoner(prisonerId)
+
+      assertThat(prisonerPostingResponseList).hasSize(1)
+    }
   }
 }

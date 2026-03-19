@@ -27,18 +27,15 @@ class ServiceTestHelpers {
     return subAccountEntity
   }
 
-  fun createPostingEntity(subAccountEntity: SubAccountEntity, transactionEntity: TransactionEntity): PostingEntity
-  {
-    return PostingEntity(
-      id = UUID.randomUUID(),
-      createdBy = "",
-      createdAt = Instant.now(),
-      type = PostingType.DR,
-      amount=0,
-      subAccountEntity = subAccountEntity,
-      transactionEntity = transactionEntity
-    )
-  }
+  fun createPostingEntity(subAccountEntity: SubAccountEntity, transactionEntity: TransactionEntity): PostingEntity = PostingEntity(
+    id = UUID.randomUUID(),
+    createdBy = "",
+    createdAt = Instant.now(),
+    type = PostingType.DR,
+    amount = 0,
+    subAccountEntity = subAccountEntity,
+    transactionEntity = transactionEntity,
+  )
 
   fun createOneToOneTransaction(transactionAmount: Long, transactionDateTime: Instant, debitSubAccount: SubAccountEntity, creditSubAccount: SubAccountEntity, timeStamp: Instant? = null, description: String = "TEST_DESCRIPTION_PAST"): TransactionEntity {
     val txInThePast = TransactionEntity(

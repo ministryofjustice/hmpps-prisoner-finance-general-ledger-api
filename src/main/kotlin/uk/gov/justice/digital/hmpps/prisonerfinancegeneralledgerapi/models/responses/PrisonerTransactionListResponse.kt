@@ -43,6 +43,7 @@ data class PrisonerTransactionListResponse(
                 it.subAccountEntity.parentAccountEntity.type,
               ),
             ),
+            transactionDescription = it.transactionEntity.description,
           )
         },
     )
@@ -59,6 +60,8 @@ data class PrisonerPostingListResponse(
   // @field:Valid
   @field:Schema(description = "The sub account associated with the posting")
   val subAccount: SubAccountListResponse,
+  @field:Schema(description = "The description of the transaction")
+  val transactionDescription: String,
 ) {
   companion object {
     fun fromEntity(postingEntity: PostingEntity): PrisonerPostingListResponse = PrisonerPostingListResponse(
@@ -74,6 +77,7 @@ data class PrisonerPostingListResponse(
           type = postingEntity.subAccountEntity.parentAccountEntity.type,
         ),
       ),
+      transactionDescription = postingEntity.transactionEntity.description,
     )
   }
 }

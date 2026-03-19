@@ -8,10 +8,12 @@ import java.util.UUID
 @Service
 class PostingService(
   private val postingsDataRepository: PostingsDataRepository,
-  ) {
-  fun listPostingsForPrisoner(accountId: UUID): List<PrisonerPostingListResponse> {
-    return postingsDataRepository.getPostingsByAccountId(accountId).map{
-      PrisonerPostingListResponse.fromEntity(it)
-    }
+) {
+  fun listPostingsForPrisoner(accountId: UUID): List<PrisonerPostingListResponse> = postingsDataRepository.getPostingsByAccountId(accountId).map {
+    PrisonerPostingListResponse.fromEntity(it)
+  }
+
+  fun transformTransactionIntoPostingsForPrisoner(prisonerId: UUID) : List<PrisonerPostingListResponse> {
+    return emptyList()
   }
 }
