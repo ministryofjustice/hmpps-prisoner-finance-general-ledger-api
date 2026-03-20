@@ -1,0 +1,204 @@
+package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration
+
+import jakarta.transaction.Transactional
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
+import org.springframework.test.web.reactive.server.expectBody
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.StatementEntryResponse
+import java.util.UUID
+
+class StatementIntegrationTest : IntegrationTestBase() {
+
+  @Transactional
+  @BeforeEach
+  fun resetDB() {
+    integrationTestHelpers.clearDB()
+  }
+
+  @Nested
+  inner class GetStatement {
+    @ParameterizedTest
+    @ValueSource(
+      strings = [
+        ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO,
+        ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW,
+      ],
+    )
+    fun `return an empty list when sent a valid account id that has no postings using either role`(role: String) {
+      val accountId = UUID.randomUUID()
+
+      val statementListResponse = webTestClient.get()
+        .uri("/accounts/$accountId/statement")
+        .headers(setAuthorisation(roles = listOf(role)))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<List<StatementEntryResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(statementListResponse).hasSize(0)
+    }
+
+    @Test
+    fun `return a list of statement entry responses when sent a valid account id that has 2 prisoner to prisoner postings`() {
+      val prisonerAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
+      val cashSubAccount = integrationTestHelpers.createSubAccount(prisonerAccount.id, "CASH")
+      val spendsSubAccount = integrationTestHelpers.createSubAccount(prisonerAccount.id, "SPENDS")
+
+      val transaction = integrationTestHelpers.createOneToOneTransaction(
+        amount = 1L,
+        debitSubAccountId = cashSubAccount.id,
+        creditSubAccountId = spendsSubAccount.id,
+        transactionReference = "TX",
+        description = "CASH to SPENDS transaction",
+      )
+
+      val statementEntryResponse = webTestClient.get()
+        .uri("/accounts/${prisonerAccount.id}/statement")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk()
+        .expectBody<List<StatementEntryResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(statementEntryResponse).hasSize(2)
+      assertThat(statementEntryResponse[0].subAccount.id).isEqualTo(spendsSubAccount.id)
+      assertThat(statementEntryResponse[0].amount).isEqualTo(transaction.amount)
+      assertThat(statementEntryResponse[0].postingType).isEqualTo(PostingType.CR)
+      assertThat(statementEntryResponse[0].oppositePostings).hasSize(1)
+      assertThat(statementEntryResponse[0].oppositePostings[0].subAccount.id).isEqualTo(cashSubAccount.id)
+      assertThat(statementEntryResponse[0].oppositePostings[0].amount).isEqualTo(1L)
+      assertThat(statementEntryResponse[0].oppositePostings[0].type).isEqualTo(PostingType.DR)
+
+      assertThat(statementEntryResponse[1].subAccount.id).isEqualTo(cashSubAccount.id)
+      assertThat(statementEntryResponse[1].amount).isEqualTo(transaction.amount)
+      assertThat(statementEntryResponse[1].postingType).isEqualTo(PostingType.DR)
+      assertThat(statementEntryResponse[1].oppositePostings).hasSize(1)
+      assertThat(statementEntryResponse[1].oppositePostings[0].subAccount.id).isEqualTo(spendsSubAccount.id)
+      assertThat(statementEntryResponse[1].oppositePostings[0].amount).isEqualTo(1L)
+      assertThat(statementEntryResponse[1].oppositePostings[0].type).isEqualTo(PostingType.CR)
+    }
+
+    @Test
+    fun `return a list of statement entry responses when sent a valid account id that has 2 prison to prisoner postings for prisoner account`() {
+      val prisonerOneAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
+      val prisonerTwoAccount = integrationTestHelpers.createAccount("A1234XX", AccountType.PRISONER)
+
+      val prisonAccount = integrationTestHelpers.createAccount("LEI", AccountType.PRISON)
+
+      val cashSubAccountOne = integrationTestHelpers.createSubAccount(prisonerOneAccount.id, "CASH")
+      val cashSubAccountTwo = integrationTestHelpers.createSubAccount(prisonerTwoAccount.id, "CASH")
+
+      val canteenAccount = integrationTestHelpers.createSubAccount(prisonAccount.id, "1001:CANT")
+
+      val transaction = integrationTestHelpers.createOneToManyTransaction(
+        amountToCreditEachAccount = 1L,
+        debitSubAccountId = canteenAccount.id,
+        creditSubAccountIds = listOf(cashSubAccountOne.id, cashSubAccountTwo.id),
+        transactionReference = "TX",
+        description = "CASH to SPENDS transaction",
+      )
+
+      val statementEntryResponse = webTestClient.get()
+        .uri("/accounts/${prisonerOneAccount.id}/statement")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk()
+        .expectBody<List<StatementEntryResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(statementEntryResponse).hasSize(1)
+      assertThat(statementEntryResponse[0].subAccount.id).isEqualTo(cashSubAccountOne.id)
+      assertThat(statementEntryResponse[0].amount).isEqualTo(1L)
+      assertThat(statementEntryResponse[0].postingType).isEqualTo(PostingType.CR)
+      assertThat(statementEntryResponse[0].oppositePostings).hasSize(1)
+      assertThat(statementEntryResponse[0].oppositePostings[0].subAccount.id).isEqualTo(canteenAccount.id)
+      assertThat(statementEntryResponse[0].oppositePostings[0].amount).isEqualTo(2L)
+      assertThat(statementEntryResponse[0].oppositePostings[0].type).isEqualTo(PostingType.DR)
+    }
+
+    @Test
+    fun `return a list of statement entry responses when sent a valid account id that has 2 prison to prisoner postings for prison account`() {
+      val prisonerOneAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
+      val prisonerTwoAccount = integrationTestHelpers.createAccount("A1234XX", AccountType.PRISONER)
+
+      val prisonAccount = integrationTestHelpers.createAccount("LEI", AccountType.PRISON)
+
+      val cashSubAccountOne = integrationTestHelpers.createSubAccount(prisonerOneAccount.id, "CASH")
+      val cashSubAccountTwo = integrationTestHelpers.createSubAccount(prisonerTwoAccount.id, "CASH")
+
+      val canteenAccount = integrationTestHelpers.createSubAccount(prisonAccount.id, "1001:CANT")
+
+      val transaction = integrationTestHelpers.createOneToManyTransaction(
+        amountToCreditEachAccount = 1L,
+        debitSubAccountId = canteenAccount.id,
+        creditSubAccountIds = listOf(cashSubAccountOne.id, cashSubAccountTwo.id),
+        transactionReference = "TX",
+        description = "CASH to SPENDS transaction",
+      )
+
+      val statementEntryResponse = webTestClient.get()
+        .uri("/accounts/${prisonAccount.id}/statement")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk()
+        .expectBody<List<StatementEntryResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(statementEntryResponse).hasSize(1)
+      assertThat(statementEntryResponse[0].subAccount.id).isEqualTo(canteenAccount.id)
+      assertThat(statementEntryResponse[0].amount).isEqualTo(2L)
+      assertThat(statementEntryResponse[0].postingType).isEqualTo(PostingType.DR)
+      assertThat(statementEntryResponse[0].oppositePostings).hasSize(2)
+      assertThat(statementEntryResponse[0].oppositePostings[0].subAccount.id).isEqualTo(cashSubAccountOne.id)
+      assertThat(statementEntryResponse[0].oppositePostings[0].amount).isEqualTo(1L)
+      assertThat(statementEntryResponse[0].oppositePostings[0].type).isEqualTo(PostingType.CR)
+
+      assertThat(statementEntryResponse[0].oppositePostings[1].subAccount.id).isEqualTo(cashSubAccountTwo.id)
+      assertThat(statementEntryResponse[0].oppositePostings[1].amount).isEqualTo(1L)
+      assertThat(statementEntryResponse[0].oppositePostings[1].type).isEqualTo(PostingType.CR)
+    }
+
+    @Test
+    fun `should return 400 when account id is invalid`() {
+      webTestClient.get()
+        .uri("/accounts/INVALID_STRING/statement")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO)))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody()
+        .returnResult()
+        .responseBody!!
+    }
+
+    @Test
+    fun `should return 401 when requesting account without authorisation headers`() {
+      val prisonerAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
+      webTestClient.get()
+        .uri("/accounts/${prisonerAccount.id}/statement")
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `should return 403 when requesting account with incorrect role`() {
+      val prisonerAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
+      webTestClient.get()
+        .uri("/accounts/${prisonerAccount.id}/statement")
+        .headers(setAuthorisation(roles = listOf("ROLE__WRONG_ROLE")))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+  }
+}

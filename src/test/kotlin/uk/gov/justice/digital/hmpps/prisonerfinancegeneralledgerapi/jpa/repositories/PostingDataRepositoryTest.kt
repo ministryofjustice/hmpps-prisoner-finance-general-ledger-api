@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.helpers.RepoTestHelpers
 import java.time.Instant
 import java.time.LocalDateTime
+import java.util.UUID
 
 @DataJpaTest
 @Import(RepoTestHelpers::class, ContainersConfig::class)
@@ -27,6 +28,7 @@ class PostingDataRepositoryTest @Autowired constructor(
 
   private lateinit var accountOne: AccountEntity
   private lateinit var accountOneSubAccountOne: SubAccountEntity
+  private lateinit var accountOneSubAccountTwo: SubAccountEntity
 
   private lateinit var accountTwo: AccountEntity
   private lateinit var accountTwoSubAccountOne: SubAccountEntity
@@ -37,6 +39,52 @@ class PostingDataRepositoryTest @Autowired constructor(
   @BeforeEach
   fun setup() {
     repoTestHelpers.clearDb()
+  }
+
+  @Nested
+  inner class GetPostingsForAccount {
+    @Test
+    fun `Should return an empty list of postings`() {
+      val parentAccountId = UUID.randomUUID()
+      val postings = postingsDataRepository.getPostingsByAccountId(parentAccountId)
+      assertThat(postings).isEmpty()
+    }
+
+    @Test
+    fun `Should return a single sub account posting for a prisoner when is a single posting`() {
+      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
+      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
+
+      accountTwo = repoTestHelpers.createAccount(ref = "LEI")
+      accountTwoSubAccountOne = repoTestHelpers.createSubAccount(ref = "1001:CANT", account = accountTwo)
+
+      repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionDateTime = Instant.now(),
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountTwoSubAccountOne,
+      )
+
+      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id)
+      assertThat(postings).hasSize(1)
+    }
+
+    @Test
+    fun `Should return all postings across multiple sub accounts `() {
+      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
+      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
+      accountOneSubAccountTwo = repoTestHelpers.createSubAccount(ref = "SPENDS", account = accountOne)
+
+      repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionDateTime = Instant.now(),
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+      )
+
+      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id)
+      assertThat(postings).hasSize(2)
+    }
   }
 
   @Nested
