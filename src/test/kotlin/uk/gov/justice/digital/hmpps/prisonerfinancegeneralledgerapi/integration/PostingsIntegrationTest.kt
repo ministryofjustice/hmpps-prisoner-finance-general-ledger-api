@@ -12,7 +12,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.PrisonerPostingListResponse
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.PrisonerPostingsResponse
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.StatementEntryResponse
 import java.util.UUID
 
 class PostingsIntegrationTest : IntegrationTestBase() {
@@ -48,31 +48,29 @@ class PostingsIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `return a list of posting responses when sent a valid account id that has 2 postings`()
-    {
+    fun `return a list of posting responses when sent a valid account id that has 2 postings`() {
       val prisonerAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
-
       val cashSubAccount = integrationTestHelpers.createSubAccount(prisonerAccount.id, "CASH")
       val spendsSubAccount = integrationTestHelpers.createSubAccount(prisonerAccount.id, "SPENDS")
 
       val transaction = integrationTestHelpers.createOneToOneTransaction(
         amount = 1L,
-        debitSubAccountId =cashSubAccount.id,
+        debitSubAccountId = cashSubAccount.id,
         creditSubAccountId = spendsSubAccount.id,
         transactionReference = "TX",
         description = "CASH to SPENDS transaction",
       )
 
-      val prisonerPostingsResponse = webTestClient.get()
+      val statementEntryResponse = webTestClient.get()
         .uri("/accounts/${prisonerAccount.id}/postings")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .exchange()
         .expectStatus().isOk()
-        .expectBody<List<PrisonerPostingsResponse>>()
+        .expectBody<List<StatementEntryResponse>>()
         .returnResult()
         .responseBody!!
 
-      assertThat(prisonerPostingsResponse[0].sourcePosting.amount).isEqualTo( transaction.amount)
+      assertThat(statementEntryResponse[0].amount).isEqualTo(transaction.amount)
     }
   }
 }

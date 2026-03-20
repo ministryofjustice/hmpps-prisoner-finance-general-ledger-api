@@ -34,7 +34,7 @@ class PostingServiceTest {
       val prisonerId = UUID.randomUUID()
       whenever { postingsDataRepository.getPostingsByAccountId(prisonerId) }.thenReturn(emptyList())
 
-      val postings = postingService.listPostingsForPrisoner(prisonerId)
+      val postings = postingService.listStatementEntries(prisonerId)
 
       assertThat(postings).isEmpty()
     }
@@ -61,19 +61,19 @@ class PostingServiceTest {
           ),
         )
 
-      val postings = postingService.listPostingsForPrisoner(prisonerId)
+      val statementEntries = postingService.listStatementEntries(prisonerId)
 
-      assertThat(postings).hasSize(2)
-
-      assertThat(postings[0].sourcePosting).isEqualTo(posting1)
-      assertThat(postings[0].oppositePosting).isEqualTo(posting2)
-      assertThat(postings[0].description).isEqualTo(transactionEntity.description)
-      assertThat(postings[0].location).isNull()
-
-      assertThat(postings[1].sourcePosting).isEqualTo(posting2)
-      assertThat(postings[1].oppositePosting).isEqualTo(posting1)
-      assertThat(postings[1].description).isEqualTo(transactionEntity.description)
-      assertThat(postings[1].location).isNull()
+      assertThat(statementEntries).hasSize(2)
+      assertThat(statementEntries[0].transactionId).isEqualTo(transactionEntity.id)
+      assertThat(statementEntries[0].description).isEqualTo(transactionEntity.description)
+      assertThat(statementEntries[0].postingCreatedAt).isEqualTo(posting1.createdAt)
+      assertThat(statementEntries[0].subAccount).isEqualTo(subAccountCashEntity)
+      assertThat(statementEntries[0].oppositePostings).isEqualTo(listOf(posting2))
+      assertThat(statementEntries[1].transactionId).isEqualTo(transactionEntity.id)
+      assertThat(statementEntries[1].description).isEqualTo(transactionEntity.description)
+      assertThat(statementEntries[1].postingCreatedAt).isEqualTo(posting2.createdAt)
+      assertThat(statementEntries[1].subAccount).isEqualTo(subAccountSpendsEntity)
+      assertThat(statementEntries[1].oppositePostings).isEqualTo(listOf(posting1))
     }
 
     @Test
@@ -99,13 +99,96 @@ class PostingServiceTest {
           ),
         )
 
-      val postings = postingService.listPostingsForPrisoner(prisonerId)
+      val statementEntries = postingService.listStatementEntries(prisonerId)
 
-      assertThat(postings).hasSize(1)
-      assertThat(postings[0].sourcePosting).isEqualTo(posting1)
-      assertThat(postings[0].oppositePosting).isEqualTo(posting2)
-      assertThat(postings[0].description).isEqualTo(transactionEntity.description)
-      assertThat(postings[0].location).isEqualTo("LEI")
+      assertThat(statementEntries).hasSize(1)
+      assertThat(statementEntries[0].transactionId).isEqualTo(transactionEntity.id)
+      assertThat(statementEntries[0].description).isEqualTo(transactionEntity.description)
+      assertThat(statementEntries[0].postingCreatedAt).isEqualTo(posting1.createdAt)
+      assertThat(statementEntries[0].subAccount).isEqualTo(subAccountCashEntity)
+      assertThat(statementEntries[0].oppositePostings).isEqualTo(listOf(posting2))
+    }
+
+    @Test
+    fun `should return list of multiple postings for many to one transaction for prison account`() {
+      val prisonerId = UUID.randomUUID()
+
+      val accountEntityOne = serviceTestHelpers.createAccount("ABC123XX", AccountType.PRISONER)
+      val accountEntityTwo = serviceTestHelpers.createAccount("ABC123DD", AccountType.PRISONER)
+      val subAccountCashEntityOne = serviceTestHelpers.createSubAccount("CASH", accountEntityOne)
+      val subAccountCashEntityTwo = serviceTestHelpers.createSubAccount("CASH", accountEntityTwo)
+
+      val prisonAccountEntity = serviceTestHelpers.createAccount("LEI", AccountType.PRISON)
+      val subAccountPrisonEntity = serviceTestHelpers.createSubAccount("1001:CANT", prisonAccountEntity)
+
+      val transactionEntity =
+        serviceTestHelpers.createOneToManyTransaction(
+          ref = "CANTEEN",
+          debitSubAccount = subAccountPrisonEntity,
+          creditSubAccounts = listOf(subAccountCashEntityOne, subAccountCashEntityTwo),
+          amountToCreditEachSubAccount = 10L,
+        )
+
+      val prisonPosting = transactionEntity.postings[0]
+      val posting1 = transactionEntity.postings[1]
+      val posting2 = transactionEntity.postings[2]
+
+      whenever { postingsDataRepository.getPostingsByAccountId(accountId = prisonAccountEntity.id) }
+        .thenReturn(
+          listOf(
+            prisonPosting,
+          ),
+        )
+
+      val statementEntries = postingService.listStatementEntries(accountId = prisonAccountEntity.id)
+
+      assertThat(statementEntries).hasSize(1)
+      assertThat(statementEntries[0].transactionId).isEqualTo(transactionEntity.id)
+      assertThat(statementEntries[0].description).isEqualTo(transactionEntity.description)
+      assertThat(statementEntries[0].postingCreatedAt).isEqualTo(prisonPosting.createdAt)
+      assertThat(statementEntries[0].subAccount).isEqualTo(subAccountPrisonEntity)
+      assertThat(statementEntries[0].oppositePostings).isEqualTo(listOf(posting1, posting2))
+    }
+
+    @Test
+    fun `should return list of multiple postings for many to one transaction for prisoner account`() {
+      val prisonerId = UUID.randomUUID()
+
+      val accountEntityOne = serviceTestHelpers.createAccount("ABC123XX", AccountType.PRISONER)
+      val accountEntityTwo = serviceTestHelpers.createAccount("ABC123DD", AccountType.PRISONER)
+      val subAccountCashEntityOne = serviceTestHelpers.createSubAccount("CASH", accountEntityOne)
+      val subAccountCashEntityTwo = serviceTestHelpers.createSubAccount("CASH", accountEntityTwo)
+
+      val prisonAccountEntity = serviceTestHelpers.createAccount("LEI", AccountType.PRISON)
+      val subAccountPrisonEntity = serviceTestHelpers.createSubAccount("1001:CANT", prisonAccountEntity)
+
+      val transactionEntity =
+        serviceTestHelpers.createOneToManyTransaction(
+          ref = "CANTEEN",
+          debitSubAccount = subAccountPrisonEntity,
+          creditSubAccounts = listOf(subAccountCashEntityOne, subAccountCashEntityTwo),
+          amountToCreditEachSubAccount = 10L,
+        )
+
+      val prisonPosting = transactionEntity.postings[0]
+      val posting1 = transactionEntity.postings[1]
+      val posting2 = transactionEntity.postings[2]
+
+      whenever { postingsDataRepository.getPostingsByAccountId(accountId = accountEntityOne.id) }
+        .thenReturn(
+          listOf(
+            posting1,
+          ),
+        )
+
+      val statementEntries = postingService.listStatementEntries(accountId = accountEntityOne.id)
+
+      assertThat(statementEntries).hasSize(1)
+      assertThat(statementEntries[0].transactionId).isEqualTo(transactionEntity.id)
+      assertThat(statementEntries[0].description).isEqualTo(transactionEntity.description)
+      assertThat(statementEntries[0].postingCreatedAt).isEqualTo(posting1.createdAt)
+      assertThat(statementEntries[0].subAccount).isEqualTo(subAccountCashEntityOne)
+      assertThat(statementEntries[0].oppositePostings).isEqualTo(listOf(prisonPosting))
     }
   }
 }
