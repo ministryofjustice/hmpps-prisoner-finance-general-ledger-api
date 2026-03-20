@@ -6,7 +6,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.respo
 import java.util.UUID
 
 @Service
-class PostingService(
+class StatementService(
   private val postingsDataRepository: PostingsDataRepository,
 ) {
   fun listStatementEntries(accountId: UUID): List<StatementEntryResponse> = postingsDataRepository.getPostingsByAccountId(accountId).map {

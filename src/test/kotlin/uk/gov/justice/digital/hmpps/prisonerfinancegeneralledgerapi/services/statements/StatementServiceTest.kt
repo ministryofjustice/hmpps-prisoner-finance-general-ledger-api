@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.postings
+package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.statements
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
@@ -10,31 +10,31 @@ import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.PostingService
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.StatementService
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.helpers.ServiceTestHelpers
 import java.time.Instant
 import java.util.UUID
 
 @ExtendWith(MockitoExtension::class)
-class PostingServiceTest {
+class StatementServiceTest {
 
   @Mock
   lateinit var postingsDataRepository: PostingsDataRepository
 
   @InjectMocks
-  lateinit var postingService: PostingService
+  lateinit var statementService: StatementService
 
   private val serviceTestHelpers = ServiceTestHelpers()
 
   @Nested
-  inner class GetPostings {
+  inner class GetStatement {
 
     @Test
     fun `should return empty list when no postings for prisoner`() {
       val prisonerId = UUID.randomUUID()
       whenever { postingsDataRepository.getPostingsByAccountId(prisonerId) }.thenReturn(emptyList())
 
-      val postings = postingService.listStatementEntries(prisonerId)
+      val postings = statementService.listStatementEntries(prisonerId)
 
       assertThat(postings).isEmpty()
     }
@@ -61,7 +61,7 @@ class PostingServiceTest {
           ),
         )
 
-      val statementEntries = postingService.listStatementEntries(prisonerId)
+      val statementEntries = statementService.listStatementEntries(prisonerId)
 
       assertThat(statementEntries).hasSize(2)
       assertThat(statementEntries[0].transactionId).isEqualTo(transactionEntity.id)
@@ -99,7 +99,7 @@ class PostingServiceTest {
           ),
         )
 
-      val statementEntries = postingService.listStatementEntries(prisonerId)
+      val statementEntries = statementService.listStatementEntries(prisonerId)
 
       assertThat(statementEntries).hasSize(1)
       assertThat(statementEntries[0].transactionId).isEqualTo(transactionEntity.id)
@@ -140,7 +140,7 @@ class PostingServiceTest {
           ),
         )
 
-      val statementEntries = postingService.listStatementEntries(accountId = prisonAccountEntity.id)
+      val statementEntries = statementService.listStatementEntries(accountId = prisonAccountEntity.id)
 
       assertThat(statementEntries).hasSize(1)
       assertThat(statementEntries[0].transactionId).isEqualTo(transactionEntity.id)
@@ -181,7 +181,7 @@ class PostingServiceTest {
           ),
         )
 
-      val statementEntries = postingService.listStatementEntries(accountId = accountEntityOne.id)
+      val statementEntries = statementService.listStatementEntries(accountId = accountEntityOne.id)
 
       assertThat(statementEntries).hasSize(1)
       assertThat(statementEntries[0].transactionId).isEqualTo(transactionEntity.id)
