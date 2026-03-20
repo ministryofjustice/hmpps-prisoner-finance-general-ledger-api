@@ -81,5 +81,36 @@ class StatementIntegrationTest : IntegrationTestBase() {
       assertThat(statementEntryResponse[1].amount).isEqualTo(transaction.amount)
       assertThat(statementEntryResponse[1].postingType).isEqualTo(PostingType.DR)
     }
+
+    @Test
+    fun `should return 400 when account id is invalid`() {
+      webTestClient.get()
+        .uri("/accounts/INVALID_STRING/statement")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO)))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody()
+        .returnResult()
+        .responseBody!!
+    }
+
+    @Test
+    fun `should return 401 when requesting account without authorisation headers`() {
+      val prisonerAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
+      webTestClient.get()
+        .uri("/accounts/${prisonerAccount.id}/statement")
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `should return 403 when requesting account with incorrect role`() {
+      val prisonerAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
+      webTestClient.get()
+        .uri("/accounts/${prisonerAccount.id}/statement")
+        .headers(setAuthorisation(roles = listOf("ROLE__WRONG_ROLE")))
+        .exchange()
+        .expectStatus().isForbidden
+    }
   }
 }
