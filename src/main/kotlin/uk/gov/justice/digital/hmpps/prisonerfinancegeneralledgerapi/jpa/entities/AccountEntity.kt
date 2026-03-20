@@ -20,7 +20,6 @@ import java.util.UUID
   ],
 )
 class AccountEntity(
-
   @Id
   @Column(name = "account_id", nullable = false, unique = true)
   val id: UUID = UUID.randomUUID(),
@@ -38,7 +37,6 @@ class AccountEntity(
   @Column(name = "type", nullable = false)
   val type: AccountType = AccountType.PRISON,
 
-) {
-  @OneToMany(mappedBy = "parentAccountEntity")
-  val subAccounts: MutableList<SubAccountEntity> = mutableListOf()
-}
+  @OneToMany(mappedBy = "parentAccountEntity", fetch = jakarta.persistence.FetchType.LAZY)
+  val subAccounts: MutableList<SubAccountEntity> = mutableListOf(),
+)

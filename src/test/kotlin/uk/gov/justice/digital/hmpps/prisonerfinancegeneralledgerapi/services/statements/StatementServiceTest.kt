@@ -67,13 +67,13 @@ class StatementServiceTest {
       assertThat(statementEntries[0].transactionId).isEqualTo(transactionEntity.id)
       assertThat(statementEntries[0].description).isEqualTo(transactionEntity.description)
       assertThat(statementEntries[0].postingCreatedAt).isEqualTo(posting1.createdAt)
-      assertThat(statementEntries[0].subAccount).isEqualTo(subAccountCashEntity)
-      assertThat(statementEntries[0].oppositePostings).isEqualTo(listOf(posting2))
+      assertThat(statementEntries[0].subAccount.id).isEqualTo(subAccountCashEntity.id)
+      assertThat(statementEntries[0].oppositePostings[0].id).isEqualTo(posting2.id)
       assertThat(statementEntries[1].transactionId).isEqualTo(transactionEntity.id)
       assertThat(statementEntries[1].description).isEqualTo(transactionEntity.description)
       assertThat(statementEntries[1].postingCreatedAt).isEqualTo(posting2.createdAt)
-      assertThat(statementEntries[1].subAccount).isEqualTo(subAccountSpendsEntity)
-      assertThat(statementEntries[1].oppositePostings).isEqualTo(listOf(posting1))
+      assertThat(statementEntries[1].subAccount.id).isEqualTo(subAccountSpendsEntity.id)
+      assertThat(statementEntries[1].oppositePostings[0].id).isEqualTo(posting1.id)
     }
 
     @Test
@@ -105,8 +105,8 @@ class StatementServiceTest {
       assertThat(statementEntries[0].transactionId).isEqualTo(transactionEntity.id)
       assertThat(statementEntries[0].description).isEqualTo(transactionEntity.description)
       assertThat(statementEntries[0].postingCreatedAt).isEqualTo(posting1.createdAt)
-      assertThat(statementEntries[0].subAccount).isEqualTo(subAccountCashEntity)
-      assertThat(statementEntries[0].oppositePostings).isEqualTo(listOf(posting2))
+      assertThat(statementEntries[0].subAccount.id).isEqualTo(subAccountCashEntity.id)
+      assertThat(statementEntries[0].oppositePostings[0].id).isEqualTo(posting2.id)
     }
 
     @Test
@@ -146,8 +146,9 @@ class StatementServiceTest {
       assertThat(statementEntries[0].transactionId).isEqualTo(transactionEntity.id)
       assertThat(statementEntries[0].description).isEqualTo(transactionEntity.description)
       assertThat(statementEntries[0].postingCreatedAt).isEqualTo(prisonPosting.createdAt)
-      assertThat(statementEntries[0].subAccount).isEqualTo(subAccountPrisonEntity)
-      assertThat(statementEntries[0].oppositePostings).isEqualTo(listOf(posting1, posting2))
+      assertThat(statementEntries[0].subAccount.id).isEqualTo(subAccountPrisonEntity.id)
+      assertThat(statementEntries[0].oppositePostings).hasSize(2)
+      assertThat(statementEntries[0].oppositePostings.map { posting -> posting.id }).isEqualTo(listOf(posting1.id, posting2.id))
     }
 
     @Test
@@ -187,8 +188,8 @@ class StatementServiceTest {
       assertThat(statementEntries[0].transactionId).isEqualTo(transactionEntity.id)
       assertThat(statementEntries[0].description).isEqualTo(transactionEntity.description)
       assertThat(statementEntries[0].postingCreatedAt).isEqualTo(posting1.createdAt)
-      assertThat(statementEntries[0].subAccount).isEqualTo(subAccountCashEntityOne)
-      assertThat(statementEntries[0].oppositePostings).isEqualTo(listOf(prisonPosting))
+      assertThat(statementEntries[0].subAccount.id).isEqualTo(subAccountCashEntityOne.id)
+      assertThat(statementEntries[0].oppositePostings[0].id).isEqualTo(prisonPosting.id)
     }
   }
 }

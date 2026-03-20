@@ -74,9 +74,9 @@ class StatementIntegrationTest : IntegrationTestBase() {
       assertThat(statementEntryResponse[0].amount).isEqualTo(transaction.amount)
       assertThat(statementEntryResponse[0].postingType).isEqualTo(PostingType.CR)
       assertThat(statementEntryResponse[0].oppositePostings).hasSize(1)
-      assertThat(statementEntryResponse[0].oppositePostings[0].subAccountEntity.id).isEqualTo(cashSubAccount.id)
+      assertThat(statementEntryResponse[0].oppositePostings[0].subAccount.id).isEqualTo(cashSubAccount.id)
       assertThat(statementEntryResponse[0].oppositePostings[0].amount).isEqualTo(1L)
-      assertThat(statementEntryResponse[0].oppositePostings[0].type).isNotEqualTo(PostingType.DR)
+      assertThat(statementEntryResponse[0].oppositePostings[0].type).isEqualTo(PostingType.DR)
 
       assertThat(statementEntryResponse[1].amount).isEqualTo(transaction.amount)
       assertThat(statementEntryResponse[1].postingType).isEqualTo(PostingType.DR)
