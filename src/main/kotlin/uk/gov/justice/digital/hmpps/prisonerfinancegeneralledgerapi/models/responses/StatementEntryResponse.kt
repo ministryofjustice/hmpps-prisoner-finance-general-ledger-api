@@ -14,6 +14,8 @@ data class StatementEntryResponse(
   val transactionId: UUID,
   @field:Schema(description = "The date/time of when the posting was created in UTC/Instant format")
   val postingCreatedAt: Instant,
+  @field:Schema(description = "The transaction timestamp in UTC/Instant format")
+  val transactionTimestamp: Instant,
   @field:Schema(description = "The description of the transaction")
   val description: String,
   @field:Schema(description = "This is the opposite postings from the statement entry")
@@ -35,6 +37,7 @@ data class StatementEntryResponse(
         .map { posting -> PostingWithAccountsResponse.fromEntity(posting) },
       amount = sourcePostingEntity.amount,
       postingType = sourcePostingEntity.type,
+      transactionTimestamp = sourcePostingEntity.transactionEntity.timestamp,
       subAccount = SubAccountWithParentResponse.fromEntity(sourcePostingEntity.subAccountEntity),
     )
   }
