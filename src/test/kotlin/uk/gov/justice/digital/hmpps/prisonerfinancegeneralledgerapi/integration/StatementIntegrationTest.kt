@@ -48,7 +48,43 @@ class StatementIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `return a list of statement entry responses when sent a valid account id that has 2 prisoner to prisoner postings`() {
+    fun `returns a list of one statement response with one opposite posting for one to one transaction between accounts`() {
+      val prisonerAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
+
+      val prisonAccount = integrationTestHelpers.createAccount("LEI", AccountType.PRISON)
+
+      val prisonerSubAccount = integrationTestHelpers.createSubAccount(prisonerAccount.id, "CASH")
+      val prisonSubAccount = integrationTestHelpers.createSubAccount(prisonAccount.id, "CANTEEN")
+
+      val transaction = integrationTestHelpers.createOneToOneTransaction(
+        amount = 1L,
+        debitSubAccountId = prisonerSubAccount.id,
+        creditSubAccountId = prisonSubAccount.id,
+        transactionReference = "TX",
+        description = "MARS BAR",
+      )
+
+      val statementEntryResponse = webTestClient.get()
+        .uri("/accounts/${prisonerAccount.id}/statement")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk()
+        .expectBody<List<StatementEntryResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(statementEntryResponse).hasSize(1)
+      assertThat(statementEntryResponse[0].subAccount.id).isEqualTo(prisonerSubAccount.id)
+      assertThat(statementEntryResponse[0].amount).isEqualTo(transaction.amount)
+      assertThat(statementEntryResponse[0].postingType).isEqualTo(PostingType.DR)
+      assertThat(statementEntryResponse[0].oppositePostings).hasSize(1)
+      assertThat(statementEntryResponse[0].oppositePostings[0].subAccount.id).isEqualTo(prisonSubAccount.id)
+      assertThat(statementEntryResponse[0].oppositePostings[0].amount).isEqualTo(1L)
+      assertThat(statementEntryResponse[0].oppositePostings[0].type).isEqualTo(PostingType.CR)
+    }
+
+    @Test
+    fun `return a list of statement entries for both postings when the account has a single one to one transaction between its sub-accounts`() {
       val prisonerAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
       val cashSubAccount = integrationTestHelpers.createSubAccount(prisonerAccount.id, "CASH")
       val spendsSubAccount = integrationTestHelpers.createSubAccount(prisonerAccount.id, "SPENDS")
@@ -89,7 +125,7 @@ class StatementIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `return a list of statement entry responses when sent a valid account id that has 2 prison to prisoner postings for prisoner account`() {
+    fun `return a list of one statement response with one opposite posting for a one to many transaction where the account id is in the many side`() {
       val prisonerOneAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
       val prisonerTwoAccount = integrationTestHelpers.createAccount("A1234XX", AccountType.PRISONER)
 
@@ -100,7 +136,7 @@ class StatementIntegrationTest : IntegrationTestBase() {
 
       val canteenAccount = integrationTestHelpers.createSubAccount(prisonAccount.id, "1001:CANT")
 
-      val transaction = integrationTestHelpers.createOneToManyTransaction(
+      integrationTestHelpers.createOneToManyTransaction(
         amountToCreditEachAccount = 1L,
         debitSubAccountId = canteenAccount.id,
         creditSubAccountIds = listOf(cashSubAccountOne.id, cashSubAccountTwo.id),
@@ -128,7 +164,7 @@ class StatementIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `return a list of statement entry responses when sent a valid account id that has 2 prison to prisoner postings for prison account`() {
+    fun `return a list of one statement response with multiple opposite postings for a one to many transaction where the account id is the one side`() {
       val prisonerOneAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
       val prisonerTwoAccount = integrationTestHelpers.createAccount("A1234XX", AccountType.PRISONER)
 
@@ -139,7 +175,7 @@ class StatementIntegrationTest : IntegrationTestBase() {
 
       val canteenAccount = integrationTestHelpers.createSubAccount(prisonAccount.id, "1001:CANT")
 
-      val transaction = integrationTestHelpers.createOneToManyTransaction(
+      integrationTestHelpers.createOneToManyTransaction(
         amountToCreditEachAccount = 1L,
         debitSubAccountId = canteenAccount.id,
         creditSubAccountIds = listOf(cashSubAccountOne.id, cashSubAccountTwo.id),
