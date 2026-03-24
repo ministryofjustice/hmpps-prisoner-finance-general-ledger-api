@@ -37,6 +37,6 @@ class AccountEntity(
   @Column(name = "type", nullable = false)
   val type: AccountType = AccountType.PRISON,
 
-  @OneToMany(mappedBy = "parentAccountEntity", fetch = jakarta.persistence.FetchType.LAZY)
+  @OneToMany(mappedBy = "parentAccountEntity", fetch = jakarta.persistence.FetchType.EAGER)
   val subAccounts: MutableList<SubAccountEntity> = mutableListOf(),
 )

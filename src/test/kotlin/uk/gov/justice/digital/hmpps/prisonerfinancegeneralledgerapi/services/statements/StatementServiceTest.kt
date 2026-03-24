@@ -7,9 +7,12 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.AccountService
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.StatementService
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.helpers.ServiceTestHelpers
 import java.time.Instant
@@ -24,14 +27,28 @@ class StatementServiceTest {
   @InjectMocks
   lateinit var statementService: StatementService
 
+  @Mock
+  lateinit var accountService: AccountService
+
   private val serviceTestHelpers = ServiceTestHelpers()
 
   @Nested
   inner class GetStatement {
 
     @Test
-    fun `should return empty list when no postings for prisoner`() {
+    fun `should return null if account does not exist`() {
       val prisonerId = UUID.randomUUID()
+      whenever { accountService.readAccount(prisonerId) }.thenReturn(null)
+
+      val postings = statementService.listStatementEntries(prisonerId)
+
+      assertThat(postings).isNull()
+    }
+
+    @Test
+    fun `should return empty list when no postings for an account`() {
+      val prisonerId = UUID.randomUUID()
+      whenever { accountService.readAccount(prisonerId) }.thenReturn(AccountEntity(id = prisonerId))
       whenever { postingsDataRepository.getPostingsByAccountId(prisonerId) }.thenReturn(emptyList())
 
       val postings = statementService.listStatementEntries(prisonerId)
@@ -40,8 +57,9 @@ class StatementServiceTest {
     }
 
     @Test
-    fun `should return list of postings for prisoner to prisoner transaction`() {
+    fun `should return list of postings for a single account with one transaction between sub-accounts`() {
       val prisonerId = UUID.randomUUID()
+      whenever { accountService.readAccount(prisonerId) }.thenReturn(AccountEntity(id = prisonerId))
 
       val accountEntity = serviceTestHelpers.createAccount("ABC123XX", AccountType.PRISONER)
       val subAccountCashEntity = serviceTestHelpers.createSubAccount("CASH", accountEntity)
@@ -64,7 +82,7 @@ class StatementServiceTest {
       val statementEntries = statementService.listStatementEntries(prisonerId)
 
       assertThat(statementEntries).hasSize(2)
-      assertThat(statementEntries[0].transactionId).isEqualTo(transactionEntity.id)
+      assertThat(statementEntries!![0].transactionId).isEqualTo(transactionEntity.id)
       assertThat(statementEntries[0].description).isEqualTo(transactionEntity.description)
       assertThat(statementEntries[0].postingCreatedAt).isEqualTo(posting1.createdAt)
       assertThat(statementEntries[0].subAccount.id).isEqualTo(subAccountCashEntity.id)
@@ -77,10 +95,12 @@ class StatementServiceTest {
     }
 
     @Test
-    fun `should return list of postings for prisoner to prison transaction`() {
+    fun `should return list of postings for a one to one transaction between accounts`() {
       val prisonerId = UUID.randomUUID()
 
       val accountEntity = serviceTestHelpers.createAccount("ABC123XX", AccountType.PRISONER)
+      whenever { accountService.readAccount(any<UUID>()) }.thenReturn(AccountEntity())
+
       val subAccountCashEntity = serviceTestHelpers.createSubAccount("CASH", accountEntity)
 
       val prisonAccountEntity = serviceTestHelpers.createAccount("LEI", AccountType.PRISON)
@@ -102,7 +122,7 @@ class StatementServiceTest {
       val statementEntries = statementService.listStatementEntries(prisonerId)
 
       assertThat(statementEntries).hasSize(1)
-      assertThat(statementEntries[0].transactionId).isEqualTo(transactionEntity.id)
+      assertThat(statementEntries!![0].transactionId).isEqualTo(transactionEntity.id)
       assertThat(statementEntries[0].description).isEqualTo(transactionEntity.description)
       assertThat(statementEntries[0].postingCreatedAt).isEqualTo(posting1.createdAt)
       assertThat(statementEntries[0].subAccount.id).isEqualTo(subAccountCashEntity.id)
@@ -110,8 +130,8 @@ class StatementServiceTest {
     }
 
     @Test
-    fun `should return list of multiple postings for many to one transaction for prison account`() {
-      val prisonerId = UUID.randomUUID()
+    fun `should return list of multiple postings for many to one transaction`() {
+      whenever { accountService.readAccount(any<UUID>()) }.thenReturn(AccountEntity())
 
       val accountEntityOne = serviceTestHelpers.createAccount("ABC123XX", AccountType.PRISONER)
       val accountEntityTwo = serviceTestHelpers.createAccount("ABC123DD", AccountType.PRISONER)
@@ -143,7 +163,7 @@ class StatementServiceTest {
       val statementEntries = statementService.listStatementEntries(accountId = prisonAccountEntity.id)
 
       assertThat(statementEntries).hasSize(1)
-      assertThat(statementEntries[0].transactionId).isEqualTo(transactionEntity.id)
+      assertThat(statementEntries!![0].transactionId).isEqualTo(transactionEntity.id)
       assertThat(statementEntries[0].description).isEqualTo(transactionEntity.description)
       assertThat(statementEntries[0].postingCreatedAt).isEqualTo(prisonPosting.createdAt)
       assertThat(statementEntries[0].subAccount.id).isEqualTo(subAccountPrisonEntity.id)
@@ -152,8 +172,8 @@ class StatementServiceTest {
     }
 
     @Test
-    fun `should return list of multiple postings for many to one transaction for prisoner account`() {
-      val prisonerId = UUID.randomUUID()
+    fun `should return list of multiple postings for many to one transaction for an account`() {
+      whenever { accountService.readAccount(any<UUID>()) }.thenReturn(AccountEntity())
 
       val accountEntityOne = serviceTestHelpers.createAccount("ABC123XX", AccountType.PRISONER)
       val accountEntityTwo = serviceTestHelpers.createAccount("ABC123DD", AccountType.PRISONER)
@@ -173,7 +193,6 @@ class StatementServiceTest {
 
       val prisonPosting = transactionEntity.postings[0]
       val posting1 = transactionEntity.postings[1]
-      val posting2 = transactionEntity.postings[2]
 
       whenever { postingsDataRepository.getPostingsByAccountId(accountId = accountEntityOne.id) }
         .thenReturn(
@@ -185,7 +204,7 @@ class StatementServiceTest {
       val statementEntries = statementService.listStatementEntries(accountId = accountEntityOne.id)
 
       assertThat(statementEntries).hasSize(1)
-      assertThat(statementEntries[0].transactionId).isEqualTo(transactionEntity.id)
+      assertThat(statementEntries!![0].transactionId).isEqualTo(transactionEntity.id)
       assertThat(statementEntries[0].description).isEqualTo(transactionEntity.description)
       assertThat(statementEntries[0].postingCreatedAt).isEqualTo(posting1.createdAt)
       assertThat(statementEntries[0].subAccount.id).isEqualTo(subAccountCashEntityOne.id)

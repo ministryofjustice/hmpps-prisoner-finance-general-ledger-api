@@ -44,7 +44,7 @@ class PostingDataRepositoryTest @Autowired constructor(
   @Nested
   inner class GetPostingsForAccount {
     @Test
-    fun `Should return an empty list of postings`() {
+    fun `Should return an empty list when an account has no postings`() {
       val parentAccountId = UUID.randomUUID()
       val postings = postingsDataRepository.getPostingsByAccountId(parentAccountId)
       assertThat(postings).isEmpty()

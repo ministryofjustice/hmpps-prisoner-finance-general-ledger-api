@@ -8,8 +8,13 @@ import java.util.UUID
 @Service
 class StatementService(
   private val postingsDataRepository: PostingsDataRepository,
+  private val accountService: AccountService,
 ) {
-  fun listStatementEntries(accountId: UUID): List<StatementEntryResponse> = postingsDataRepository.getPostingsByAccountId(accountId).map {
-    StatementEntryResponse.fromEntity(it)
+  fun listStatementEntries(accountId: UUID): List<StatementEntryResponse>? {
+    accountService.readAccount(accountId) ?: return null
+
+    return postingsDataRepository.getPostingsByAccountId(accountId).map {
+      StatementEntryResponse.fromEntity(it)
+    }
   }
 }

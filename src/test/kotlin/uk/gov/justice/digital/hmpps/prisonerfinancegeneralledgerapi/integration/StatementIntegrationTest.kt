@@ -33,10 +33,10 @@ class StatementIntegrationTest : IntegrationTestBase() {
       ],
     )
     fun `return an empty list when sent a valid account id that has no postings using either role`(role: String) {
-      val accountId = UUID.randomUUID()
+      val prisonerAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
 
       val statementListResponse = webTestClient.get()
-        .uri("/accounts/$accountId/statement")
+        .uri("/accounts/${prisonerAccount.id}/statement")
         .headers(setAuthorisation(roles = listOf(role)))
         .exchange()
         .expectStatus().isOk
@@ -235,6 +235,16 @@ class StatementIntegrationTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf("ROLE__WRONG_ROLE")))
         .exchange()
         .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `should return 404 when sent a valid UUID that doesn't exist`() {
+      val uuid = UUID.randomUUID()
+      webTestClient.get()
+        .uri("/accounts/$uuid/statement")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO)))
+        .exchange()
+        .expectStatus().isNotFound
     }
   }
 }
