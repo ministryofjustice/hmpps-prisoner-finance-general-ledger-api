@@ -27,14 +27,21 @@ class ServiceTestHelpers {
     return subAccountEntity
   }
 
-  fun createOneToOneTransaction(transactionAmount: Long, transactionDateTime: Instant, debitSubAccount: SubAccountEntity, creditSubAccount: SubAccountEntity, timeStamp: Instant? = null, description: String = "TEST_DESCRIPTION_PAST"): TransactionEntity {
+  fun createOneToOneTransaction(
+    transactionAmount: Long,
+    transactionDateTime: Instant,
+    debitSubAccount: SubAccountEntity,
+    creditSubAccount: SubAccountEntity,
+    timeStamp: Instant? = null,
+    description: String = "TEST_DESCRIPTION_PAST",
+  ): TransactionEntity {
     val txInThePast = TransactionEntity(
       reference = UUID.randomUUID().toString(),
       description = description,
       amount = transactionAmount,
       timestamp = timeStamp ?: transactionDateTime,
     )
-    val postingsInThePast = listOf(
+    val postings = listOf(
       PostingEntity(
         createdAt = transactionDateTime,
         type = PostingType.DR,
@@ -51,7 +58,7 @@ class ServiceTestHelpers {
       ),
     )
 
-    txInThePast.postings.addAll(postingsInThePast)
+    txInThePast.postings.addAll(postings)
 
     return txInThePast
   }
