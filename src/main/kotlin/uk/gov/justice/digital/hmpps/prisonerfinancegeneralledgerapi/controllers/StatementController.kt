@@ -60,7 +60,7 @@ class StatementController(
       ),
       ApiResponse(
         responseCode = "404",
-        description = "Not Found - Statement not found",
+        description = "Not Found - Account not found",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(

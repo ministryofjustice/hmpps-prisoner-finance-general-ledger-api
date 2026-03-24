@@ -35,6 +35,6 @@ class TransactionEntity(
   @Column(name = "amount", nullable = false)
   val amount: Long = 0,
 
-  @OneToMany(mappedBy = "transactionEntity", fetch = jakarta.persistence.FetchType.LAZY)
+  @OneToMany(mappedBy = "transactionEntity", fetch = jakarta.persistence.FetchType.EAGER)
   val postings: MutableList<PostingEntity> = mutableListOf(),
 )
