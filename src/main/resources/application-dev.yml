@@ -1,2 +1,9 @@
 hmpps-auth:
   url: "http://localhost:8090/auth"
+
+spring:
+  springdoc:
+    api-docs:
+      enabled: true
+    swagger-ui:
+      enabled: true
