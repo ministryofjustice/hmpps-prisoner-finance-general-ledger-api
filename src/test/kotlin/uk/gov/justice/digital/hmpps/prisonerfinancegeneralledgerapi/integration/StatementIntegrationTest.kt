@@ -13,6 +13,8 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.StatementEntryResponse
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.util.UUID
 
 class StatementIntegrationTest : IntegrationTestBase() {
@@ -204,6 +206,48 @@ class StatementIntegrationTest : IntegrationTestBase() {
       assertThat(statementEntryResponse[0].oppositePostings[1].subAccount.id).isEqualTo(cashSubAccountTwo.id)
       assertThat(statementEntryResponse[0].oppositePostings[1].amount).isEqualTo(1L)
       assertThat(statementEntryResponse[0].oppositePostings[1].type).isEqualTo(PostingType.CR)
+    }
+
+    @Test
+    fun `return a list of postings after the startDate for a single account`() {
+      val prisonerOneAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
+      val prisonAccount = integrationTestHelpers.createAccount("LEI", AccountType.PRISON)
+
+      val cashSubAccountOne = integrationTestHelpers.createSubAccount(prisonerOneAccount.id, "CASH")
+      val canteenAccount = integrationTestHelpers.createSubAccount(prisonAccount.id, "1001:CANT")
+
+      val christmasDayInstant = LocalDateTime.of(2025, 12, 25, 0, 0, 0).toInstant(ZoneOffset.UTC)
+      val boxingDayInstant = LocalDateTime.of(2025, 12, 26, 0, 0, 0).toInstant(ZoneOffset.UTC)
+
+      integrationTestHelpers.createOneToOneTransaction(
+        amount = 1L,
+        debitSubAccountId = canteenAccount.id,
+        creditSubAccountId = cashSubAccountOne.id,
+        transactionReference = "TX",
+        description = "CHRISTMAS DAY",
+        timestamp = christmasDayInstant,
+      )
+
+      val boxingDayTransaction = integrationTestHelpers.createOneToOneTransaction(
+        amount = 2L,
+        debitSubAccountId = canteenAccount.id,
+        creditSubAccountId = cashSubAccountOne.id,
+        transactionReference = "TX",
+        description = "BOXING DAY",
+        timestamp = boxingDayInstant,
+      )
+
+      val statementEntryResponse = webTestClient.get()
+        .uri("/accounts/${prisonerOneAccount.id}/statement?startDate=26/12/2025")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk()
+        .expectBody<List<StatementEntryResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(statementEntryResponse).hasSize(1)
+      assertThat(statementEntryResponse[0].transactionId).isEqualTo(boxingDayTransaction.id)
     }
 
     @Test

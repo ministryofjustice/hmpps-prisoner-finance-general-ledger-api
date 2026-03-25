@@ -17,33 +17,8 @@ interface PostingsDataRepository :
   JpaRepository<PostingEntity, UUID>,
   JpaSpecificationExecutor<PostingEntity> {
 
-  // SELECT id, name, created_at
-  // FROM events
-  // WHERE (created_at >= $1 OR $1 IS NULL)  -- $1 is the optional Start Date
-  //  AND (created_at <= $2 OR $2 IS NULL); -- $2 is the optional End Date
-
-//  @Query(
-//    """
-//          SELECT p
-//        FROM PostingEntity p
-//        JOIN p.subAccountEntity sa
-//            ON p.subAccountEntity.id = sa.id
-//        JOIN sa.parentAccountEntity a
-//            ON a.id = :accountId
-//  """,
-//  )
-//  fun getPostingsByAccountId(accountId: UUID, startDate: Instant? = null): List<PostingEntity>
-
-  fun getPostingsByAccountId(accountId: UUID, startDate: Instant? = null): List<PostingEntity> {
-    var spec = Specification.where(PostingsSpecification.byParentAccountId(accountId))
-    println("*******************")
-    println("*******************")
-    if (startDate != null) {
-      println("*******************")
-      println(startDate)
-      spec = spec.and(PostingsSpecification.createdAfter(startDate))
-    }
-
+  fun getPostingsByAccountId(accountId: UUID, startDate: Instant? = null, endDate: Instant? = null): List<PostingEntity> {
+    val spec = Specification.where(PostingsSpecification.byParentAccountId(accountId)).and(PostingsSpecification.createdBetween(startDate, endDate))
     return this.findAll(spec)
   }
 

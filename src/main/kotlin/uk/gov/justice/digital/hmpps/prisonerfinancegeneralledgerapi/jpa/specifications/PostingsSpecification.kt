@@ -4,6 +4,7 @@ import org.springframework.data.jpa.domain.Specification
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.TransactionEntity
 import java.time.Instant
 import java.util.UUID
 
@@ -17,7 +18,21 @@ object PostingsSpecification {
     cb.equal(parentAccount.get<UUID>("id"), accountId)
   }
 
-  fun createdAfter(startDate: Instant): Specification<PostingEntity> = Specification { root, _, cb ->
-    cb.greaterThanOrEqualTo(root.get("createdAt"), startDate)
+  fun createdBetween(startDate: Instant?, endDate: Instant?): Specification<PostingEntity> = Specification { root, _, cb ->
+
+    if (startDate == null && endDate == null) return@Specification null
+
+    val parentTransaction = root.join<PostingEntity, TransactionEntity>("transactionEntity")
+
+    when {
+      startDate != null && endDate != null ->
+        cb.between(parentTransaction.get("timestamp"), startDate, endDate)
+
+      startDate != null ->
+        cb.greaterThanOrEqualTo(parentTransaction.get("timestamp"), startDate)
+
+      else ->
+        cb.lessThanOrEqualTo(parentTransaction.get("timestamp"), endDate)
+    }
   }
 }
