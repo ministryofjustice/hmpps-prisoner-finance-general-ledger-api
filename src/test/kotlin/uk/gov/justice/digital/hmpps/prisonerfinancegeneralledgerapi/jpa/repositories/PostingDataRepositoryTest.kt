@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.helpers.RepoTestHelpers
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
 
@@ -268,6 +269,46 @@ class PostingDataRepositoryTest @Autowired constructor(
       )
       val balance = postingsDataRepository.calculateBalanceFromPostings(postings)
       assertThat(balance).isEqualTo(2)
+    }
+  }
+
+  @Nested
+  inner class GetPostingsWithSpec {
+
+    @Test
+    fun `Should return all postings after the start date supplied`() {
+      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
+      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
+      accountOneSubAccountTwo = repoTestHelpers.createSubAccount(ref = "SPENDS", account = accountOne)
+
+      val timeYesterdayAtOneAM = LocalDate.now().minusDays(1).atStartOfDay().plusHours(1).toInstant(java.time.ZoneOffset.UTC)
+      val timeTodayAtOneAM = LocalDate.now().atStartOfDay().plusHours(1).toInstant(java.time.ZoneOffset.UTC)
+
+      // TX from 1 day ago
+      repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionDateTime = timeYesterdayAtOneAM,
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+      )
+
+      // TX from today
+      val txFromToday = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionDateTime = timeTodayAtOneAM,
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+      )
+
+      val timeTodayAtMidnight = LocalDate.now().atStartOfDay().toInstant(java.time.ZoneOffset.UTC)
+
+      val postings = postingsDataRepository.findAll()
+
+      // Only one tx today with 2 postings for the account/subaccount transfer == 2 posting
+      assertThat(postings).hasSize(2)
+
+      assertThat(postings.first().transactionEntity.id).isEqualTo(txFromToday.id)
+      assertThat(postings.last().transactionEntity.id).isEqualTo(txFromToday.id)
     }
   }
 }

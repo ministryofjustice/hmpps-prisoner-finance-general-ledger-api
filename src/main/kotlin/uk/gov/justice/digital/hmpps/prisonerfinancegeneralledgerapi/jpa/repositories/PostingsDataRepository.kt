@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories
 
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
@@ -10,7 +11,14 @@ import java.time.Instant
 import java.util.UUID
 
 @Repository
-interface PostingsDataRepository : JpaRepository<PostingEntity, UUID> {
+interface PostingsDataRepository :
+  JpaRepository<PostingEntity, UUID>,
+  JpaSpecificationExecutor<PostingEntity> {
+
+  // SELECT id, name, created_at
+  // FROM events
+  // WHERE (created_at >= $1 OR $1 IS NULL)  -- $1 is the optional Start Date
+  //  AND (created_at <= $2 OR $2 IS NULL); -- $2 is the optional End Date
 
   @Query(
     """
@@ -22,7 +30,7 @@ interface PostingsDataRepository : JpaRepository<PostingEntity, UUID> {
             ON a.id = :accountId
   """,
   )
-  fun getPostingsByAccountId(accountId: UUID): List<PostingEntity>
+  fun getPostingsByAccountId(accountId: UUID, startDate: Instant? = null): List<PostingEntity>
 
   @Query("SELECT p FROM PostingEntity p WHERE p.subAccountEntity.id = :subAccountId")
   fun getPostingsForSubAccountId(@Param("subAccountId") subAccountId: UUID): List<PostingEntity>
