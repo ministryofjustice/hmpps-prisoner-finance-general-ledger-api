@@ -276,13 +276,15 @@ class PostingDataRepositoryTest @Autowired constructor(
   inner class GetPostingsWithSpec {
 
     @Test
-    fun `Should return all postings after the start date supplied`() {
+    fun `Should return all postings on or after the start date supplied`() {
       accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
       accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
       accountOneSubAccountTwo = repoTestHelpers.createSubAccount(ref = "SPENDS", account = accountOne)
 
       val timeYesterdayAtOneAM = LocalDate.now().minusDays(1).atStartOfDay().plusHours(1).toInstant(java.time.ZoneOffset.UTC)
       val timeTodayAtOneAM = LocalDate.now().atStartOfDay().plusHours(1).toInstant(java.time.ZoneOffset.UTC)
+
+      val timeTodayAtMidnight = LocalDate.now().atStartOfDay().toInstant(java.time.ZoneOffset.UTC)
 
       // TX from 1 day ago
       repoTestHelpers.createOneToOneTransaction(
@@ -292,23 +294,29 @@ class PostingDataRepositoryTest @Autowired constructor(
         creditSubAccount = accountOneSubAccountTwo,
       )
 
-      // TX from today
-      val txFromToday = repoTestHelpers.createOneToOneTransaction(
+      // TX from today at midnight
+      val txAtMidnight = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionDateTime = timeTodayAtMidnight,
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+      )
+
+      // TX from at one AM
+      val txFromAtOneAM = repoTestHelpers.createOneToOneTransaction(
         transactionAmount = 1,
         transactionDateTime = timeTodayAtOneAM,
         debitSubAccount = accountOneSubAccountOne,
         creditSubAccount = accountOneSubAccountTwo,
       )
 
-      val timeTodayAtMidnight = LocalDate.now().atStartOfDay().toInstant(java.time.ZoneOffset.UTC)
+      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, startDate = timeTodayAtMidnight)
 
-      val postings = postingsDataRepository.findAll()
+      // two tx today with 4 postings for the account/subaccount transfer == 4 posting
+      assertThat(postings).hasSize(4)
 
-      // Only one tx today with 2 postings for the account/subaccount transfer == 2 posting
-      assertThat(postings).hasSize(2)
-
-      assertThat(postings.first().transactionEntity.id).isEqualTo(txFromToday.id)
-      assertThat(postings.last().transactionEntity.id).isEqualTo(txFromToday.id)
+      assertThat(postings.first().transactionEntity.id).isEqualTo(txAtMidnight.id)
+      assertThat(postings.last().transactionEntity.id).isEqualTo(txFromAtOneAM.id)
     }
   }
 }
