@@ -121,7 +121,7 @@ class IntegrationTestHelpers(
     return transactionResponse
   }
 
-  fun createOneToOneTransaction(amount: Long, debitSubAccountId: UUID, creditSubAccountId: UUID, transactionReference: String, description: String = ""): TransactionResponse {
+  fun createOneToOneTransaction(amount: Long, debitSubAccountId: UUID, creditSubAccountId: UUID, transactionReference: String, description: String = "", timestamp: Instant = Instant.now()): TransactionResponse {
     val postings = listOf(
       CreatePostingRequest(
         subAccountId = creditSubAccountId,
@@ -139,7 +139,7 @@ class IntegrationTestHelpers(
     val transactionPayload = CreateTransactionRequest(
       reference = transactionReference,
       description = description,
-      timestamp = Instant.now(),
+      timestamp = timestamp,
       amount = amount,
       postings = postings,
     )

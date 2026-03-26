@@ -1,28 +1,26 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories
 
+import org.springframework.data.jpa.domain.Specification
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.specifications.PostingsSpecification
 import java.time.Instant
 import java.util.UUID
 
 @Repository
-interface PostingsDataRepository : JpaRepository<PostingEntity, UUID> {
+interface PostingsDataRepository :
+  JpaRepository<PostingEntity, UUID>,
+  JpaSpecificationExecutor<PostingEntity> {
 
-  @Query(
-    """
-          SELECT p
-        FROM PostingEntity p
-        JOIN p.subAccountEntity sa
-            ON p.subAccountEntity.id = sa.id
-        JOIN sa.parentAccountEntity a
-            ON a.id = :accountId
-  """,
-  )
-  fun getPostingsByAccountId(accountId: UUID): List<PostingEntity>
+  fun getPostingsByAccountId(accountId: UUID, startDate: Instant? = null, endDate: Instant? = null): List<PostingEntity> {
+    val spec = Specification.where(PostingsSpecification.byParentAccountId(accountId)).and(PostingsSpecification.createdBetween(startDate, endDate))
+    return this.findAll(spec)
+  }
 
   @Query("SELECT p FROM PostingEntity p WHERE p.subAccountEntity.id = :subAccountId")
   fun getPostingsForSubAccountId(@Param("subAccountId") subAccountId: UUID): List<PostingEntity>

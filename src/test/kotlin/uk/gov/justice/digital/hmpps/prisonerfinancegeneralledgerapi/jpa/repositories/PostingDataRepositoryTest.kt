@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.helpers.RepoTestHelpers
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
 
@@ -268,6 +269,198 @@ class PostingDataRepositoryTest @Autowired constructor(
       )
       val balance = postingsDataRepository.calculateBalanceFromPostings(postings)
       assertThat(balance).isEqualTo(2)
+    }
+  }
+
+  @Nested
+  inner class GetPostingsWithSpec {
+
+    @Test
+    fun `Should return all postings on or after the start date supplied`() {
+      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
+      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
+      accountOneSubAccountTwo = repoTestHelpers.createSubAccount(ref = "SPENDS", account = accountOne)
+
+      val timeYesterdayAtOneAM = LocalDate.now().minusDays(1).atStartOfDay().plusHours(1).toInstant(java.time.ZoneOffset.UTC)
+      val timeTodayAtMidnight = LocalDate.now().atStartOfDay().toInstant(java.time.ZoneOffset.UTC)
+      val timeTodayAtOneAM = LocalDate.now().atStartOfDay().plusHours(1).toInstant(java.time.ZoneOffset.UTC)
+
+      // TX from 1 day ago
+      repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionDateTime = timeYesterdayAtOneAM,
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+      )
+
+      // TX from today at midnight
+      val txAtMidnight = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionDateTime = timeTodayAtMidnight,
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+      )
+
+      // TX from at one AM
+      val txAtOneAM = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionDateTime = timeTodayAtOneAM,
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+      )
+
+      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, startDate = timeTodayAtMidnight)
+
+      // two tx today with 4 postings for the account/subaccount transfer == 4 posting
+      assertThat(postings).hasSize(4)
+
+      assertThat(postings.first().transactionEntity.id).isEqualTo(txAtMidnight.id)
+      assertThat(postings.last().transactionEntity.id).isEqualTo(txAtOneAM.id)
+    }
+
+    @Test
+    fun `Should return all postings on or before the end date supplied`() {
+      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
+      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
+      accountOneSubAccountTwo = repoTestHelpers.createSubAccount(ref = "SPENDS", account = accountOne)
+
+      val timeYesterdayAtOneAM = LocalDate.now().minusDays(1).atStartOfDay().plusHours(1).toInstant(java.time.ZoneOffset.UTC)
+      val timeTodayAtMidnight = LocalDate.now().atStartOfDay().toInstant(java.time.ZoneOffset.UTC)
+      val timeTomorrowAtMidnight = LocalDate.now().atStartOfDay().plusDays(1).toInstant(java.time.ZoneOffset.UTC)
+
+      // TX from 1 day ago
+      val txFromYesterday = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionDateTime = timeYesterdayAtOneAM,
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+      )
+
+      // TX from today at midnight
+      val txFromMidnight = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionDateTime = timeTodayAtMidnight,
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+      )
+
+      // TX from tomorrow at midnight
+      repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionDateTime = timeTomorrowAtMidnight,
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+      )
+
+      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, endDate = timeTodayAtMidnight)
+
+      // two tx today with 4 postings for the account/subaccount transfer == 4 posting
+      assertThat(postings).hasSize(4)
+
+      assertThat(postings.first().transactionEntity.id).isEqualTo(txFromYesterday.id)
+      assertThat(postings.last().transactionEntity.id).isEqualTo(txFromMidnight.id)
+    }
+
+    @Test
+    fun `should return all posting between or on start and end date supplied`() {
+      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
+      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
+      accountOneSubAccountTwo = repoTestHelpers.createSubAccount(ref = "SPENDS", account = accountOne)
+
+      val timeYesterdayAtOneAM = LocalDate.now().minusDays(1).atStartOfDay().plusHours(1).toInstant(java.time.ZoneOffset.UTC)
+      val timeTodayAtMidnight = LocalDate.now().atStartOfDay().toInstant(java.time.ZoneOffset.UTC)
+      val timeTodayAtNoon = LocalDate.now().atStartOfDay().plusHours(12).toInstant(java.time.ZoneOffset.UTC)
+      val timeTomorrowAtMidnight = LocalDate.now().atStartOfDay().plusDays(1).toInstant(java.time.ZoneOffset.UTC)
+      val timeTomorrowAtOneAM = LocalDate.now().atStartOfDay().plusDays(1).plusHours(1).toInstant(java.time.ZoneOffset.UTC)
+
+      // TX from 1 day ago
+      repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionDateTime = timeYesterdayAtOneAM,
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+      )
+
+      // TX from today at midnight
+      val txFromMidnight = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionDateTime = timeTodayAtMidnight,
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+      )
+
+      // TX from today at noon
+      val txFromTodayAtNoon = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionDateTime = timeTodayAtNoon,
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+      )
+
+      // TX from tomorrow at one AM
+      repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionDateTime = timeTomorrowAtOneAM,
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+      )
+
+      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, startDate = timeTodayAtMidnight, endDate = timeTomorrowAtMidnight)
+
+      // two tx today with 4 postings for the account/subaccount transfer == 4 posting
+      assertThat(postings).hasSize(4)
+
+      assertThat(postings.first().transactionEntity.id).isEqualTo(txFromMidnight.id)
+      assertThat(postings.last().transactionEntity.id).isEqualTo(txFromTodayAtNoon.id)
+    }
+
+    @Test
+    fun `should return empty list if start and end date are transposed`() {
+      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
+      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
+      accountOneSubAccountTwo = repoTestHelpers.createSubAccount(ref = "SPENDS", account = accountOne)
+
+      val timeYesterdayAtOneAM = LocalDate.now().minusDays(1).atStartOfDay().plusHours(1).toInstant(java.time.ZoneOffset.UTC)
+      val timeTodayAtMidnight = LocalDate.now().atStartOfDay().toInstant(java.time.ZoneOffset.UTC)
+      val timeTodayAtNoon = LocalDate.now().atStartOfDay().plusHours(12).toInstant(java.time.ZoneOffset.UTC)
+      val timeTomorrowAtMidnight = LocalDate.now().atStartOfDay().plusDays(1).toInstant(java.time.ZoneOffset.UTC)
+      val timeTomorrowAtOneAM = LocalDate.now().atStartOfDay().plusDays(1).plusHours(1).toInstant(java.time.ZoneOffset.UTC)
+
+      // TX from 1 day ago
+      repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionDateTime = timeYesterdayAtOneAM,
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+      )
+
+      // TX from today at midnight
+      repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionDateTime = timeTodayAtMidnight,
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+      )
+
+      // TX from today at noon
+      repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionDateTime = timeTodayAtNoon,
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+      )
+
+      // TX from tomorrow at one AM
+      repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionDateTime = timeTomorrowAtOneAM,
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+      )
+
+      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, startDate = timeTomorrowAtMidnight, endDate = timeTodayAtMidnight)
+
+      assertThat(postings).hasSize(0)
     }
   }
 }

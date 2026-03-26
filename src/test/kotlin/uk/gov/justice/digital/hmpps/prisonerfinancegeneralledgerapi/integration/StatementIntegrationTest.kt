@@ -13,6 +13,8 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.StatementEntryResponse
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.util.UUID
 
 class StatementIntegrationTest : IntegrationTestBase() {
@@ -207,6 +209,175 @@ class StatementIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `return a list of statements after and on the startDate`() {
+      val prisonerOneAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
+      val prisonAccount = integrationTestHelpers.createAccount("LEI", AccountType.PRISON)
+
+      val cashSubAccountOne = integrationTestHelpers.createSubAccount(prisonerOneAccount.id, "CASH")
+      val canteenAccount = integrationTestHelpers.createSubAccount(prisonAccount.id, "1001:CANT")
+
+      val christmasDayInstant = LocalDateTime.of(2025, 12, 25, 0, 0, 0).toInstant(ZoneOffset.UTC)
+      val boxingDayInstant = LocalDateTime.of(2025, 12, 26, 0, 0, 0).toInstant(ZoneOffset.UTC)
+      val twentySeventhDayInstant = LocalDateTime.of(2025, 12, 27, 0, 0, 0).toInstant(ZoneOffset.UTC)
+
+      integrationTestHelpers.createOneToOneTransaction(
+        amount = 1L,
+        debitSubAccountId = canteenAccount.id,
+        creditSubAccountId = cashSubAccountOne.id,
+        transactionReference = "TX",
+        description = "CHRISTMAS DAY",
+        timestamp = christmasDayInstant,
+      )
+
+      val boxingDayTransaction = integrationTestHelpers.createOneToOneTransaction(
+        amount = 2L,
+        debitSubAccountId = canteenAccount.id,
+        creditSubAccountId = cashSubAccountOne.id,
+        transactionReference = "TX",
+        description = "BOXING DAY",
+        timestamp = boxingDayInstant,
+      )
+
+      val twentySeventhTransaction = integrationTestHelpers.createOneToOneTransaction(
+        amount = 2L,
+        debitSubAccountId = canteenAccount.id,
+        creditSubAccountId = cashSubAccountOne.id,
+        transactionReference = "TX",
+        description = "DAY AFTER BOXING DAY",
+        timestamp = twentySeventhDayInstant,
+      )
+
+      val statementEntryResponse = webTestClient.get()
+        .uri("/accounts/${prisonerOneAccount.id}/statement?startDate=26/12/2025")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk()
+        .expectBody<List<StatementEntryResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(statementEntryResponse).hasSize(2)
+      assertThat(statementEntryResponse[0].transactionId).isEqualTo(boxingDayTransaction.id)
+      assertThat(statementEntryResponse[1].transactionId).isEqualTo(twentySeventhTransaction.id)
+    }
+
+    @Test
+    fun `return a list of statements before or on the endDate`() {
+      val prisonerOneAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
+      val prisonAccount = integrationTestHelpers.createAccount("LEI", AccountType.PRISON)
+
+      val cashSubAccountOne = integrationTestHelpers.createSubAccount(prisonerOneAccount.id, "CASH")
+      val canteenAccount = integrationTestHelpers.createSubAccount(prisonAccount.id, "1001:CANT")
+
+      val christmasDayInstant = LocalDateTime.of(2025, 12, 25, 0, 0, 0).toInstant(ZoneOffset.UTC)
+      val boxingDayInstant = LocalDateTime.of(2025, 12, 26, 23, 0, 0).toInstant(ZoneOffset.UTC)
+      val twentySeventhDayInstant = LocalDateTime.of(2025, 12, 27, 0, 0, 0).toInstant(ZoneOffset.UTC)
+
+      val christmasDayTransaction = integrationTestHelpers.createOneToOneTransaction(
+        amount = 1L,
+        debitSubAccountId = canteenAccount.id,
+        creditSubAccountId = cashSubAccountOne.id,
+        transactionReference = "TX",
+        description = "CHRISTMAS DAY",
+        timestamp = christmasDayInstant,
+      )
+
+      val boxingDayTransaction = integrationTestHelpers.createOneToOneTransaction(
+        amount = 2L,
+        debitSubAccountId = canteenAccount.id,
+        creditSubAccountId = cashSubAccountOne.id,
+        transactionReference = "TX",
+        description = "BOXING DAY",
+        timestamp = boxingDayInstant,
+      )
+
+      integrationTestHelpers.createOneToOneTransaction(
+        amount = 2L,
+        debitSubAccountId = canteenAccount.id,
+        creditSubAccountId = cashSubAccountOne.id,
+        transactionReference = "TX",
+        description = "DAY AFTER BOXING DAY",
+        timestamp = twentySeventhDayInstant,
+      )
+
+      val statementEntryResponse = webTestClient.get()
+        .uri("/accounts/${prisonerOneAccount.id}/statement?endDate=26/12/2025")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk()
+        .expectBody<List<StatementEntryResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(statementEntryResponse).hasSize(2)
+      assertThat(statementEntryResponse[0].transactionId).isEqualTo(christmasDayTransaction.id)
+      assertThat(statementEntryResponse[1].transactionId).isEqualTo(boxingDayTransaction.id)
+    }
+
+    @Test
+    fun `return a list of statements between startDate and endDate (inclusive)`() {
+      val prisonerOneAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
+      val prisonAccount = integrationTestHelpers.createAccount("LEI", AccountType.PRISON)
+
+      val cashSubAccountOne = integrationTestHelpers.createSubAccount(prisonerOneAccount.id, "CASH")
+      val canteenAccount = integrationTestHelpers.createSubAccount(prisonAccount.id, "1001:CANT")
+
+      val christmasEveInstant = LocalDateTime.of(2025, 12, 24, 0, 0, 0).toInstant(ZoneOffset.UTC)
+      val christmasDayInstant = LocalDateTime.of(2025, 12, 25, 0, 0, 0).toInstant(ZoneOffset.UTC)
+      val boxingDayInstant = LocalDateTime.of(2025, 12, 26, 23, 0, 0).toInstant(ZoneOffset.UTC)
+      val twentySeventhDayInstant = LocalDateTime.of(2025, 12, 27, 0, 0, 0).toInstant(ZoneOffset.UTC)
+
+      integrationTestHelpers.createOneToOneTransaction(
+        amount = 1L,
+        debitSubAccountId = canteenAccount.id,
+        creditSubAccountId = cashSubAccountOne.id,
+        transactionReference = "TX",
+        description = "CHRISTMAS EVE",
+        timestamp = christmasEveInstant,
+      )
+
+      val christmasDayTransaction = integrationTestHelpers.createOneToOneTransaction(
+        amount = 1L,
+        debitSubAccountId = canteenAccount.id,
+        creditSubAccountId = cashSubAccountOne.id,
+        transactionReference = "TX",
+        description = "CHRISTMAS DAY",
+        timestamp = christmasDayInstant,
+      )
+
+      val boxingDayTransaction = integrationTestHelpers.createOneToOneTransaction(
+        amount = 2L,
+        debitSubAccountId = canteenAccount.id,
+        creditSubAccountId = cashSubAccountOne.id,
+        transactionReference = "TX",
+        description = "BOXING DAY",
+        timestamp = boxingDayInstant,
+      )
+
+      integrationTestHelpers.createOneToOneTransaction(
+        amount = 2L,
+        debitSubAccountId = canteenAccount.id,
+        creditSubAccountId = cashSubAccountOne.id,
+        transactionReference = "TX",
+        description = "DAY AFTER BOXING DAY",
+        timestamp = twentySeventhDayInstant,
+      )
+
+      val statementEntryResponse = webTestClient.get()
+        .uri("/accounts/${prisonerOneAccount.id}/statement?startDate=25/12/2025&endDate=26/12/2025")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk()
+        .expectBody<List<StatementEntryResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(statementEntryResponse).hasSize(2)
+      assertThat(statementEntryResponse[0].transactionId).isEqualTo(christmasDayTransaction.id)
+      assertThat(statementEntryResponse[1].transactionId).isEqualTo(boxingDayTransaction.id)
+    }
+
+    @Test
     fun `should return 400 when account id is invalid`() {
       webTestClient.get()
         .uri("/accounts/INVALID_STRING/statement")
@@ -216,6 +387,26 @@ class StatementIntegrationTest : IntegrationTestBase() {
         .expectBody()
         .returnResult()
         .responseBody!!
+    }
+
+    @Test
+    fun `should return 400 when startDate query is malformed`() {
+      val prisonerAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
+      webTestClient.get()
+        .uri("/accounts/${prisonerAccount.id}/statement?startDate=XXXX")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO)))
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    fun `should return 400 when endDate query is malformed`() {
+      val prisonerAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
+      webTestClient.get()
+        .uri("/accounts/${prisonerAccount.id}/statement?endDate=XXXX")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO)))
+        .exchange()
+        .expectStatus().isBadRequest
     }
 
     @Test

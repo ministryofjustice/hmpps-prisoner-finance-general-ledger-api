@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.controllers
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -8,11 +9,13 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.CustomException
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO
@@ -20,6 +23,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.StatementEntryResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.StatementService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
+import java.time.LocalDate
 import java.util.UUID
 
 @Tag(name = "Statement Controller")
@@ -30,6 +34,10 @@ class StatementController(
   @Operation(
     summary = "Return Statement Entries list for the account",
     description = "Returns all statement entries (postings) for the account.",
+    parameters = [
+      Parameter(name = "startDate", description = "Filter statements from start date (inclusive) in a dd/MM/yyyy format", required = false, example = "24/12/2025"),
+      Parameter(name = "endDate", description = "Filter statements to end date (inclusive) in a dd/MM/yyyy format", required = false, example = "25/12/2025"),
+    ],
   )
   @ApiResponses(
     value = [
@@ -76,8 +84,12 @@ class StatementController(
   )
   @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO','$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
   @GetMapping(value = ["/accounts/{accountId}/statement"])
-  fun getStatementForAccountId(@PathVariable accountId: UUID): ResponseEntity<List<StatementEntryResponse>> {
-    val listStatementEntryResponse = statementService.listStatementEntries(accountId)
+  fun getStatementForAccountId(
+    @PathVariable accountId: UUID,
+    @RequestParam @DateTimeFormat(pattern = "dd/MM/yyyy") startDate: LocalDate? = null,
+    @RequestParam @DateTimeFormat(pattern = "dd/MM/yyyy") endDate: LocalDate? = null,
+  ): ResponseEntity<List<StatementEntryResponse>> {
+    val listStatementEntryResponse = statementService.listStatementEntries(accountId, startDate, endDate)
 
     if (listStatementEntryResponse == null) {
       throw CustomException(message = "Account not found", status = HttpStatus.NOT_FOUND)
