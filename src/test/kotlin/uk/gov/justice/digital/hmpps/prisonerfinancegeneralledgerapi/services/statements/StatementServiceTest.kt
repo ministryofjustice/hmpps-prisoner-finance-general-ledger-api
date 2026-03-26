@@ -8,6 +8,8 @@ import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
@@ -16,6 +18,8 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.Acc
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.StatementService
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.helpers.ServiceTestHelpers
 import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.util.UUID
 
 @ExtendWith(MockitoExtension::class)
@@ -209,6 +213,70 @@ class StatementServiceTest {
       assertThat(statementEntries[0].postingCreatedAt).isEqualTo(posting1.createdAt)
       assertThat(statementEntries[0].subAccount.id).isEqualTo(subAccountCashEntityOne.id)
       assertThat(statementEntries[0].oppositePostings[0].id).isEqualTo(prisonPosting.id)
+    }
+
+    @Test
+    fun `should pass null to the repository if no dates are provided`() {
+      val prisonerId = UUID.randomUUID()
+      whenever { accountService.readAccount(accountUUID = prisonerId) }.thenReturn(AccountEntity(id = prisonerId))
+      whenever { postingsDataRepository.getPostingsByAccountId(accountId = prisonerId) }.thenReturn(emptyList())
+
+      val postings = statementService.listStatementEntries(accountId = prisonerId)
+
+      assertThat(postings).isEmpty()
+      verify(postingsDataRepository, times(1)).getPostingsByAccountId(
+        accountId = prisonerId,
+        startDate = null,
+        endDate = null,
+      )
+    }
+
+    @Test
+    fun `should pass midnight of start date to the repository if start date is provided`() {
+      val prisonerId = UUID.randomUUID()
+      val christmasEveTenAM = LocalDateTime.of(2025, 12, 24, 10, 30, 0).toLocalDate()
+      val christmasEveMidnight = LocalDateTime.of(2025, 12, 24, 0, 0, 0).toInstant(ZoneOffset.UTC)
+
+      whenever { accountService.readAccount(accountUUID = prisonerId) }.thenReturn(AccountEntity(id = prisonerId))
+      whenever { postingsDataRepository.getPostingsByAccountId(accountId = prisonerId, startDate = christmasEveMidnight) }.thenReturn(emptyList())
+
+      val postings = statementService.listStatementEntries(accountId = prisonerId, startDate = christmasEveTenAM)
+
+      assertThat(postings).isEmpty()
+      verify(postingsDataRepository, times(numInvocations = 1)).getPostingsByAccountId(
+        accountId = prisonerId,
+        startDate = christmasEveMidnight,
+        endDate = null,
+      )
+    }
+
+    @Test
+    fun `should pass 11,59,59 of start date to the repository if end date is provided`() {
+      val prisonerId = UUID.randomUUID()
+      val christmasEveTenAM = LocalDateTime.of(2025, 12, 24, 10, 30, 0).toLocalDate()
+      val christmasElevenFiftyNine = LocalDateTime.of(2025, 12, 24, 23, 59, 59).toInstant(ZoneOffset.UTC)
+
+      whenever { accountService.readAccount(accountUUID = prisonerId) }.thenReturn(AccountEntity(id = prisonerId))
+      whenever {
+        postingsDataRepository.getPostingsByAccountId(
+          accountId = prisonerId,
+          startDate = null,
+          endDate = christmasElevenFiftyNine,
+        )
+      }.thenReturn(emptyList())
+
+      val postings = statementService.listStatementEntries(
+        accountId = prisonerId,
+        startDate = null,
+        endDate = christmasEveTenAM,
+      )
+
+      assertThat(postings).isEmpty()
+      verify(postingsDataRepository, times(1)).getPostingsByAccountId(
+        accountId = prisonerId,
+        startDate = null,
+        endDate = christmasElevenFiftyNine,
+      )
     }
   }
 }
