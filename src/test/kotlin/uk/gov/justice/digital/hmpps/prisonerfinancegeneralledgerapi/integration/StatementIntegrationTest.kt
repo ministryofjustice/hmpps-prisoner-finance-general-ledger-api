@@ -248,7 +248,7 @@ class StatementIntegrationTest : IntegrationTestBase() {
       )
 
       val statementEntryResponse = webTestClient.get()
-        .uri("/accounts/${prisonerOneAccount.id}/statement?startDate=26/12/2025")
+        .uri("/accounts/${prisonerOneAccount.id}/statement?startDate=2025-12-26")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .exchange()
         .expectStatus().isOk()
@@ -301,7 +301,7 @@ class StatementIntegrationTest : IntegrationTestBase() {
       )
 
       val statementEntryResponse = webTestClient.get()
-        .uri("/accounts/${prisonerOneAccount.id}/statement?endDate=26/12/2025")
+        .uri("/accounts/${prisonerOneAccount.id}/statement?endDate=2025-12-26")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .exchange()
         .expectStatus().isOk()
@@ -364,7 +364,7 @@ class StatementIntegrationTest : IntegrationTestBase() {
       )
 
       val statementEntryResponse = webTestClient.get()
-        .uri("/accounts/${prisonerOneAccount.id}/statement?startDate=25/12/2025&endDate=26/12/2025")
+        .uri("/accounts/${prisonerOneAccount.id}/statement?startDate=2025-12-25&endDate=2025-12-26")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .exchange()
         .expectStatus().isOk()
