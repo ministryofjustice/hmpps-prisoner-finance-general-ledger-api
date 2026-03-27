@@ -11,6 +11,8 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
@@ -53,11 +55,11 @@ class StatementServiceTest {
     fun `should return empty list when no postings for an account`() {
       val prisonerId = UUID.randomUUID()
       whenever { accountService.readAccount(prisonerId) }.thenReturn(AccountEntity(id = prisonerId))
-      whenever { postingsDataRepository.getPostingsByAccountId(prisonerId) }.thenReturn(emptyList())
+      whenever { postingsDataRepository.getPostingsByAccountId(prisonerId) }.thenReturn(Page.empty())
 
       val postings = statementService.listStatementEntries(prisonerId)
 
-      assertThat(postings).isEmpty()
+      assertThat(postings!!.content).isEmpty()
     }
 
     @Test
@@ -75,18 +77,15 @@ class StatementServiceTest {
       val posting1 = transactionEntity.postings[0]
       val posting2 = transactionEntity.postings[1]
 
-      whenever { postingsDataRepository.getPostingsByAccountId(prisonerId) }
-        .thenReturn(
-          listOf(
-            posting1,
-            posting2,
-          ),
-        )
+      val page = PageImpl(listOf(posting1, posting2))
 
-      val statementEntries = statementService.listStatementEntries(prisonerId)
+      whenever { postingsDataRepository.getPostingsByAccountId(prisonerId) }
+        .thenReturn(page)
+
+      val statementEntries = statementService.listStatementEntries(prisonerId)?.content!!
 
       assertThat(statementEntries).hasSize(2)
-      assertThat(statementEntries!![0].transactionId).isEqualTo(transactionEntity.id)
+      assertThat(statementEntries[0].transactionId).isEqualTo(transactionEntity.id)
       assertThat(statementEntries[0].description).isEqualTo(transactionEntity.description)
       assertThat(statementEntries[0].postingCreatedAt).isEqualTo(posting1.createdAt)
       assertThat(statementEntries[0].subAccount.id).isEqualTo(subAccountCashEntity.id)
@@ -116,17 +115,15 @@ class StatementServiceTest {
       val posting1 = transactionEntity.postings[0]
       val posting2 = transactionEntity.postings[1]
 
-      whenever { postingsDataRepository.getPostingsByAccountId(prisonerId) }
-        .thenReturn(
-          listOf(
-            posting1,
-          ),
-        )
+      val page = PageImpl(listOf(posting1))
 
-      val statementEntries = statementService.listStatementEntries(prisonerId)
+      whenever { postingsDataRepository.getPostingsByAccountId(prisonerId) }
+        .thenReturn(page)
+
+      val statementEntries = statementService.listStatementEntries(prisonerId)?.content!!
 
       assertThat(statementEntries).hasSize(1)
-      assertThat(statementEntries!![0].transactionId).isEqualTo(transactionEntity.id)
+      assertThat(statementEntries[0].transactionId).isEqualTo(transactionEntity.id)
       assertThat(statementEntries[0].description).isEqualTo(transactionEntity.description)
       assertThat(statementEntries[0].postingCreatedAt).isEqualTo(posting1.createdAt)
       assertThat(statementEntries[0].subAccount.id).isEqualTo(subAccountCashEntity.id)
@@ -157,17 +154,15 @@ class StatementServiceTest {
       val posting1 = transactionEntity.postings[1]
       val posting2 = transactionEntity.postings[2]
 
-      whenever { postingsDataRepository.getPostingsByAccountId(accountId = prisonAccountEntity.id) }
-        .thenReturn(
-          listOf(
-            prisonPosting,
-          ),
-        )
+      val page = PageImpl(listOf(prisonPosting))
 
-      val statementEntries = statementService.listStatementEntries(accountId = prisonAccountEntity.id)
+      whenever { postingsDataRepository.getPostingsByAccountId(accountId = prisonAccountEntity.id) }
+        .thenReturn(page)
+
+      val statementEntries = statementService.listStatementEntries(accountId = prisonAccountEntity.id)?.content!!
 
       assertThat(statementEntries).hasSize(1)
-      assertThat(statementEntries!![0].transactionId).isEqualTo(transactionEntity.id)
+      assertThat(statementEntries[0].transactionId).isEqualTo(transactionEntity.id)
       assertThat(statementEntries[0].description).isEqualTo(transactionEntity.description)
       assertThat(statementEntries[0].postingCreatedAt).isEqualTo(prisonPosting.createdAt)
       assertThat(statementEntries[0].subAccount.id).isEqualTo(subAccountPrisonEntity.id)
@@ -198,17 +193,15 @@ class StatementServiceTest {
       val prisonPosting = transactionEntity.postings[0]
       val posting1 = transactionEntity.postings[1]
 
-      whenever { postingsDataRepository.getPostingsByAccountId(accountId = accountEntityOne.id) }
-        .thenReturn(
-          listOf(
-            posting1,
-          ),
-        )
+      val page = PageImpl(listOf(posting1))
 
-      val statementEntries = statementService.listStatementEntries(accountId = accountEntityOne.id)
+      whenever { postingsDataRepository.getPostingsByAccountId(accountId = accountEntityOne.id) }
+        .thenReturn(page)
+
+      val statementEntries = statementService.listStatementEntries(accountId = accountEntityOne.id)?.content!!
 
       assertThat(statementEntries).hasSize(1)
-      assertThat(statementEntries!![0].transactionId).isEqualTo(transactionEntity.id)
+      assertThat(statementEntries[0].transactionId).isEqualTo(transactionEntity.id)
       assertThat(statementEntries[0].description).isEqualTo(transactionEntity.description)
       assertThat(statementEntries[0].postingCreatedAt).isEqualTo(posting1.createdAt)
       assertThat(statementEntries[0].subAccount.id).isEqualTo(subAccountCashEntityOne.id)
@@ -219,9 +212,9 @@ class StatementServiceTest {
     fun `should pass null to the repository if no dates are provided`() {
       val prisonerId = UUID.randomUUID()
       whenever { accountService.readAccount(accountUUID = prisonerId) }.thenReturn(AccountEntity(id = prisonerId))
-      whenever { postingsDataRepository.getPostingsByAccountId(accountId = prisonerId) }.thenReturn(emptyList())
+      whenever { postingsDataRepository.getPostingsByAccountId(accountId = prisonerId) }.thenReturn(PageImpl(emptyList()))
 
-      val postings = statementService.listStatementEntries(accountId = prisonerId)
+      val postings = statementService.listStatementEntries(accountId = prisonerId)?.content!!
 
       assertThat(postings).isEmpty()
       verify(postingsDataRepository, times(1)).getPostingsByAccountId(
@@ -238,9 +231,9 @@ class StatementServiceTest {
       val christmasEveMidnight = LocalDateTime.of(2025, 12, 24, 0, 0, 0).toInstant(ZoneOffset.UTC)
 
       whenever { accountService.readAccount(accountUUID = prisonerId) }.thenReturn(AccountEntity(id = prisonerId))
-      whenever { postingsDataRepository.getPostingsByAccountId(accountId = prisonerId, startDate = christmasEveMidnight) }.thenReturn(emptyList())
+      whenever { postingsDataRepository.getPostingsByAccountId(accountId = prisonerId, startDate = christmasEveMidnight) }.thenReturn(PageImpl(emptyList()))
 
-      val postings = statementService.listStatementEntries(accountId = prisonerId, startDate = christmasEveTenAM)
+      val postings = statementService.listStatementEntries(accountId = prisonerId, startDate = christmasEveTenAM)?.content!!
 
       assertThat(postings).isEmpty()
       verify(postingsDataRepository, times(numInvocations = 1)).getPostingsByAccountId(
@@ -263,7 +256,7 @@ class StatementServiceTest {
           startDate = null,
           endDate = christmasElevenFiftyNine,
         )
-      }.thenReturn(emptyList())
+      }.thenReturn(PageImpl(emptyList()))
 
       val postings = statementService.listStatementEntries(
         accountId = prisonerId,
@@ -271,11 +264,37 @@ class StatementServiceTest {
         endDate = christmasEveTenAM,
       )
 
-      assertThat(postings).isEmpty()
+      assertThat(postings!!.content).isEmpty()
       verify(postingsDataRepository, times(1)).getPostingsByAccountId(
         accountId = prisonerId,
         startDate = null,
         endDate = christmasElevenFiftyNine,
+      )
+    }
+
+    @Test
+    fun `should call the repository with the correct page number and size`() {
+      val prisonerId = UUID.randomUUID()
+
+      whenever { accountService.readAccount(accountUUID = prisonerId) }.thenReturn(AccountEntity(id = prisonerId))
+      whenever {
+        postingsDataRepository.getPostingsByAccountId(
+          pageNumber = 0,
+          pageSize = 25,
+          accountId = prisonerId,
+        )
+      }.thenReturn(PageImpl(emptyList()))
+
+      statementService.listStatementEntries(
+        accountId = prisonerId,
+        pageNumber = 1,
+        pageSize = 25,
+      )
+
+      verify(postingsDataRepository, times(1)).getPostingsByAccountId(
+        accountId = prisonerId,
+        pageNumber = 0,
+        pageSize = 25,
       )
     }
   }

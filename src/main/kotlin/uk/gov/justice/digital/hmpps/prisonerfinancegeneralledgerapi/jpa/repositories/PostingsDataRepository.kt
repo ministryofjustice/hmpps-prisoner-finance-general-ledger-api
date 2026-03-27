@@ -1,5 +1,9 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories
 
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
 import org.springframework.data.jpa.domain.Specification
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor
@@ -17,9 +21,11 @@ interface PostingsDataRepository :
   JpaRepository<PostingEntity, UUID>,
   JpaSpecificationExecutor<PostingEntity> {
 
-  fun getPostingsByAccountId(accountId: UUID, startDate: Instant? = null, endDate: Instant? = null): List<PostingEntity> {
+  fun getPostingsByAccountId(accountId: UUID, startDate: Instant? = null, endDate: Instant? = null, pageSize: Int = 25, pageNumber: Int = 0, pageable: Pageable? = null): Page<PostingEntity> {
     val spec = Specification.where(PostingsSpecification.byParentAccountId(accountId)).and(PostingsSpecification.createdBetween(startDate, endDate))
-    return this.findAll(spec)
+    val timeStampOrdering = Sort.by(Sort.Direction.DESC, "transactionEntity.timestamp")
+    val page = PageRequest.of(pageNumber, pageSize, timeStampOrdering)
+    return this.findAll(spec, page)
   }
 
   @Query("SELECT p FROM PostingEntity p WHERE p.subAccountEntity.id = :subAccountId")
