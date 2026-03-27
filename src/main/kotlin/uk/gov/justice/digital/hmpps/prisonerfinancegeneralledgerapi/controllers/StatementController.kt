@@ -35,8 +35,8 @@ class StatementController(
     summary = "Return Statement Entries list for the account",
     description = "Returns all statement entries (postings) for the account.",
     parameters = [
-      Parameter(name = "startDate", description = "Filter statements from start date (inclusive) in a dd/MM/yyyy format", required = false, example = "24/12/2025"),
-      Parameter(name = "endDate", description = "Filter statements to end date (inclusive) in a dd/MM/yyyy format", required = false, example = "25/12/2025"),
+      Parameter(name = "startDate", description = "Filter statements from start date (inclusive) in a yyyy-MM-dd format", required = false, example = "2025-12-24"),
+      Parameter(name = "endDate", description = "Filter statements to end date (inclusive) in a yyyy-MM-dd format", required = false, example = "2025-12-25"),
     ],
   )
   @ApiResponses(
@@ -86,8 +86,8 @@ class StatementController(
   @GetMapping(value = ["/accounts/{accountId}/statement"])
   fun getStatementForAccountId(
     @PathVariable accountId: UUID,
-    @RequestParam @DateTimeFormat(pattern = "dd/MM/yyyy") startDate: LocalDate? = null,
-    @RequestParam @DateTimeFormat(pattern = "dd/MM/yyyy") endDate: LocalDate? = null,
+    @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") startDate: LocalDate? = null,
+    @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") endDate: LocalDate? = null,
   ): ResponseEntity<List<StatementEntryResponse>> {
     val listStatementEntryResponse = statementService.listStatementEntries(accountId, startDate, endDate)
 
