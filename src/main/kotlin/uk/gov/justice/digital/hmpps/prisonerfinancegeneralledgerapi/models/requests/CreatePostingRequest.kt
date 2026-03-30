@@ -16,4 +16,11 @@ data class CreatePostingRequest(
   @field:Schema(description = "The non-negative posting amount")
   @field:PositiveOrZero(message = "posting amount must be positive")
   val amount: Long,
+
+  @field:Schema(
+    description = "The entry sequence number of the posting, " +
+      "this is used to ensure that the posting is created in the correct order, " +
+      "if not provided defaulted to zero")
+  @field:PositiveOrZero(message = "Entry sequence number must be positive")
+  val entrySequence: Long = 0,
 )
