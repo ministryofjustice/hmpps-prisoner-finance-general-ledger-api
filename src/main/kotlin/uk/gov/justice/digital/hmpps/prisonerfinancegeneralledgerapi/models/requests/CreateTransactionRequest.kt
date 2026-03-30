@@ -26,6 +26,14 @@ data class CreateTransactionRequest(
   val amount: Long,
 
   @field:Schema(
+    description = "The entry sequence number of the transaction, " +
+      "this is used to ensure that the transaction is ordered correctly, " +
+      "if not provided defaulted to zero",
+  )
+  @field:PositiveOrZero(message = "Entry sequence number must be positive")
+  val entrySequence: Long = 0,
+
+  @field:Schema(
     description = "A collection of postings for the transaction, there must be at least 1 Credit (CR) and 1 Debit (DR) posting supplied.\n" +
       "\n" +
       "We accept one to one postings (1DR to 1CR).\n" +
