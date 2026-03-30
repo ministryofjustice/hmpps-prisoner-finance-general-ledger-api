@@ -24,7 +24,14 @@ class TransactionService(
 ) {
   @Transactional()
   fun createTransaction(createTxReq: CreateTransactionRequest, createdBy: String, idempotencyKey: UUID): TransactionEntity {
-    val transactionEntity = TransactionEntity(reference = createTxReq.reference, createdBy = createdBy, description = createTxReq.description, amount = createTxReq.amount, timestamp = createTxReq.timestamp)
+    val transactionEntity = TransactionEntity(
+      reference = createTxReq.reference,
+      createdBy = createdBy,
+      description = createTxReq.description,
+      amount = createTxReq.amount,
+      timestamp = createTxReq.timestamp,
+      entrySequence = createTxReq.entrySequence,
+    )
     transactionDataRepository.save(transactionEntity)
 
     val idempotencyEntityToSave = IdempotencyEntity(idempotencyKey, transactionEntity)
@@ -38,6 +45,7 @@ class TransactionService(
         amount = it.amount,
         subAccountEntity = subAccountDataRepository.getSubAccountEntityById(it.subAccountId) ?: throw CustomException("Invalid sub account ID", HttpStatus.BAD_REQUEST),
         transactionEntity = transactionEntity,
+        entrySequence = it.entrySequence,
       )
     }
     postingsDataRepository.saveAll(postingEntities)

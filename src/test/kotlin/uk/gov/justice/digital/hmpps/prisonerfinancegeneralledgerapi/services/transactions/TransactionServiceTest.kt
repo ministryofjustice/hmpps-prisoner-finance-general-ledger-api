@@ -64,8 +64,8 @@ class TransactionServiceTest {
   val transactionDescription = "TX"
   val transactionAmount: Long = 1
   val createPostingRequests: List<CreatePostingRequest> = listOf(
-    CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000001"), type = PostingType.CR, amount = 1),
-    CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000002"), type = PostingType.DR, amount = 1),
+    CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000001"), type = PostingType.CR, amount = 1, entrySequence = 1L),
+    CreatePostingRequest(subAccountId = UUID.fromString("00000000-0000-0000-0000-000000000002"), type = PostingType.DR, amount = 1, entrySequence = 2L),
   )
 
   @BeforeEach
@@ -78,8 +78,19 @@ class TransactionServiceTest {
       description = transactionDescription,
       timestamp = timeStamp,
       amount = transactionAmount,
+      entrySequence = 1,
     )
-    postingEntities = createPostingRequests.map { PostingEntity(createdBy = TEST_USERNAME, createdAt = date, type = it.type, amount = it.amount, subAccountEntity = SubAccountEntity(), transactionEntity = transactionEntity) }.toMutableList()
+    postingEntities = createPostingRequests.map {
+      PostingEntity(
+        createdBy = TEST_USERNAME,
+        createdAt = date,
+        type = it.type,
+        amount = it.amount,
+        subAccountEntity = SubAccountEntity(),
+        transactionEntity = transactionEntity,
+        entrySequence = it.entrySequence,
+      )
+    }.toMutableList()
   }
 
   @Nested
@@ -92,7 +103,7 @@ class TransactionServiceTest {
       whenever(postingsDataRepository.saveAll(any<Iterable<PostingEntity>>())).thenReturn(postingEntities)
       whenever(subAccountDataRepository.getSubAccountEntityById(any<UUID>())).thenAnswer { SubAccountEntity(id = it.getArgument(0)) }
 
-      val txnReq = CreateTransactionRequest(reference = TEST_TREF, description = transactionDescription, amount = transactionAmount, timestamp = timeStamp, postings = createPostingRequests)
+      val txnReq = CreateTransactionRequest(reference = TEST_TREF, description = transactionDescription, amount = transactionAmount, timestamp = timeStamp, postings = createPostingRequests, entrySequence = 1)
 
       val createdTransaction: TransactionEntity =
         transactionService.createTransaction(txnReq, createdBy = TEST_USERNAME, idempotencyKey = idempotencyKey)
@@ -106,29 +117,31 @@ class TransactionServiceTest {
       assertThat(transactionToSave.description).isEqualTo(transactionDescription)
       assertThat(transactionToSave.amount).isEqualTo(transactionAmount)
       assertThat(transactionToSave.timestamp).isEqualTo(timeStamp)
+      assertThat(transactionToSave.entrySequence).isEqualTo(1)
 
       val postingsCaptor = argumentCaptor<List<PostingEntity>>()
       verify(postingsDataRepository, times(1)).saveAll(postingsCaptor.capture())
 
       val postingsToSave = postingsCaptor.firstValue
-      assertThat(postingsToSave[0].createdBy).isEqualTo(TEST_USERNAME)
-      assertThat(postingsToSave[0].amount).isEqualTo(1L)
-      assertThat(postingsToSave[0].type).isEqualTo(PostingType.CR)
-      assertThat(postingsToSave[0].transactionEntity.id).isEqualTo(createdTransaction.id)
 
-      // Just test the PostingType as properties are the same as 0
+      assertThat(postingsToSave[0].type).isEqualTo(PostingType.CR)
       assertThat(postingsToSave[1].type).isEqualTo(PostingType.DR)
 
       assertThat(createdTransaction.postings.size).isEqualTo(2)
 
-      assertThat(createdTransaction.postings[0].id).isEqualTo(postingsToSave[0].id)
-      assertThat(createdTransaction.postings[0].amount).isEqualTo(postingsToSave[0].amount)
-      assertThat(createdTransaction.postings[0].type).isEqualTo(postingsToSave[0].type)
-      assertThat(createdTransaction.postings[0].createdBy).isEqualTo(postingsToSave[0].createdBy)
-      assertThat(createdTransaction.postings[0].transactionEntity.id).isEqualTo(postingsToSave[0].transactionEntity.id)
+      for (i in 0 until 2) {
+        assertThat(postingsToSave[i].createdBy).isEqualTo(TEST_USERNAME)
+        assertThat(postingsToSave[i].amount).isEqualTo(1L)
+        assertThat(postingsToSave[i].transactionEntity.id).isEqualTo(createdTransaction.id)
+        assertThat(postingsToSave[i].entrySequence).isEqualTo(i + 1L)
 
-      assertThat(createdTransaction.postings[1].id).isEqualTo(postingsToSave[1].id)
-      assertThat(createdTransaction.postings[1].type).isEqualTo(postingsToSave[1].type)
+        assertThat(createdTransaction.postings[i].id).isEqualTo(postingsToSave[i].id)
+        assertThat(createdTransaction.postings[i].amount).isEqualTo(postingsToSave[i].amount)
+        assertThat(createdTransaction.postings[i].type).isEqualTo(postingsToSave[i].type)
+        assertThat(createdTransaction.postings[i].createdBy).isEqualTo(postingsToSave[i].createdBy)
+        assertThat(createdTransaction.postings[i].transactionEntity.id).isEqualTo(postingsToSave[i].transactionEntity.id)
+        assertThat(createdTransaction.postings[i].entrySequence).isEqualTo(i + 1L)
+      }
 
       val idempotencyCaptor = argumentCaptor<IdempotencyEntity>()
       verify(idempotencyKeyDataRepository, times(1)).save(idempotencyCaptor.capture())

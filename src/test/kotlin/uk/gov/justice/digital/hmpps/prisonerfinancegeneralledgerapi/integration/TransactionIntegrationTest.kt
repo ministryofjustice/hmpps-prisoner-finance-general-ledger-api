@@ -52,8 +52,8 @@ class TransactionIntegrationTest : IntegrationTestBase() {
     @Test
     fun `return a 201 when sent a valid transaction with one to one postings`() {
       val createPostingRequests: List<CreatePostingRequest> = listOf(
-        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 1L),
-        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = 1L),
+        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 1L, entrySequence = 1),
+        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = 1L, entrySequence = 2),
       )
 
       val transactionResponseBody = webTestClient.post()
@@ -68,6 +68,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             amount = 1L,
             timestamp = Instant.now(),
             postings = createPostingRequests,
+            entrySequence = 1,
           ),
         )
         .exchange()
@@ -90,9 +91,9 @@ class TransactionIntegrationTest : IntegrationTestBase() {
     @Test
     fun `return a 201 when sent a valid transaction with many credits for one debit`() {
       val createPostingRequests: List<CreatePostingRequest> = listOf(
-        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.DR, amount = 2L),
-        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.CR, amount = 1L),
-        CreatePostingRequest(subAccountId = subAccounts[2].id, type = PostingType.CR, amount = 1L),
+        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.DR, amount = 2L, entrySequence = 1),
+        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.CR, amount = 1L, entrySequence = 2),
+        CreatePostingRequest(subAccountId = subAccounts[2].id, type = PostingType.CR, amount = 1L, entrySequence = 3),
       )
 
       val transactionResponseBody = webTestClient.post()
@@ -107,6 +108,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             amount = 2L,
             timestamp = Instant.now(),
             postings = createPostingRequests,
+            entrySequence = 1,
           ),
         )
         .exchange()
@@ -126,9 +128,9 @@ class TransactionIntegrationTest : IntegrationTestBase() {
     @Test
     fun `return a 201 when sent a valid transaction with one credit to many debits`() {
       val createPostingRequests: List<CreatePostingRequest> = listOf(
-        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.DR, amount = 2L),
-        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = 1L),
-        CreatePostingRequest(subAccountId = subAccounts[2].id, type = PostingType.CR, amount = 3L),
+        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.DR, amount = 2L, entrySequence = 1),
+        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = 1L, entrySequence = 2),
+        CreatePostingRequest(subAccountId = subAccounts[2].id, type = PostingType.CR, amount = 3L, entrySequence = 3),
       )
 
       val transactionResponseBody = webTestClient.post()
@@ -143,6 +145,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             amount = 3L,
             timestamp = Instant.now(),
             postings = createPostingRequests,
+            entrySequence = 1,
           ),
         )
         .exchange()
@@ -162,8 +165,8 @@ class TransactionIntegrationTest : IntegrationTestBase() {
     @Test
     fun `return a 200 and the corresponding transaction when the idempotency key has already been used`() {
       val createPostingRequests: List<CreatePostingRequest> = listOf(
-        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 1L),
-        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = 1L),
+        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 1L, entrySequence = 1),
+        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = 1L, entrySequence = 2),
       )
 
       val idempotencyKey = UUID.randomUUID()
@@ -180,6 +183,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             amount = 1L,
             timestamp = Instant.now(),
             postings = createPostingRequests,
+            entrySequence = 1,
           ),
         )
         .exchange()
@@ -200,6 +204,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             amount = 1L,
             timestamp = Instant.now(),
             postings = createPostingRequests,
+            entrySequence = 1,
           ),
         )
         .exchange()
@@ -214,8 +219,8 @@ class TransactionIntegrationTest : IntegrationTestBase() {
     @Test
     fun `Should return a 400 when no Idempotency Key header is sent`() {
       val createPostingRequests: List<CreatePostingRequest> = listOf(
-        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 1L),
-        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = 1L),
+        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 1L, entrySequence = 1),
+        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = 1L, entrySequence = 2),
       )
 
       webTestClient.post()
@@ -229,6 +234,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             amount = 1L,
             timestamp = Instant.now(),
             postings = createPostingRequests,
+            entrySequence = 1,
           ),
         )
         .exchange()
@@ -238,10 +244,10 @@ class TransactionIntegrationTest : IntegrationTestBase() {
     @Test
     fun `return a 400 when sent a valid transaction with many to many postings`() {
       val createPostingRequests: List<CreatePostingRequest> = listOf(
-        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.DR, amount = 1L),
-        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.CR, amount = 1L),
-        CreatePostingRequest(subAccountId = subAccounts[2].id, type = PostingType.DR, amount = 1L),
-        CreatePostingRequest(subAccountId = subAccounts[3].id, type = PostingType.CR, amount = 1L),
+        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.DR, amount = 1L, entrySequence = 1),
+        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.CR, amount = 1L, entrySequence = 2),
+        CreatePostingRequest(subAccountId = subAccounts[2].id, type = PostingType.DR, amount = 1L, entrySequence = 3),
+        CreatePostingRequest(subAccountId = subAccounts[3].id, type = PostingType.CR, amount = 1L, entrySequence = 4),
       )
 
       val transactionResponseBody = webTestClient.post()
@@ -256,6 +262,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             amount = 2L,
             timestamp = Instant.now(),
             postings = createPostingRequests,
+            entrySequence = 1,
           ),
         )
         .exchange()
@@ -265,8 +272,8 @@ class TransactionIntegrationTest : IntegrationTestBase() {
     @Test
     fun `return a 400 when sent a valid transaction with an invalid sub-account UUID`() {
       val createPostingRequests: List<CreatePostingRequest> = listOf(
-        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 1L),
-        CreatePostingRequest(subAccountId = UUID.randomUUID(), type = PostingType.DR, amount = 1L),
+        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 1L, entrySequence = 1),
+        CreatePostingRequest(subAccountId = UUID.randomUUID(), type = PostingType.DR, amount = 1L, entrySequence = 2),
       )
 
       val transactionResponseBody = webTestClient.post()
@@ -281,6 +288,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             amount = 1L,
             timestamp = Instant.now(),
             postings = createPostingRequests,
+            entrySequence = 1,
           ),
         )
         .exchange()
@@ -290,7 +298,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
     @Test
     fun `should return 400 when sent a transaction with fewer than two postings`() {
       val createPostingRequests: List<CreatePostingRequest> = listOf(
-        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.DR, amount = 1L),
+        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.DR, amount = 1L, entrySequence = 1),
       )
 
       webTestClient.post()
@@ -305,6 +313,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             amount = 1L,
             timestamp = Instant.now(),
             postings = createPostingRequests,
+            entrySequence = 1,
           ),
         )
         .exchange()
@@ -314,8 +323,8 @@ class TransactionIntegrationTest : IntegrationTestBase() {
     @Test
     fun `should return 400 when transaction posting credits do not match transaction amount`() {
       val createPostingRequests: List<CreatePostingRequest> = listOf(
-        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 100L),
-        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = 100L),
+        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 100L, entrySequence = 1),
+        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = 100L, entrySequence = 2),
       )
 
       webTestClient.post()
@@ -330,6 +339,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             amount = 1L,
             timestamp = Instant.now(),
             postings = createPostingRequests,
+            entrySequence = 1,
           ),
         )
         .exchange()
@@ -339,8 +349,8 @@ class TransactionIntegrationTest : IntegrationTestBase() {
     @Test
     fun `should return 400 when transaction posting credits and posting debits do not balance`() {
       val createPostingRequests: List<CreatePostingRequest> = listOf(
-        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 1L),
-        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = 100L),
+        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 1L, entrySequence = 1),
+        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = 100L, entrySequence = 2),
       )
 
       webTestClient.post()
@@ -355,6 +365,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             amount = 1L,
             timestamp = Instant.now(),
             postings = createPostingRequests,
+            entrySequence = 1,
           ),
         )
         .exchange()
@@ -364,8 +375,8 @@ class TransactionIntegrationTest : IntegrationTestBase() {
     @Test
     fun `should return 400 when transaction amount is negative`() {
       val createPostingRequests: List<CreatePostingRequest> = listOf(
-        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = -1L),
-        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = -1L),
+        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = -1L, entrySequence = 1),
+        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = -1L, entrySequence = 2),
       )
 
       webTestClient.post()
@@ -380,6 +391,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             amount = -1L,
             timestamp = Instant.now(),
             postings = createPostingRequests,
+            entrySequence = 1,
           ),
         )
         .exchange()
@@ -389,9 +401,9 @@ class TransactionIntegrationTest : IntegrationTestBase() {
     @Test
     fun `should return 400 when transaction postings contain a negative amount`() {
       val createPostingRequests: List<CreatePostingRequest> = listOf(
-        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 2L),
-        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.CR, amount = -1L),
-        CreatePostingRequest(subAccountId = subAccounts[2].id, type = PostingType.DR, amount = 1L),
+        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 2L, entrySequence = 1),
+        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.CR, amount = -1L, entrySequence = 2),
+        CreatePostingRequest(subAccountId = subAccounts[2].id, type = PostingType.DR, amount = 1L, entrySequence = 3),
       )
 
       webTestClient.post()
@@ -406,6 +418,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             amount = 1L,
             timestamp = Instant.now(),
             postings = createPostingRequests,
+            entrySequence = 1,
           ),
         )
         .exchange()
@@ -424,8 +437,8 @@ class TransactionIntegrationTest : IntegrationTestBase() {
     @Test
     fun `should return 403 when requesting account with incorrect role`() {
       val createPostingRequests: List<CreatePostingRequest> = listOf(
-        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 1L),
-        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = 1L),
+        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 1L, entrySequence = 1),
+        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = 1L, entrySequence = 2),
       )
 
       webTestClient.post()
@@ -440,6 +453,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             amount = 1L,
             timestamp = Instant.now(),
             postings = createPostingRequests,
+            entrySequence = 1,
           ),
         )
         .exchange()
@@ -495,12 +509,12 @@ class TransactionIntegrationTest : IntegrationTestBase() {
       assertThat(transactionResponse.reference).isEqualTo("TX")
       assertThat(transactionResponse.postings).hasSize(2)
       assertThat(transactionResponse.postings[0].amount).isEqualTo(1L)
-      assertThat(transactionResponse.postings[0].subAccountID).isEqualTo(subAccounts[0].id)
-      assertThat(transactionResponse.postings[0].type).isEqualTo(PostingType.CR)
+      assertThat(transactionResponse.postings[0].subAccountID).isEqualTo(subAccounts[1].id)
+      assertThat(transactionResponse.postings[0].type).isEqualTo(PostingType.DR)
 
       assertThat(transactionResponse.postings[1].amount).isEqualTo(1L)
-      assertThat(transactionResponse.postings[1].subAccountID).isEqualTo(subAccounts[1].id)
-      assertThat(transactionResponse.postings[1].type).isEqualTo(PostingType.DR)
+      assertThat(transactionResponse.postings[1].subAccountID).isEqualTo(subAccounts[0].id)
+      assertThat(transactionResponse.postings[1].type).isEqualTo(PostingType.CR)
     }
 
     @Test
@@ -519,12 +533,12 @@ class TransactionIntegrationTest : IntegrationTestBase() {
       assertThat(transactionResponse.reference).isEqualTo("TX")
       assertThat(transactionResponse.postings).hasSize(2)
       assertThat(transactionResponse.postings[0].amount).isEqualTo(1L)
-      assertThat(transactionResponse.postings[0].subAccountID).isEqualTo(subAccounts[0].id)
-      assertThat(transactionResponse.postings[0].type).isEqualTo(PostingType.CR)
+      assertThat(transactionResponse.postings[0].subAccountID).isEqualTo(subAccounts[1].id)
+      assertThat(transactionResponse.postings[0].type).isEqualTo(PostingType.DR)
 
       assertThat(transactionResponse.postings[1].amount).isEqualTo(1L)
-      assertThat(transactionResponse.postings[1].subAccountID).isEqualTo(subAccounts[1].id)
-      assertThat(transactionResponse.postings[1].type).isEqualTo(PostingType.DR)
+      assertThat(transactionResponse.postings[1].subAccountID).isEqualTo(subAccounts[0].id)
+      assertThat(transactionResponse.postings[1].type).isEqualTo(PostingType.CR)
     }
 
     @Test
@@ -539,8 +553,8 @@ class TransactionIntegrationTest : IntegrationTestBase() {
     @Test
     fun `returns a 400 when the transaction description contains control characters`() {
       val createPostingRequests: List<CreatePostingRequest> = listOf(
-        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 1L),
-        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = 1L),
+        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = 1L, entrySequence = 1),
+        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = 1L, entrySequence = 2),
       )
 
       val idempotencyKey = UUID.randomUUID()
@@ -557,6 +571,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             amount = 1L,
             timestamp = Instant.now(),
             postings = createPostingRequests,
+            entrySequence = 1,
           ),
         )
         .exchange()

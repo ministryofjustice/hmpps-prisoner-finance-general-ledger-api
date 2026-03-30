@@ -23,5 +23,5 @@ data class CreatePostingRequest(
       "if not provided defaulted to zero",
   )
   @field:PositiveOrZero(message = "Entry sequence number must be positive")
-  val entrySequence: Long = 0,
+  val entrySequence: Long,
 )

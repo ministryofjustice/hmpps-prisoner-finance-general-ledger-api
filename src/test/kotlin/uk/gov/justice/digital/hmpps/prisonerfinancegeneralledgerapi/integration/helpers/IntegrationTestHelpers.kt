@@ -85,17 +85,17 @@ class IntegrationTestHelpers(
       CreatePostingRequest(
         subAccountId = debitSubAccountId,
         amount = amountToCreditEachAccount * creditSubAccountIds.size,
-        type = PostingType
-          .DR,
+        type = PostingType.DR,
+        entrySequence = 1,
       ),
     )
-    for (creditSubAccountId in creditSubAccountIds) {
+    for ((i, creditSubAccountId) in creditSubAccountIds.withIndex()) {
       postings.add(
         CreatePostingRequest(
           subAccountId = creditSubAccountId,
           amount = amountToCreditEachAccount,
-          type = PostingType
-            .CR,
+          type = PostingType.CR,
+          entrySequence = i + 2L,
         ),
       )
     }
@@ -106,6 +106,7 @@ class IntegrationTestHelpers(
       timestamp = Instant.now(),
       amount = amountToCreditEachAccount * creditSubAccountIds.size,
       postings = postings,
+      entrySequence = 1,
     )
 
     val transactionResponse = webTestClient.post().uri("/transactions")
@@ -126,14 +127,14 @@ class IntegrationTestHelpers(
       CreatePostingRequest(
         subAccountId = creditSubAccountId,
         amount = amount,
-        type = PostingType
-          .CR,
+        type = PostingType.CR,
+        entrySequence = 1L,
       ),
       CreatePostingRequest(
         subAccountId = debitSubAccountId,
         amount = amount,
-        type = PostingType
-          .DR,
+        type = PostingType.DR,
+        entrySequence = 2L,
       ),
     )
     val transactionPayload = CreateTransactionRequest(
@@ -142,6 +143,7 @@ class IntegrationTestHelpers(
       timestamp = timestamp,
       amount = amount,
       postings = postings,
+      entrySequence = 1,
     )
 
     val transactionResponse = webTestClient.post().uri("/transactions")

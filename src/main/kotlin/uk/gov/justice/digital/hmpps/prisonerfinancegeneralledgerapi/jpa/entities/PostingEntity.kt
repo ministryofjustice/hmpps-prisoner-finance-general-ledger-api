@@ -34,6 +34,9 @@ class PostingEntity(
   @Column(name = "amount", nullable = false)
   val amount: Long,
 
+  @Column(name = "entry_sequence", nullable = false, columnDefinition = "Entry sequence of the posting")
+  val entrySequence: Long,
+
   @ManyToOne(optional = false, fetch = jakarta.persistence.FetchType.LAZY)
   @JoinColumn(name = "sub_account_id", nullable = false)
   val subAccountEntity: SubAccountEntity,

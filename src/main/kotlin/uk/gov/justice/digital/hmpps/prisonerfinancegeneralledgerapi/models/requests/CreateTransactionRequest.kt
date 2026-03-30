@@ -31,7 +31,7 @@ data class CreateTransactionRequest(
       "if not provided defaulted to zero",
   )
   @field:PositiveOrZero(message = "Entry sequence number must be positive")
-  val entrySequence: Long = 0,
+  val entrySequence: Long,
 
   @field:Schema(
     description = "A collection of postings for the transaction, there must be at least 1 Credit (CR) and 1 Debit (DR) posting supplied.\n" +

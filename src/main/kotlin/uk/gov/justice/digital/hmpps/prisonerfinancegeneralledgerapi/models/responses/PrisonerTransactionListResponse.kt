@@ -19,26 +19,26 @@ data class PrisonerTransactionListResponse(
 ) {
   companion object {
     fun fromEntity(transactionEntity: TransactionEntity, prisonerAccountId: UUID): PrisonerTransactionListResponse = PrisonerTransactionListResponse(
-      transactionEntity.id,
-      transactionEntity.description,
-      transactionEntity.timestamp,
-      transactionEntity.postings
+      id = transactionEntity.id,
+      description = transactionEntity.description,
+      timestamp = transactionEntity.timestamp,
+      postings = transactionEntity.postings
         .filter {
           it.subAccountEntity.parentAccountEntity.id == prisonerAccountId ||
             it.subAccountEntity.parentAccountEntity.type == AccountType.PRISON
         }
         .map {
           PrisonerPostingListResponse(
-            it.id,
-            it.type,
-            it.amount,
-            SubAccountListResponse(
-              it.subAccountEntity.id,
-              it.subAccountEntity.reference,
-              ParentAccountResponse(
-                it.subAccountEntity.parentAccountEntity.id,
-                it.subAccountEntity.parentAccountEntity.reference,
-                it.subAccountEntity.parentAccountEntity.type,
+            id = it.id,
+            type = it.type,
+            amount = it.amount,
+            subAccount = SubAccountListResponse(
+              id = it.subAccountEntity.id,
+              subAccountReference = it.subAccountEntity.reference,
+              parentAccount = ParentAccountResponse(
+                id = it.subAccountEntity.parentAccountEntity.id,
+                reference = it.subAccountEntity.parentAccountEntity.reference,
+                type = it.subAccountEntity.parentAccountEntity.type,
               ),
             ),
           )

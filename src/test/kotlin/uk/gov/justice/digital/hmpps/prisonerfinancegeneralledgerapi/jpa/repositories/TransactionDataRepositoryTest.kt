@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories
 
+import jakarta.persistence.EntityManager
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -17,6 +18,9 @@ class TransactionDataRepositoryTest @Autowired constructor(
   val transactionDataRepository: TransactionDataRepository,
   private val repoTestHelpers: RepoTestHelpers,
 ) {
+
+  @Autowired
+  lateinit var entityManager: EntityManager
 
   lateinit var testAccount: AccountEntity
 
@@ -86,6 +90,70 @@ class TransactionDataRepositoryTest @Autowired constructor(
 
       assertThat(transactions).hasSize(2)
       assertThat(transactions[0].id).isEqualTo(tx2.id)
+    }
+
+    @Test
+    fun `postings are guaranteed to be ordered by entrySequence DESC from query`() {
+      val cash = repoTestHelpers.createSubAccount("CASH", testAccount)
+      val spends = repoTestHelpers.createSubAccount("SPENDS", testAccount)
+
+      repoTestHelpers.createOneToOneTransaction(
+        1,
+        Instant.now(),
+        cash,
+        spends,
+        debitEntrySequence = 1,
+        creditEntrySequence = 2,
+      )
+
+      // make sure in memory changes are persisted and clear memory cache to make sure db is used
+      entityManager.flush()
+      entityManager.clear()
+
+      val loadedTransaction = transactionDataRepository.findTransactionsByAccountId(testAccount.id)
+      val postings = loadedTransaction[0].postings
+
+      val entrySequenceList = postings.map { it.entrySequence }
+
+      assertThat(entrySequenceList).containsExactly(2, 1)
+    }
+
+    @Test
+    fun `transactions are guaranteed to be ordered by entrySequence DESC from query`() {
+      val cash = repoTestHelpers.createSubAccount("CASH", testAccount)
+      val spends = repoTestHelpers.createSubAccount("SPENDS", testAccount)
+
+      val transactionTimeStamp = Instant.now()
+
+      repoTestHelpers.createOneToOneTransaction(
+        1,
+        transactionTimeStamp,
+        cash,
+        spends,
+        transactionEntrySequence = 1,
+        debitEntrySequence = 1,
+        creditEntrySequence = 2,
+      )
+
+      repoTestHelpers.createOneToOneTransaction(
+        1,
+        transactionTimeStamp,
+        cash,
+        spends,
+        transactionEntrySequence = 2,
+        debitEntrySequence = 1,
+        creditEntrySequence = 2,
+      )
+
+      // make sure in memory changes are persisted and clear memory cache to make sure db is used
+      entityManager.flush()
+      entityManager.clear()
+
+      val loadedTransaction = transactionDataRepository.findTransactionsByAccountId(testAccount.id)
+
+      val entrySequenceList = loadedTransaction.map { it.entrySequence }
+
+      assertThat(entrySequenceList).containsExactly(2, 1)
     }
   }
 }

@@ -51,6 +51,7 @@ class RepoTestHelpers(
       description = "TEST_DESCRIPTION_PAST",
       amount = transactionAmount,
       timestamp = timestamp,
+      entrySequence = 1,
     )
     val postingsInThePast = listOf(
       PostingEntity(
@@ -59,6 +60,7 @@ class RepoTestHelpers(
         amount = transactionAmount,
         subAccountEntity = debitSubAccount,
         transactionEntity = txInThePast,
+        entrySequence = 1,
       ),
       PostingEntity(
         createdAt = createdAtTime,
@@ -66,6 +68,42 @@ class RepoTestHelpers(
         amount = transactionAmount,
         subAccountEntity = creditSubAccount,
         transactionEntity = txInThePast,
+        entrySequence = 2,
+      ),
+    )
+
+    txInThePast.postings.addAll(postingsInThePast)
+    entityManager.persist(txInThePast)
+    entityManager.persist(postingsInThePast[0])
+    entityManager.persist(postingsInThePast[1])
+
+    return txInThePast
+  }
+
+  fun createOneToOneTransaction(transactionAmount: Long, transactionDateTime: Instant, debitSubAccount: SubAccountEntity, creditSubAccount: SubAccountEntity, debitEntrySequence: Long, creditEntrySequence: Long, transactionEntrySequence: Long = 1, timeStamp: Instant? = null): TransactionEntity {
+    val txInThePast = TransactionEntity(
+      reference = UUID.randomUUID().toString(),
+      description = "TEST_DESCRIPTION_PAST",
+      amount = transactionAmount,
+      timestamp = timeStamp ?: transactionDateTime,
+      entrySequence = transactionEntrySequence,
+    )
+    val postingsInThePast = listOf(
+      PostingEntity(
+        createdAt = transactionDateTime,
+        type = PostingType.DR,
+        amount = transactionAmount,
+        subAccountEntity = debitSubAccount,
+        transactionEntity = txInThePast,
+        entrySequence = debitEntrySequence,
+      ),
+      PostingEntity(
+        createdAt = transactionDateTime,
+        type = PostingType.CR,
+        amount = transactionAmount,
+        subAccountEntity = creditSubAccount,
+        transactionEntity = txInThePast,
+        entrySequence = creditEntrySequence,
       ),
     )
 
@@ -88,6 +126,7 @@ class RepoTestHelpers(
     val transaction = TransactionEntity(
       reference = ref,
       amount = overallDebitAmount,
+      entrySequence = 1,
     )
 
     val postings = mutableListOf<PostingEntity>(
@@ -96,6 +135,7 @@ class RepoTestHelpers(
         amount = overallDebitAmount,
         transactionEntity = transaction,
         type = PostingType.DR,
+        entrySequence = 1,
       ),
     )
 
@@ -105,6 +145,7 @@ class RepoTestHelpers(
         transactionEntity = transaction,
         type = PostingType.CR,
         amount = amountToCreditEachSubAccount,
+        entrySequence = i + 2L,
       )
       postings.add(creditPosting)
     }

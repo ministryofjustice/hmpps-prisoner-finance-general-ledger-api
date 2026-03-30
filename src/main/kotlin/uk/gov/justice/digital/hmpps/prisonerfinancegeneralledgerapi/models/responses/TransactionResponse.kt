@@ -24,6 +24,15 @@ class TransactionResponse(
   val postings: List<PostingResponse> = emptyList(),
 ) {
   companion object {
-    fun fromEntity(transactionEntity: TransactionEntity): TransactionResponse = TransactionResponse(transactionEntity.id, transactionEntity.createdBy, transactionEntity.createdAt, transactionEntity.reference, transactionEntity.description, transactionEntity.timestamp, transactionEntity.amount, postings = transactionEntity.postings.map { PostingResponse.fromEntity(it) })
+    fun fromEntity(transactionEntity: TransactionEntity): TransactionResponse = TransactionResponse(
+      id = transactionEntity.id,
+      createdBy = transactionEntity.createdBy,
+      createdAt = transactionEntity.createdAt,
+      reference = transactionEntity.reference,
+      description = transactionEntity.description,
+      timestamp = transactionEntity.timestamp,
+      amount = transactionEntity.amount,
+      postings = transactionEntity.postings.map { PostingResponse.fromEntity(it) },
+    )
   }
 }

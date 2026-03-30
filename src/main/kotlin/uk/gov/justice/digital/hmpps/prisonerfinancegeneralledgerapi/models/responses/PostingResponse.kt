@@ -21,6 +21,13 @@ class PostingResponse(
   val subAccountID: UUID,
 ) {
   companion object {
-    fun fromEntity(postingEntity: PostingEntity): PostingResponse = PostingResponse(postingEntity.id, postingEntity.createdBy, postingEntity.createdAt, postingEntity.type, postingEntity.amount, postingEntity.subAccountEntity.id)
+    fun fromEntity(postingEntity: PostingEntity): PostingResponse = PostingResponse(
+      id = postingEntity.id,
+      createdBy = postingEntity.createdBy,
+      createdAt = postingEntity.createdAt,
+      type = postingEntity.type,
+      amount = postingEntity.amount,
+      subAccountID = postingEntity.subAccountEntity.id,
+    )
   }
 }

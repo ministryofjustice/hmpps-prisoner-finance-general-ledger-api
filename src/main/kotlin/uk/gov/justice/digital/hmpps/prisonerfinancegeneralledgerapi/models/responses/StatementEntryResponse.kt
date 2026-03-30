@@ -84,12 +84,12 @@ data class StatementEntryOppositePostingsResponse(
 ) {
   companion object {
     fun fromEntity(postingEntity: PostingEntity): StatementEntryOppositePostingsResponse = StatementEntryOppositePostingsResponse(
-      postingEntity.id,
-      postingEntity.createdBy,
-      postingEntity.createdAt,
-      postingEntity.type,
-      postingEntity.amount,
-      SubAccountWithParentResponse.fromEntity(postingEntity.subAccountEntity),
+      id = postingEntity.id,
+      createdBy = postingEntity.createdBy,
+      createdAt = postingEntity.createdAt,
+      type = postingEntity.type,
+      amount = postingEntity.amount,
+      subAccount = SubAccountWithParentResponse.fromEntity(postingEntity.subAccountEntity),
     )
   }
 }
