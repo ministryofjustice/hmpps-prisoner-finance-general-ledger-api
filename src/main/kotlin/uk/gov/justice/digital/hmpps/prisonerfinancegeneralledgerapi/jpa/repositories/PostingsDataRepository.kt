@@ -25,7 +25,7 @@ interface PostingsDataRepository :
   @Query("SELECT p FROM PostingEntity p WHERE p.subAccountEntity.id = :subAccountId")
   fun getPostingsForSubAccountId(@Param("subAccountId") subAccountId: UUID): List<PostingEntity>
 
-  @Query("SELECT p FROM PostingEntity p WHERE p.subAccountEntity.id = :subAccountId AND p.createdAt > :dateTime")
+  @Query("SELECT p FROM PostingEntity p WHERE p.subAccountEntity.id = :subAccountId AND p.transactionEntity.timestamp > :dateTime")
   fun getPostingsForSubAccountIdAfterDateTime(@Param("subAccountId") subAccountId: UUID, @Param("dateTime") dateTime: Instant): List<PostingEntity>
 
   fun getBalanceForSubAccount(subAccountId: UUID, latestStatementBalanceDateTime: Instant? = null): Long {
