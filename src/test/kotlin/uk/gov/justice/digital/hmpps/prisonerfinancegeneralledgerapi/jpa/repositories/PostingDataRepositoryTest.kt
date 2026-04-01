@@ -284,13 +284,13 @@ class PostingDataRepositoryTest @Autowired constructor(
       val februaryTransactionsOne = listOf(
         repoTestHelpers.createOneToOneTransaction(
           transactionAmount = 1,
-          transactionDateTime = LocalDate.of(2026, 2, 23).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          timestamp = LocalDate.of(2026, 2, 23).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
           debitSubAccount = accountOneSubAccountOne,
           creditSubAccount = accountOneSubAccountTwo,
         ),
         repoTestHelpers.createOneToOneTransaction(
           transactionAmount = 1,
-          transactionDateTime = LocalDate.of(2026, 2, 22).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          timestamp = LocalDate.of(2026, 2, 22).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
           debitSubAccount = accountOneSubAccountOne,
           creditSubAccount = accountOneSubAccountTwo,
         ),
@@ -299,13 +299,13 @@ class PostingDataRepositoryTest @Autowired constructor(
       val marchTransactions = listOf(
         repoTestHelpers.createOneToOneTransaction(
           transactionAmount = 1,
-          transactionDateTime = LocalDate.of(2026, 3, 15).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          timestamp = LocalDate.of(2026, 3, 15).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
           debitSubAccount = accountOneSubAccountOne,
           creditSubAccount = accountOneSubAccountTwo,
         ),
         repoTestHelpers.createOneToOneTransaction(
           transactionAmount = 1,
-          transactionDateTime = LocalDate.of(2026, 3, 16).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          timestamp = LocalDate.of(2026, 3, 16).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
           debitSubAccount = accountOneSubAccountOne,
           creditSubAccount = accountOneSubAccountTwo,
         ),
@@ -314,13 +314,13 @@ class PostingDataRepositoryTest @Autowired constructor(
       val febTransactionsTwo = listOf(
         repoTestHelpers.createOneToOneTransaction(
           transactionAmount = 1,
-          transactionDateTime = LocalDate.of(2026, 2, 11).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          timestamp = LocalDate.of(2026, 2, 11).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
           debitSubAccount = accountOneSubAccountOne,
           creditSubAccount = accountOneSubAccountTwo,
         ),
         repoTestHelpers.createOneToOneTransaction(
           transactionAmount = 1,
-          transactionDateTime = LocalDate.of(2026, 2, 10).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          timestamp = LocalDate.of(2026, 2, 10).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
           debitSubAccount = accountOneSubAccountOne,
           creditSubAccount = accountOneSubAccountTwo,
         ),
@@ -351,7 +351,7 @@ class PostingDataRepositoryTest @Autowired constructor(
         transactions.add(
           repoTestHelpers.createOneToOneTransaction(
             transactionAmount = 1,
-            transactionDateTime = LocalDate.of(2026, 2, 1 + index).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+            timestamp = LocalDate.of(2026, 2, 1 + index).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
             debitSubAccount = subAccountOne,
             creditSubAccount = subAccountTwo,
           ),
@@ -375,7 +375,7 @@ class PostingDataRepositoryTest @Autowired constructor(
       repeat(25) { index ->
         repoTestHelpers.createOneToOneTransaction(
           transactionAmount = 1,
-          transactionDateTime = LocalDate.of(2026, 2, 1 + index).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          timestamp = LocalDate.of(2026, 2, 1 + index).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
           debitSubAccount = subAccountOne,
           creditSubAccount = subAccountTwo,
         )
@@ -383,7 +383,7 @@ class PostingDataRepositoryTest @Autowired constructor(
       repeat(25) { index ->
         repoTestHelpers.createOneToOneTransaction(
           transactionAmount = 1,
-          transactionDateTime = LocalDate.of(2026, 3, 1 + index).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          timestamp = LocalDate.of(2026, 3, 1 + index).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
           debitSubAccount = subAccountOne,
           creditSubAccount = subAccountTwo,
         )
@@ -410,7 +410,7 @@ class PostingDataRepositoryTest @Autowired constructor(
       repeat(25) { index ->
         repoTestHelpers.createOneToOneTransaction(
           transactionAmount = 1,
-          transactionDateTime = LocalDate.of(2026, 2, 1 + index).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          timestamp = LocalDate.of(2026, 2, 1 + index).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
           debitSubAccount = subAccountOne,
           creditSubAccount = subAccountTwo,
         )
