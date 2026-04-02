@@ -73,7 +73,8 @@ class PostingDataRepositoryTest @Autowired constructor(
 
       repoTestHelpers.createOneToOneTransaction(
         transactionAmount = 1,
-        timestamp = Instant.now(),
+        postingCreatedAt = Instant.now(),
+        transactionTimeStamp = Instant.now(),
         debitSubAccount = accountOneSubAccountOne,
         creditSubAccount = accountTwoSubAccountOne,
       )
@@ -90,7 +91,8 @@ class PostingDataRepositoryTest @Autowired constructor(
 
       repoTestHelpers.createOneToOneTransaction(
         transactionAmount = 1,
-        timestamp = Instant.now(),
+        transactionTimeStamp = Instant.now(),
+        postingCreatedAt = Instant.now(),
         debitSubAccount = accountOneSubAccountOne,
         creditSubAccount = accountOneSubAccountTwo,
       )
@@ -112,7 +114,8 @@ class PostingDataRepositoryTest @Autowired constructor(
       // TX from 1 day ago
       repoTestHelpers.createOneToOneTransaction(
         transactionAmount = 1,
-        timestamp = timeYesterdayAtOneAM,
+        transactionTimeStamp = timeYesterdayAtOneAM,
+        postingCreatedAt = timeYesterdayAtOneAM,
         debitSubAccount = accountOneSubAccountOne,
         creditSubAccount = accountOneSubAccountTwo,
       )
@@ -120,7 +123,8 @@ class PostingDataRepositoryTest @Autowired constructor(
       // TX from today at midnight
       val txAtMidnight = repoTestHelpers.createOneToOneTransaction(
         transactionAmount = 1,
-        timestamp = timeTodayAtMidnight,
+        transactionTimeStamp = timeTodayAtMidnight,
+        postingCreatedAt = timeTodayAtMidnight,
         debitSubAccount = accountOneSubAccountOne,
         creditSubAccount = accountOneSubAccountTwo,
       )
@@ -128,7 +132,8 @@ class PostingDataRepositoryTest @Autowired constructor(
       // TX from at one AM
       val txAtOneAM = repoTestHelpers.createOneToOneTransaction(
         transactionAmount = 1,
-        timestamp = timeTodayAtOneAM,
+        transactionTimeStamp = timeTodayAtOneAM,
+        postingCreatedAt = timeTodayAtOneAM,
         debitSubAccount = accountOneSubAccountOne,
         creditSubAccount = accountOneSubAccountTwo,
       )
@@ -155,7 +160,8 @@ class PostingDataRepositoryTest @Autowired constructor(
       // TX from 1 day ago
       val txFromYesterday = repoTestHelpers.createOneToOneTransaction(
         transactionAmount = 1,
-        timestamp = timeYesterdayAtOneAM,
+        transactionTimeStamp = timeYesterdayAtOneAM,
+        postingCreatedAt = timeYesterdayAtOneAM,
         debitSubAccount = accountOneSubAccountOne,
         creditSubAccount = accountOneSubAccountTwo,
       )
@@ -163,7 +169,8 @@ class PostingDataRepositoryTest @Autowired constructor(
       // TX from today at midnight
       val txFromMidnight = repoTestHelpers.createOneToOneTransaction(
         transactionAmount = 1,
-        timestamp = timeTodayAtMidnight,
+        transactionTimeStamp = timeTodayAtMidnight,
+        postingCreatedAt = timeTodayAtMidnight,
         debitSubAccount = accountOneSubAccountOne,
         creditSubAccount = accountOneSubAccountTwo,
       )
@@ -171,7 +178,8 @@ class PostingDataRepositoryTest @Autowired constructor(
       // TX from tomorrow at midnight
       repoTestHelpers.createOneToOneTransaction(
         transactionAmount = 1,
-        timestamp = timeTomorrowAtMidnight,
+        transactionTimeStamp = timeTomorrowAtMidnight,
+        postingCreatedAt = timeTomorrowAtMidnight,
         debitSubAccount = accountOneSubAccountOne,
         creditSubAccount = accountOneSubAccountTwo,
       )
@@ -200,7 +208,8 @@ class PostingDataRepositoryTest @Autowired constructor(
       // TX from 1 day ago
       repoTestHelpers.createOneToOneTransaction(
         transactionAmount = 1,
-        timestamp = timeYesterdayAtOneAM,
+        transactionTimeStamp = timeYesterdayAtOneAM,
+        postingCreatedAt = timeYesterdayAtOneAM,
         debitSubAccount = accountOneSubAccountOne,
         creditSubAccount = accountOneSubAccountTwo,
       )
@@ -208,7 +217,8 @@ class PostingDataRepositoryTest @Autowired constructor(
       // TX from today at midnight
       val txFromMidnight = repoTestHelpers.createOneToOneTransaction(
         transactionAmount = 1,
-        timestamp = timeTodayAtMidnight,
+        transactionTimeStamp = timeTodayAtMidnight,
+        postingCreatedAt = timeTodayAtMidnight,
         debitSubAccount = accountOneSubAccountOne,
         creditSubAccount = accountOneSubAccountTwo,
       )
@@ -216,7 +226,8 @@ class PostingDataRepositoryTest @Autowired constructor(
       // TX from today at noon
       val txFromTodayAtNoon = repoTestHelpers.createOneToOneTransaction(
         transactionAmount = 1,
-        timestamp = timeTodayAtNoon,
+        transactionTimeStamp = timeTodayAtNoon,
+        postingCreatedAt = timeTodayAtNoon,
         debitSubAccount = accountOneSubAccountOne,
         creditSubAccount = accountOneSubAccountTwo,
       )
@@ -224,7 +235,8 @@ class PostingDataRepositoryTest @Autowired constructor(
       // TX from tomorrow at one AM
       repoTestHelpers.createOneToOneTransaction(
         transactionAmount = 1,
-        timestamp = timeTomorrowAtOneAM,
+        transactionTimeStamp = timeTomorrowAtOneAM,
+        postingCreatedAt = timeTomorrowAtOneAM,
         debitSubAccount = accountOneSubAccountOne,
         creditSubAccount = accountOneSubAccountTwo,
       )
@@ -253,7 +265,8 @@ class PostingDataRepositoryTest @Autowired constructor(
       // TX from 1 day ago
       repoTestHelpers.createOneToOneTransaction(
         transactionAmount = 1,
-        timestamp = timeYesterdayAtOneAM,
+        transactionTimeStamp = timeYesterdayAtOneAM,
+        postingCreatedAt = timeYesterdayAtOneAM,
         debitSubAccount = accountOneSubAccountOne,
         creditSubAccount = accountOneSubAccountTwo,
       )
@@ -261,7 +274,8 @@ class PostingDataRepositoryTest @Autowired constructor(
       // TX from today at midnight
       repoTestHelpers.createOneToOneTransaction(
         transactionAmount = 1,
-        timestamp = timeTodayAtMidnight,
+        transactionTimeStamp = timeTodayAtMidnight,
+        postingCreatedAt = timeTodayAtMidnight,
         debitSubAccount = accountOneSubAccountOne,
         creditSubAccount = accountOneSubAccountTwo,
       )
@@ -269,7 +283,8 @@ class PostingDataRepositoryTest @Autowired constructor(
       // TX from today at noon
       repoTestHelpers.createOneToOneTransaction(
         transactionAmount = 1,
-        timestamp = timeTodayAtNoon,
+        transactionTimeStamp = timeTodayAtNoon,
+        postingCreatedAt = timeTodayAtNoon,
         debitSubAccount = accountOneSubAccountOne,
         creditSubAccount = accountOneSubAccountTwo,
       )
@@ -277,7 +292,8 @@ class PostingDataRepositoryTest @Autowired constructor(
       // TX from tomorrow at one AM
       repoTestHelpers.createOneToOneTransaction(
         transactionAmount = 1,
-        timestamp = timeTomorrowAtOneAM,
+        transactionTimeStamp = timeTomorrowAtOneAM,
+        postingCreatedAt = timeTomorrowAtOneAM,
         debitSubAccount = accountOneSubAccountOne,
         creditSubAccount = accountOneSubAccountTwo,
       )
@@ -296,13 +312,15 @@ class PostingDataRepositoryTest @Autowired constructor(
       val februaryTransactionsOne = listOf(
         repoTestHelpers.createOneToOneTransaction(
           transactionAmount = 1,
-          timestamp = LocalDate.of(2026, 2, 23).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          transactionTimeStamp = LocalDate.of(2026, 2, 23).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          postingCreatedAt = LocalDate.of(2026, 2, 23).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
           debitSubAccount = accountOneSubAccountOne,
           creditSubAccount = accountOneSubAccountTwo,
         ),
         repoTestHelpers.createOneToOneTransaction(
           transactionAmount = 1,
-          timestamp = LocalDate.of(2026, 2, 22).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          transactionTimeStamp = LocalDate.of(2026, 2, 22).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          postingCreatedAt = LocalDate.of(2026, 2, 22).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
           debitSubAccount = accountOneSubAccountOne,
           creditSubAccount = accountOneSubAccountTwo,
         ),
@@ -311,13 +329,15 @@ class PostingDataRepositoryTest @Autowired constructor(
       val marchTransactions = listOf(
         repoTestHelpers.createOneToOneTransaction(
           transactionAmount = 1,
-          timestamp = LocalDate.of(2026, 3, 15).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          transactionTimeStamp = LocalDate.of(2026, 3, 15).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          postingCreatedAt = LocalDate.of(2026, 3, 15).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
           debitSubAccount = accountOneSubAccountOne,
           creditSubAccount = accountOneSubAccountTwo,
         ),
         repoTestHelpers.createOneToOneTransaction(
           transactionAmount = 1,
-          timestamp = LocalDate.of(2026, 3, 16).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          transactionTimeStamp = LocalDate.of(2026, 3, 16).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          postingCreatedAt = LocalDate.of(2026, 3, 16).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
           debitSubAccount = accountOneSubAccountOne,
           creditSubAccount = accountOneSubAccountTwo,
         ),
@@ -326,13 +346,15 @@ class PostingDataRepositoryTest @Autowired constructor(
       val febTransactionsTwo = listOf(
         repoTestHelpers.createOneToOneTransaction(
           transactionAmount = 1,
-          timestamp = LocalDate.of(2026, 2, 11).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          transactionTimeStamp = LocalDate.of(2026, 2, 11).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          postingCreatedAt = LocalDate.of(2026, 2, 11).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
           debitSubAccount = accountOneSubAccountOne,
           creditSubAccount = accountOneSubAccountTwo,
         ),
         repoTestHelpers.createOneToOneTransaction(
           transactionAmount = 1,
-          timestamp = LocalDate.of(2026, 2, 10).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          transactionTimeStamp = LocalDate.of(2026, 2, 10).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          postingCreatedAt = LocalDate.of(2026, 2, 10).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
           debitSubAccount = accountOneSubAccountOne,
           creditSubAccount = accountOneSubAccountTwo,
         ),
@@ -363,7 +385,8 @@ class PostingDataRepositoryTest @Autowired constructor(
         transactions.add(
           repoTestHelpers.createOneToOneTransaction(
             transactionAmount = 1,
-            timestamp = LocalDate.of(2026, 2, 1 + index).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+            transactionTimeStamp = LocalDate.of(2026, 2, 1 + index).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+            postingCreatedAt = LocalDate.of(2026, 2, 1 + index).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
             debitSubAccount = subAccountOne,
             creditSubAccount = subAccountTwo,
           ),
@@ -398,7 +421,8 @@ class PostingDataRepositoryTest @Autowired constructor(
       repeat(25) { index ->
         repoTestHelpers.createOneToOneTransaction(
           transactionAmount = 1,
-          timestamp = LocalDate.of(2026, 2, 1 + index).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          transactionTimeStamp = LocalDate.of(2026, 2, 1 + index).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          postingCreatedAt = LocalDate.of(2026, 2, 1 + index).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
           debitSubAccount = subAccountOne,
           creditSubAccount = subAccountTwo,
         )
@@ -406,7 +430,8 @@ class PostingDataRepositoryTest @Autowired constructor(
       repeat(25) { index ->
         repoTestHelpers.createOneToOneTransaction(
           transactionAmount = 1,
-          timestamp = LocalDate.of(2026, 3, 1 + index).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          transactionTimeStamp = LocalDate.of(2026, 3, 1 + index).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          postingCreatedAt = LocalDate.of(2026, 3, 1 + index).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
           debitSubAccount = subAccountOne,
           creditSubAccount = subAccountTwo,
         )
@@ -433,7 +458,8 @@ class PostingDataRepositoryTest @Autowired constructor(
       repeat(25) { index ->
         repoTestHelpers.createOneToOneTransaction(
           transactionAmount = 1,
-          timestamp = LocalDate.of(2026, 2, 1 + index).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          transactionTimeStamp = LocalDate.of(2026, 2, 1 + index).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          postingCreatedAt = LocalDate.of(2026, 2, 1 + index).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
           debitSubAccount = subAccountOne,
           creditSubAccount = subAccountTwo,
         )
@@ -482,10 +508,10 @@ class PostingDataRepositoryTest @Autowired constructor(
       accountThreeSubAccountOne = repoTestHelpers.createSubAccount("TEST_SUB_ACCOUNT_REF_3", accountThree)
 
       repeat(5) {
-        repoTestHelpers.createOneToOneTransaction(1, Instant.now(), accountTwoSubAccountOne, accountOneSubAccountOne)
+        repoTestHelpers.createOneToOneTransaction(1, Instant.now(), accountTwoSubAccountOne, accountOneSubAccountOne, transactionTimeStamp = Instant.now())
       }
 
-      repoTestHelpers.createOneToOneTransaction(1, Instant.now(), accountOneSubAccountOne, accountTwoSubAccountOne)
+      repoTestHelpers.createOneToOneTransaction(1, Instant.now(), accountOneSubAccountOne, accountTwoSubAccountOne, transactionTimeStamp = Instant.now())
     }
 
     @Test
@@ -510,12 +536,13 @@ class PostingDataRepositoryTest @Autowired constructor(
       assertThat(zeroBalance).isEqualTo(0)
 
       // txToIgnoreFromTwoDaysAgo
-      repoTestHelpers.createOneToOneTransaction(100, LocalDateTime.now().minusDays(2).toInstant(java.time.ZoneOffset.UTC), accountOneSubAccountOne, accountWithNoMoney)
+      val twoDaysAgo = LocalDateTime.now().minusDays(2).toInstant(java.time.ZoneOffset.UTC)
+      repoTestHelpers.createOneToOneTransaction(transactionAmount = 100, postingCreatedAt = twoDaysAgo, debitSubAccount = accountOneSubAccountOne, creditSubAccount = accountWithNoMoney, transactionTimeStamp = twoDaysAgo)
 
       val statementBalanceFromYesterday = StatementBalanceEntity(amount = 0, subAccountEntity = accountOneSubAccountOne, balanceDateTime = LocalDateTime.now().minusDays(1).toInstant(java.time.ZoneOffset.UTC))
 
       // txFromTodayToInclude
-      repoTestHelpers.createOneToOneTransaction(50, Instant.now(), accountOneSubAccountOne, accountWithNoMoney)
+      repoTestHelpers.createOneToOneTransaction(50, Instant.now(), accountOneSubAccountOne, accountWithNoMoney, transactionTimeStamp = Instant.now())
 
       val subAccountBalance = postingsDataRepository.getBalanceForSubAccount(accountWithNoMoney.id, latestStatementBalanceDateTime = statementBalanceFromYesterday.balanceDateTime)
 
@@ -544,8 +571,8 @@ class PostingDataRepositoryTest @Autowired constructor(
       val prisonerOne = repoTestHelpers.createAccount("123456")
       val prisonerOneCash = repoTestHelpers.createSubAccount("CASH", prisonerOne)
 
-      repoTestHelpers.createOneToOneTransaction(10, Instant.now(), prisonerOneCash, prisonACanteen)
-      repoTestHelpers.createOneToOneTransaction(5, Instant.now(), prisonACanteen, prisonerOneCash)
+      repoTestHelpers.createOneToOneTransaction(10, Instant.now(), prisonerOneCash, prisonACanteen, transactionTimeStamp = Instant.now())
+      repoTestHelpers.createOneToOneTransaction(5, Instant.now(), prisonACanteen, prisonerOneCash, transactionTimeStamp = Instant.now())
 
       val prisonerBalAtPrison =
         postingsDataRepository.getBalanceForAPrisonerAtAPrison(prisonId = prisonA.id, prisonerId = prisonerOne.id)
@@ -564,8 +591,8 @@ class PostingDataRepositoryTest @Autowired constructor(
       val prisoner = repoTestHelpers.createAccount("123456")
       val prisonerCashAccount = repoTestHelpers.createSubAccount("CASH", prisoner)
 
-      repoTestHelpers.createOneToOneTransaction(15, Instant.now(), prisonerCashAccount, prisonACanteen)
-      repoTestHelpers.createOneToOneTransaction(1, Instant.now(), prisonerCashAccount, prisonBCatalogue)
+      repoTestHelpers.createOneToOneTransaction(15, Instant.now(), prisonerCashAccount, prisonACanteen, transactionTimeStamp = Instant.now())
+      repoTestHelpers.createOneToOneTransaction(1, Instant.now(), prisonerCashAccount, prisonBCatalogue, transactionTimeStamp = Instant.now())
 
       val balanceForPrisonerAtPrison =
         postingsDataRepository.getBalanceForAPrisonerAtAPrison(prisonId = prisonA.id, prisonerId = prisoner.id)
@@ -590,9 +617,9 @@ class PostingDataRepositoryTest @Autowired constructor(
         30,
       )
 
-      repoTestHelpers.createOneToOneTransaction(1, Instant.now(), prisonerTwoCashAccount, prisonACash)
+      repoTestHelpers.createOneToOneTransaction(1, Instant.now(), prisonerTwoCashAccount, prisonACash, transactionTimeStamp = Instant.now())
 
-      repoTestHelpers.createOneToOneTransaction(5, Instant.now(), prisonACash, prisonerOneCashAccount)
+      repoTestHelpers.createOneToOneTransaction(5, Instant.now(), prisonACash, prisonerOneCashAccount, transactionTimeStamp = Instant.now())
 
       val balanceForPrisonerAtPrison =
         postingsDataRepository.getBalanceForAPrisonerAtAPrison(prisonId = prisonA.id, prisonerId = prisonerOne.id)

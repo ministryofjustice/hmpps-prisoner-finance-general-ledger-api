@@ -15,8 +15,9 @@ import java.time.Instant
 @DataJpaTest
 @Import(RepoTestHelpers::class)
 class TransactionDataRepositoryTest @Autowired constructor(
-  val transactionDataRepository: TransactionDataRepository,
+  @Autowired val transactionDataRepository: TransactionDataRepository,
   private val repoTestHelpers: RepoTestHelpers,
+  dataRepository: TransactionDataRepository,
 ) {
 
   @Autowired
@@ -47,7 +48,7 @@ class TransactionDataRepositoryTest @Autowired constructor(
       val cash = repoTestHelpers.createSubAccount("CASH", testAccount)
       val spends = repoTestHelpers.createSubAccount("SPENDS", testAccount)
 
-      repoTestHelpers.createOneToOneTransaction(1, Instant.now(), cash, spends)
+      repoTestHelpers.createOneToOneTransaction(1, Instant.now(), cash, spends, transactionTimeStamp = Instant.now())
 
       val transactions = transactionDataRepository.findTransactionsByAccountId(testAccount.id)
 
@@ -60,13 +61,13 @@ class TransactionDataRepositoryTest @Autowired constructor(
       val cashA = repoTestHelpers.createSubAccount("CASH", testAccount)
       val spendsA = repoTestHelpers.createSubAccount("SPENDS", testAccount)
 
-      repoTestHelpers.createOneToOneTransaction(1, Instant.now(), cashA, spendsA)
+      repoTestHelpers.createOneToOneTransaction(1, Instant.now(), cashA, spendsA, transactionTimeStamp = Instant.now())
 
       val accountB = repoTestHelpers.createAccount("TEST_ACCOUNT_REF_2")
       val cashB = repoTestHelpers.createSubAccount("CASH", accountB)
       val spendsB = repoTestHelpers.createSubAccount("SPENDS", accountB)
 
-      repoTestHelpers.createOneToOneTransaction(1, Instant.now(), cashB, spendsB)
+      repoTestHelpers.createOneToOneTransaction(1, Instant.now(), cashB, spendsB, transactionTimeStamp = Instant.now())
 
       val transactions = transactionDataRepository.findTransactionsByAccountId(testAccount.id)
 
@@ -83,13 +84,14 @@ class TransactionDataRepositoryTest @Autowired constructor(
     fun `should return transactions ordered by timestamp descending`() {
       val cash = repoTestHelpers.createSubAccount("CASH", testAccount)
       val spends = repoTestHelpers.createSubAccount("SPENDS", testAccount)
-      val tx1 = repoTestHelpers.createOneToOneTransaction(1, Instant.now(), cash, spends, Instant.now().minusSeconds(1000))
-      val tx2 = repoTestHelpers.createOneToOneTransaction(1, Instant.now(), cash, spends, Instant.now())
+      val tx1 = repoTestHelpers.createOneToOneTransaction(1, Instant.now(), cash, spends, transactionTimeStamp = Instant.now().minusSeconds(1000))
+      val tx2 = repoTestHelpers.createOneToOneTransaction(1, Instant.now(), cash, spends, transactionTimeStamp = Instant.now())
 
       val transactions = transactionDataRepository.findTransactionsByAccountId(testAccount.id)
 
       assertThat(transactions).hasSize(2)
       assertThat(transactions[0].id).isEqualTo(tx2.id)
+      assertThat(transactions[1].id).isEqualTo(tx1.id)
     }
 
     @Test

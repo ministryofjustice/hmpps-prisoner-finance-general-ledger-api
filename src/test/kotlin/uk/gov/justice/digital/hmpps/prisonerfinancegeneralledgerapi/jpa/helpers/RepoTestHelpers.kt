@@ -45,42 +45,7 @@ class RepoTestHelpers(
     return subAccountEntity
   }
 
-  fun createOneToOneTransaction(transactionAmount: Long, timestamp: Instant, debitSubAccount: SubAccountEntity, creditSubAccount: SubAccountEntity, createdAtTime: Instant = Instant.now()): TransactionEntity {
-    val txInThePast = TransactionEntity(
-      reference = UUID.randomUUID().toString(),
-      description = "TEST_DESCRIPTION_PAST",
-      amount = transactionAmount,
-      timestamp = timestamp,
-      entrySequence = 1,
-    )
-    val postingsInThePast = listOf(
-      PostingEntity(
-        createdAt = createdAtTime,
-        type = PostingType.DR,
-        amount = transactionAmount,
-        subAccountEntity = debitSubAccount,
-        transactionEntity = txInThePast,
-        entrySequence = 1,
-      ),
-      PostingEntity(
-        createdAt = createdAtTime,
-        type = PostingType.CR,
-        amount = transactionAmount,
-        subAccountEntity = creditSubAccount,
-        transactionEntity = txInThePast,
-        entrySequence = 2,
-      ),
-    )
-
-    txInThePast.postings.addAll(postingsInThePast)
-    entityManager.persist(txInThePast)
-    entityManager.persist(postingsInThePast[0])
-    entityManager.persist(postingsInThePast[1])
-
-    return txInThePast
-  }
-
-  fun createOneToOneTransaction(transactionAmount: Long, postingCreatedAt: Instant, debitSubAccount: SubAccountEntity, creditSubAccount: SubAccountEntity, debitEntrySequence: Long, creditEntrySequence: Long, transactionEntrySequence: Long = 1, transactionTimeStamp: Instant): TransactionEntity {
+  fun createOneToOneTransaction(transactionAmount: Long, postingCreatedAt: Instant, debitSubAccount: SubAccountEntity, creditSubAccount: SubAccountEntity, debitEntrySequence: Long = 1, creditEntrySequence: Long = 2, transactionEntrySequence: Long = 1, transactionTimeStamp: Instant): TransactionEntity {
     val txInThePast = TransactionEntity(
       reference = UUID.randomUUID().toString(),
       description = "TEST_DESCRIPTION_PAST",
