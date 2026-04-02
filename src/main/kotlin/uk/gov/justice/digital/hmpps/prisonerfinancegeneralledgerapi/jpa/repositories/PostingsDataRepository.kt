@@ -21,10 +21,16 @@ interface PostingsDataRepository :
   JpaRepository<PostingEntity, UUID>,
   JpaSpecificationExecutor<PostingEntity> {
 
-  fun getPostingsByAccountId(accountId: UUID, startDate: Instant? = null, endDate: Instant? = null, pageSize: Int = 25, pageNumber: Int = 0, pageable: Pageable? = null): Page<PostingEntity> {
+  fun getPostingsByAccountId(
+    accountId: UUID,
+    startDate: Instant? = null,
+    endDate: Instant? = null,
+    pageSize: Int = 25,
+    pageNumber: Int = 0,
+    page: Pageable = PageRequest.of(pageNumber, pageSize, Sort.Direction.DESC, "transactionEntity.timestamp"),
+  ): Page<PostingEntity> {
     val spec = Specification.where(PostingsSpecification.byParentAccountId(accountId)).and(PostingsSpecification.createdBetween(startDate, endDate))
-    val timeStampOrdering = Sort.by(Sort.Direction.DESC, "transactionEntity.timestamp")
-    val page = PageRequest.of(pageNumber, pageSize, timeStampOrdering)
+
     return this.findAll(spec, page)
   }
 
