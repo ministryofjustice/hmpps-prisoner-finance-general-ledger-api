@@ -2,13 +2,13 @@ package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.controllers
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
-import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.constraints.Min
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.CustomException
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.PagedResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.StatementEntryResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.StatementService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
@@ -44,12 +45,6 @@ class StatementController(
       ApiResponse(
         responseCode = "200",
         description = "Return Statement Entries list for the account",
-        content = [
-          Content(
-            mediaType = "application/json",
-            array = ArraySchema(schema = Schema(StatementEntryResponse::class)),
-          ),
-        ],
       ),
       ApiResponse(
         responseCode = "400",
@@ -83,19 +78,21 @@ class StatementController(
     scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO, ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW],
   )
   @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO','$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
-  @GetMapping(value = ["/accounts/{accountId}/statement"])
+  @GetMapping(value = ["/accounts/{accountId}/statement"], produces = ["application/json"])
   fun getStatementForAccountId(
     @PathVariable accountId: UUID,
     @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") startDate: LocalDate? = null,
     @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") endDate: LocalDate? = null,
-  ): ResponseEntity<List<StatementEntryResponse>> {
-    val listStatementEntryResponse = statementService.listStatementEntries(accountId, startDate, endDate)
+    @RequestParam @Min(1) pageNumber: Int = 1,
+    @RequestParam @Min(1) pageSize: Int = 25,
+  ): ResponseEntity<PagedResponse<StatementEntryResponse>> {
+    val pagedStatementEntryResponses = statementService.listStatementEntries(accountId, startDate, endDate, pageNumber, pageSize)
 
-    if (listStatementEntryResponse == null) {
+    if (pagedStatementEntryResponses == null) {
       throw CustomException(message = "Account not found", status = HttpStatus.NOT_FOUND)
     }
 
-    return ResponseEntity<List<StatementEntryResponse>>.status(200)
-      .body(listStatementEntryResponse)
+    return ResponseEntity<PagedResponse<StatementEntryResponse>>.status(200)
+      .body(pagedStatementEntryResponses)
   }
 }

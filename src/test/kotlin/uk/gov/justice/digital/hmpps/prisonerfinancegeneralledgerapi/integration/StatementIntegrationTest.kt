@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.PagedResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.StatementEntryResponse
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -42,17 +43,16 @@ class StatementIntegrationTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf(role)))
         .exchange()
         .expectStatus().isOk
-        .expectBody<List<StatementEntryResponse>>()
+        .expectBody<PagedResponse<StatementEntryResponse>>()
         .returnResult()
         .responseBody!!
 
-      assertThat(statementListResponse).hasSize(0)
+      assertThat(statementListResponse.content).hasSize(0)
     }
 
     @Test
     fun `returns a list of one statement response with one opposite posting for one to one transaction between accounts`() {
       val prisonerAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
-
       val prisonAccount = integrationTestHelpers.createAccount("LEI", AccountType.PRISON)
 
       val prisonerSubAccount = integrationTestHelpers.createSubAccount(prisonerAccount.id, "CASH")
@@ -71,18 +71,20 @@ class StatementIntegrationTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .exchange()
         .expectStatus().isOk()
-        .expectBody<List<StatementEntryResponse>>()
+        .expectBody<PagedResponse<StatementEntryResponse>>()
         .returnResult()
         .responseBody!!
 
-      assertThat(statementEntryResponse).hasSize(1)
-      assertThat(statementEntryResponse[0].subAccount.id).isEqualTo(prisonerSubAccount.id)
-      assertThat(statementEntryResponse[0].amount).isEqualTo(transaction.amount)
-      assertThat(statementEntryResponse[0].postingType).isEqualTo(PostingType.DR)
-      assertThat(statementEntryResponse[0].oppositePostings).hasSize(1)
-      assertThat(statementEntryResponse[0].oppositePostings[0].subAccount.id).isEqualTo(prisonSubAccount.id)
-      assertThat(statementEntryResponse[0].oppositePostings[0].amount).isEqualTo(1L)
-      assertThat(statementEntryResponse[0].oppositePostings[0].type).isEqualTo(PostingType.CR)
+      val content = statementEntryResponse.content
+
+      assertThat(content).hasSize(1)
+      assertThat(content[0].subAccount.id).isEqualTo(prisonerSubAccount.id)
+      assertThat(content[0].amount).isEqualTo(transaction.amount)
+      assertThat(content[0].postingType).isEqualTo(PostingType.DR)
+      assertThat(content[0].oppositePostings).hasSize(1)
+      assertThat(content[0].oppositePostings[0].subAccount.id).isEqualTo(prisonSubAccount.id)
+      assertThat(content[0].oppositePostings[0].amount).isEqualTo(1L)
+      assertThat(content[0].oppositePostings[0].type).isEqualTo(PostingType.CR)
     }
 
     @Test
@@ -104,26 +106,28 @@ class StatementIntegrationTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .exchange()
         .expectStatus().isOk()
-        .expectBody<List<StatementEntryResponse>>()
+        .expectBody<PagedResponse<StatementEntryResponse>>()
         .returnResult()
         .responseBody!!
 
-      assertThat(statementEntryResponse).hasSize(2)
-      assertThat(statementEntryResponse[0].subAccount.id).isEqualTo(spendsSubAccount.id)
-      assertThat(statementEntryResponse[0].amount).isEqualTo(transaction.amount)
-      assertThat(statementEntryResponse[0].postingType).isEqualTo(PostingType.CR)
-      assertThat(statementEntryResponse[0].oppositePostings).hasSize(1)
-      assertThat(statementEntryResponse[0].oppositePostings[0].subAccount.id).isEqualTo(cashSubAccount.id)
-      assertThat(statementEntryResponse[0].oppositePostings[0].amount).isEqualTo(1L)
-      assertThat(statementEntryResponse[0].oppositePostings[0].type).isEqualTo(PostingType.DR)
+      val content = statementEntryResponse.content
 
-      assertThat(statementEntryResponse[1].subAccount.id).isEqualTo(cashSubAccount.id)
-      assertThat(statementEntryResponse[1].amount).isEqualTo(transaction.amount)
-      assertThat(statementEntryResponse[1].postingType).isEqualTo(PostingType.DR)
-      assertThat(statementEntryResponse[1].oppositePostings).hasSize(1)
-      assertThat(statementEntryResponse[1].oppositePostings[0].subAccount.id).isEqualTo(spendsSubAccount.id)
-      assertThat(statementEntryResponse[1].oppositePostings[0].amount).isEqualTo(1L)
-      assertThat(statementEntryResponse[1].oppositePostings[0].type).isEqualTo(PostingType.CR)
+      assertThat(content).hasSize(2)
+      assertThat(content[0].subAccount.id).isEqualTo(spendsSubAccount.id)
+      assertThat(content[0].amount).isEqualTo(transaction.amount)
+      assertThat(content[0].postingType).isEqualTo(PostingType.CR)
+      assertThat(content[0].oppositePostings).hasSize(1)
+      assertThat(content[0].oppositePostings[0].subAccount.id).isEqualTo(cashSubAccount.id)
+      assertThat(content[0].oppositePostings[0].amount).isEqualTo(1L)
+      assertThat(content[0].oppositePostings[0].type).isEqualTo(PostingType.DR)
+
+      assertThat(content[1].subAccount.id).isEqualTo(cashSubAccount.id)
+      assertThat(content[1].amount).isEqualTo(transaction.amount)
+      assertThat(content[1].postingType).isEqualTo(PostingType.DR)
+      assertThat(content[1].oppositePostings).hasSize(1)
+      assertThat(content[1].oppositePostings[0].subAccount.id).isEqualTo(spendsSubAccount.id)
+      assertThat(content[1].oppositePostings[0].amount).isEqualTo(1L)
+      assertThat(content[1].oppositePostings[0].type).isEqualTo(PostingType.CR)
     }
 
     @Test
@@ -151,18 +155,20 @@ class StatementIntegrationTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .exchange()
         .expectStatus().isOk()
-        .expectBody<List<StatementEntryResponse>>()
+        .expectBody<PagedResponse<StatementEntryResponse>>()
         .returnResult()
         .responseBody!!
 
-      assertThat(statementEntryResponse).hasSize(1)
-      assertThat(statementEntryResponse[0].subAccount.id).isEqualTo(cashSubAccountOne.id)
-      assertThat(statementEntryResponse[0].amount).isEqualTo(1L)
-      assertThat(statementEntryResponse[0].postingType).isEqualTo(PostingType.CR)
-      assertThat(statementEntryResponse[0].oppositePostings).hasSize(1)
-      assertThat(statementEntryResponse[0].oppositePostings[0].subAccount.id).isEqualTo(canteenAccount.id)
-      assertThat(statementEntryResponse[0].oppositePostings[0].amount).isEqualTo(2L)
-      assertThat(statementEntryResponse[0].oppositePostings[0].type).isEqualTo(PostingType.DR)
+      val content = statementEntryResponse.content
+
+      assertThat(content).hasSize(1)
+      assertThat(content[0].subAccount.id).isEqualTo(cashSubAccountOne.id)
+      assertThat(content[0].amount).isEqualTo(1L)
+      assertThat(content[0].postingType).isEqualTo(PostingType.CR)
+      assertThat(content[0].oppositePostings).hasSize(1)
+      assertThat(content[0].oppositePostings[0].subAccount.id).isEqualTo(canteenAccount.id)
+      assertThat(content[0].oppositePostings[0].amount).isEqualTo(2L)
+      assertThat(content[0].oppositePostings[0].type).isEqualTo(PostingType.DR)
     }
 
     @Test
@@ -190,22 +196,24 @@ class StatementIntegrationTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .exchange()
         .expectStatus().isOk()
-        .expectBody<List<StatementEntryResponse>>()
+        .expectBody<PagedResponse<StatementEntryResponse>>()
         .returnResult()
         .responseBody!!
 
-      assertThat(statementEntryResponse).hasSize(1)
-      assertThat(statementEntryResponse[0].subAccount.id).isEqualTo(canteenAccount.id)
-      assertThat(statementEntryResponse[0].amount).isEqualTo(2L)
-      assertThat(statementEntryResponse[0].postingType).isEqualTo(PostingType.DR)
-      assertThat(statementEntryResponse[0].oppositePostings).hasSize(2)
-      assertThat(statementEntryResponse[0].oppositePostings[0].subAccount.id).isEqualTo(cashSubAccountOne.id)
-      assertThat(statementEntryResponse[0].oppositePostings[0].amount).isEqualTo(1L)
-      assertThat(statementEntryResponse[0].oppositePostings[0].type).isEqualTo(PostingType.CR)
+      val content = statementEntryResponse.content
 
-      assertThat(statementEntryResponse[0].oppositePostings[1].subAccount.id).isEqualTo(cashSubAccountTwo.id)
-      assertThat(statementEntryResponse[0].oppositePostings[1].amount).isEqualTo(1L)
-      assertThat(statementEntryResponse[0].oppositePostings[1].type).isEqualTo(PostingType.CR)
+      assertThat(content).hasSize(1)
+      assertThat(content[0].subAccount.id).isEqualTo(canteenAccount.id)
+      assertThat(content[0].amount).isEqualTo(2L)
+      assertThat(content[0].postingType).isEqualTo(PostingType.DR)
+      assertThat(content[0].oppositePostings).hasSize(2)
+      assertThat(content[0].oppositePostings[0].subAccount.id).isEqualTo(cashSubAccountOne.id)
+      assertThat(content[0].oppositePostings[0].amount).isEqualTo(1L)
+      assertThat(content[0].oppositePostings[0].type).isEqualTo(PostingType.CR)
+
+      assertThat(content[0].oppositePostings[1].subAccount.id).isEqualTo(cashSubAccountTwo.id)
+      assertThat(content[0].oppositePostings[1].amount).isEqualTo(1L)
+      assertThat(content[0].oppositePostings[1].type).isEqualTo(PostingType.CR)
     }
 
     @Test
@@ -252,13 +260,15 @@ class StatementIntegrationTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .exchange()
         .expectStatus().isOk()
-        .expectBody<List<StatementEntryResponse>>()
+        .expectBody<PagedResponse<StatementEntryResponse>>()
         .returnResult()
         .responseBody!!
 
-      assertThat(statementEntryResponse).hasSize(2)
-      assertThat(statementEntryResponse[0].transactionId).isEqualTo(boxingDayTransaction.id)
-      assertThat(statementEntryResponse[1].transactionId).isEqualTo(twentySeventhTransaction.id)
+      val content = statementEntryResponse.content
+
+      assertThat(content).hasSize(2)
+      assertThat(content[0].transactionId).isEqualTo(twentySeventhTransaction.id)
+      assertThat(content[1].transactionId).isEqualTo(boxingDayTransaction.id)
     }
 
     @Test
@@ -305,13 +315,15 @@ class StatementIntegrationTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .exchange()
         .expectStatus().isOk()
-        .expectBody<List<StatementEntryResponse>>()
+        .expectBody<PagedResponse<StatementEntryResponse>>()
         .returnResult()
         .responseBody!!
 
-      assertThat(statementEntryResponse).hasSize(2)
-      assertThat(statementEntryResponse[0].transactionId).isEqualTo(christmasDayTransaction.id)
-      assertThat(statementEntryResponse[1].transactionId).isEqualTo(boxingDayTransaction.id)
+      val content = statementEntryResponse.content
+
+      assertThat(content).hasSize(2)
+      assertThat(content[0].transactionId).isEqualTo(boxingDayTransaction.id)
+      assertThat(content[1].transactionId).isEqualTo(christmasDayTransaction.id)
     }
 
     @Test
@@ -368,13 +380,169 @@ class StatementIntegrationTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .exchange()
         .expectStatus().isOk()
-        .expectBody<List<StatementEntryResponse>>()
+        .expectBody<PagedResponse<StatementEntryResponse>>()
         .returnResult()
         .responseBody!!
 
-      assertThat(statementEntryResponse).hasSize(2)
-      assertThat(statementEntryResponse[0].transactionId).isEqualTo(christmasDayTransaction.id)
-      assertThat(statementEntryResponse[1].transactionId).isEqualTo(boxingDayTransaction.id)
+      val content = statementEntryResponse.content
+
+      assertThat(content).hasSize(2)
+      assertThat(content[0].transactionId).isEqualTo(boxingDayTransaction.id)
+      assertThat(content[1].transactionId).isEqualTo(christmasDayTransaction.id)
+    }
+
+    @Test
+    fun `should return a default page when given no page queries`() {
+      val prisonerOneAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
+      val prisonAccount = integrationTestHelpers.createAccount("LEI", AccountType.PRISON)
+
+      val cashSubAccountOne = integrationTestHelpers.createSubAccount(prisonerOneAccount.id, "CASH")
+      val canteenAccount = integrationTestHelpers.createSubAccount(prisonAccount.id, "1001:CANT")
+
+      repeat(26) {
+        integrationTestHelpers.createOneToOneTransaction(
+          amount = 1L,
+          debitSubAccountId = canteenAccount.id,
+          creditSubAccountId = cashSubAccountOne.id,
+          transactionReference = "TX",
+          description = "TEST",
+          timestamp = LocalDateTime.of(2025, 12, 24, 0, 0, 0).toInstant(ZoneOffset.UTC),
+        )
+      }
+
+      val statementEntryPage = webTestClient.get()
+        .uri("/accounts/${prisonerOneAccount.id}/statement")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk()
+        .expectBody<PagedResponse<StatementEntryResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(statementEntryPage.pageSize).isEqualTo(25)
+      assertThat(statementEntryPage.pageNumber).isEqualTo(1)
+      assertThat(statementEntryPage.isLastPage).isEqualTo(false)
+      assertThat(statementEntryPage.totalPages).isEqualTo(2)
+      assertThat(statementEntryPage.totalElements).isEqualTo(26)
+    }
+
+    @Test
+    fun `should return the page number requested`() {
+      val prisonerOneAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
+      val prisonAccount = integrationTestHelpers.createAccount("LEI", AccountType.PRISON)
+
+      val cashSubAccountOne = integrationTestHelpers.createSubAccount(prisonerOneAccount.id, "CASH")
+      val canteenAccount = integrationTestHelpers.createSubAccount(prisonAccount.id, "1001:CANT")
+
+      repeat(26) {
+        integrationTestHelpers.createOneToOneTransaction(
+          amount = 1L,
+          debitSubAccountId = canteenAccount.id,
+          creditSubAccountId = cashSubAccountOne.id,
+          transactionReference = "TX",
+          description = "TEST",
+          timestamp = LocalDateTime.of(2025, 12, 24, 0, 0, 0).toInstant(ZoneOffset.UTC),
+        )
+      }
+
+      val statementEntryPage = webTestClient.get()
+        .uri("/accounts/${prisonerOneAccount.id}/statement?pageNumber=2")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk()
+        .expectBody<PagedResponse<StatementEntryResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(statementEntryPage.content.size).isEqualTo(1)
+      assertThat(statementEntryPage.pageSize).isEqualTo(25)
+      assertThat(statementEntryPage.pageNumber).isEqualTo(2)
+      assertThat(statementEntryPage.isLastPage).isEqualTo(true)
+      assertThat(statementEntryPage.totalPages).isEqualTo(2)
+      assertThat(statementEntryPage.totalElements).isEqualTo(26)
+    }
+
+    @Test
+    fun `should return a page with specific page size requested`() {
+      val prisonerOneAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
+      val prisonAccount = integrationTestHelpers.createAccount("LEI", AccountType.PRISON)
+
+      val cashSubAccountOne = integrationTestHelpers.createSubAccount(prisonerOneAccount.id, "CASH")
+      val canteenAccount = integrationTestHelpers.createSubAccount(prisonAccount.id, "1001:CANT")
+
+      repeat(26) {
+        integrationTestHelpers.createOneToOneTransaction(
+          amount = 1L,
+          debitSubAccountId = canteenAccount.id,
+          creditSubAccountId = cashSubAccountOne.id,
+          transactionReference = "TX",
+          description = "TEST",
+          timestamp = LocalDateTime.of(2025, 12, 24, 0, 0, 0).toInstant(ZoneOffset.UTC),
+        )
+      }
+
+      val statementEntryPage = webTestClient.get()
+        .uri("/accounts/${prisonerOneAccount.id}/statement?pageNumber=1&pageSize=2")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk()
+        .expectBody<PagedResponse<StatementEntryResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(statementEntryPage.pageSize).isEqualTo(2)
+      assertThat(statementEntryPage.pageNumber).isEqualTo(1)
+      assertThat(statementEntryPage.isLastPage).isEqualTo(false)
+      assertThat(statementEntryPage.totalPages).isEqualTo(13)
+      assertThat(statementEntryPage.totalElements).isEqualTo(26)
+    }
+
+    @Test
+    fun `should return 400 when page requested is out of range`() {
+      val prisonerOneAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
+      val prisonAccount = integrationTestHelpers.createAccount("LEI", AccountType.PRISON)
+
+      val cashSubAccountOne = integrationTestHelpers.createSubAccount(prisonerOneAccount.id, "CASH")
+      val canteenAccount = integrationTestHelpers.createSubAccount(prisonAccount.id, "1001:CANT")
+
+      repeat(26) {
+        integrationTestHelpers.createOneToOneTransaction(
+          amount = 1L,
+          debitSubAccountId = canteenAccount.id,
+          creditSubAccountId = cashSubAccountOne.id,
+          transactionReference = "TX",
+          description = "TEST",
+          timestamp = LocalDateTime.of(2025, 12, 24, 0, 0, 0).toInstant(ZoneOffset.UTC),
+        )
+      }
+
+      webTestClient.get()
+        .uri("/accounts/${prisonerOneAccount.id}/statement?pageNumber=10&pageSize=25")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    fun `should return 400 if page number is less than one`() {
+      val prisonerOneAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
+
+      webTestClient.get()
+        .uri("/accounts/${prisonerOneAccount.id}/statement?pageNumber=0")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    fun `should return 400 if page size is less than one`() {
+      val prisonerOneAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
+
+      webTestClient.get()
+        .uri("/accounts/${prisonerOneAccount.id}/statement?pageSize=0")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isBadRequest
     }
 
     @Test
