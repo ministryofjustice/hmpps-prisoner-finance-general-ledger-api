@@ -80,17 +80,17 @@ class RepoTestHelpers(
     return txInThePast
   }
 
-  fun createOneToOneTransaction(transactionAmount: Long, transactionDateTime: Instant, debitSubAccount: SubAccountEntity, creditSubAccount: SubAccountEntity, debitEntrySequence: Long, creditEntrySequence: Long, transactionEntrySequence: Long = 1, timeStamp: Instant? = null): TransactionEntity {
+  fun createOneToOneTransaction(transactionAmount: Long, postingCreatedAt: Instant, debitSubAccount: SubAccountEntity, creditSubAccount: SubAccountEntity, debitEntrySequence: Long, creditEntrySequence: Long, transactionEntrySequence: Long = 1, transactionTimeStamp: Instant): TransactionEntity {
     val txInThePast = TransactionEntity(
       reference = UUID.randomUUID().toString(),
       description = "TEST_DESCRIPTION_PAST",
       amount = transactionAmount,
-      timestamp = timeStamp ?: transactionDateTime,
+      timestamp = transactionTimeStamp,
       entrySequence = transactionEntrySequence,
     )
     val postingsInThePast = listOf(
       PostingEntity(
-        createdAt = transactionDateTime,
+        createdAt = postingCreatedAt,
         type = PostingType.DR,
         amount = transactionAmount,
         subAccountEntity = debitSubAccount,
@@ -98,7 +98,7 @@ class RepoTestHelpers(
         entrySequence = debitEntrySequence,
       ),
       PostingEntity(
-        createdAt = transactionDateTime,
+        createdAt = postingCreatedAt,
         type = PostingType.CR,
         amount = transactionAmount,
         subAccountEntity = creditSubAccount,

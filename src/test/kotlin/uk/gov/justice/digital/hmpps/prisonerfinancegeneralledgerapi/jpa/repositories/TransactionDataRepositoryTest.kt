@@ -98,12 +98,13 @@ class TransactionDataRepositoryTest @Autowired constructor(
       val spends = repoTestHelpers.createSubAccount("SPENDS", testAccount)
 
       repoTestHelpers.createOneToOneTransaction(
-        1,
-        Instant.now(),
-        cash,
-        spends,
+        transactionAmount = 1,
+        postingCreatedAt = Instant.now(),
+        debitSubAccount = cash,
+        creditSubAccount = spends,
         debitEntrySequence = 1,
         creditEntrySequence = 2,
+        transactionTimeStamp = Instant.now(),
       )
 
       // make sure in memory changes are persisted and clear memory cache to make sure db is used
@@ -126,23 +127,25 @@ class TransactionDataRepositoryTest @Autowired constructor(
       val transactionTimeStamp = Instant.now()
 
       repoTestHelpers.createOneToOneTransaction(
-        1,
-        transactionTimeStamp,
-        cash,
-        spends,
+        transactionAmount = 1,
+        postingCreatedAt = transactionTimeStamp,
+        debitSubAccount = cash,
+        creditSubAccount = spends,
         transactionEntrySequence = 1,
+        transactionTimeStamp = transactionTimeStamp,
         debitEntrySequence = 1,
         creditEntrySequence = 2,
       )
 
       repoTestHelpers.createOneToOneTransaction(
-        1,
-        transactionTimeStamp,
-        cash,
-        spends,
+        transactionAmount = 1,
+        postingCreatedAt = transactionTimeStamp,
+        debitSubAccount = cash,
+        creditSubAccount = spends,
         transactionEntrySequence = 2,
         debitEntrySequence = 1,
         creditEntrySequence = 2,
+        transactionTimeStamp = transactionTimeStamp,
       )
 
       // make sure in memory changes are persisted and clear memory cache to make sure db is used
