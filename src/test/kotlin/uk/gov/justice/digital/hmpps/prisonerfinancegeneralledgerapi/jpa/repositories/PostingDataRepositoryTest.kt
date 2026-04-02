@@ -420,7 +420,7 @@ class PostingDataRepositoryTest @Autowired constructor(
         )
       }
 
-      val pageTen = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, PageRequest.of(99, 25, Sort.Direction.DESC, "transactionEntity.timestamp"))
+      val pageTen = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, PageRequest.of(10, 25, Sort.Direction.DESC, "transactionEntity.timestamp"))
 
       assertThat(pageTen.content.size).isEqualTo(0)
     }
