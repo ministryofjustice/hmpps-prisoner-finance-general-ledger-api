@@ -207,11 +207,12 @@ class StatementIntegrationTest : IntegrationTestBase() {
       assertThat(content[0].amount).isEqualTo(2L)
       assertThat(content[0].postingType).isEqualTo(PostingType.DR)
       assertThat(content[0].oppositePostings).hasSize(2)
-      assertThat(content[0].oppositePostings[0].subAccount.id).isEqualTo(cashSubAccountOne.id)
+
+      assertThat(content[0].oppositePostings[0].subAccount.id).isEqualTo(cashSubAccountTwo.id)
       assertThat(content[0].oppositePostings[0].amount).isEqualTo(1L)
       assertThat(content[0].oppositePostings[0].type).isEqualTo(PostingType.CR)
 
-      assertThat(content[0].oppositePostings[1].subAccount.id).isEqualTo(cashSubAccountTwo.id)
+      assertThat(content[0].oppositePostings[1].subAccount.id).isEqualTo(cashSubAccountOne.id)
       assertThat(content[0].oppositePostings[1].amount).isEqualTo(1L)
       assertThat(content[0].oppositePostings[1].type).isEqualTo(PostingType.CR)
     }
