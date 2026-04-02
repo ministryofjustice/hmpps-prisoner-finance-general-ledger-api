@@ -39,7 +39,15 @@ class PostingDataRepositoryTest @Autowired constructor(
   private lateinit var accountThree: AccountEntity
   private lateinit var accountThreeSubAccountOne: SubAccountEntity
 
-  private val pageReq = PageRequest.of(0, 25, Sort.Direction.DESC, "transactionEntity.timestamp")
+  private val pageReq = PageRequest.of(
+    0,
+    25,
+    Sort.by(
+      Sort.Order.desc("transactionEntity.timestamp"),
+      Sort.Order.desc("transactionEntity.entrySequence"),
+      Sort.Order.desc("entrySequence"),
+    ),
+  )
 
   @BeforeEach
   fun setup() {
@@ -362,7 +370,18 @@ class PostingDataRepositoryTest @Autowired constructor(
         )
       }
 
-      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, page = PageRequest.of(0, pageSize, Sort.Direction.DESC, "transactionEntity.timestamp"))
+      val postings = postingsDataRepository.getPostingsByAccountId(
+        accountId = accountOne.id,
+        page = PageRequest.of(
+          0,
+          pageSize,
+          Sort.by(
+            Sort.Order.desc("transactionEntity.timestamp"),
+            Sort.Order.desc("transactionEntity.entrySequence"),
+            Sort.Order.desc("entrySequence"),
+          ),
+        ),
+      )
 
       assertThat(postings.content).hasSize(pageSize)
 
@@ -420,7 +439,18 @@ class PostingDataRepositoryTest @Autowired constructor(
         )
       }
 
-      val pageTen = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, PageRequest.of(10, 25, Sort.Direction.DESC, "transactionEntity.timestamp"))
+      val pageTen = postingsDataRepository.getPostingsByAccountId(
+        accountId = accountOne.id,
+        PageRequest.of(
+          10,
+          25,
+          Sort.by(
+            Sort.Order.desc("transactionEntity.timestamp"),
+            Sort.Order.desc("transactionEntity.entrySequence"),
+            Sort.Order.desc("entrySequence"),
+          ),
+        ),
+      )
 
       assertThat(pageTen.content.size).isEqualTo(0)
     }

@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.PagedResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.StatementEntryResponse
+import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.UUID
@@ -113,21 +114,110 @@ class StatementIntegrationTest : IntegrationTestBase() {
       val content = statementEntryResponse.content
 
       assertThat(content).hasSize(2)
-      assertThat(content[0].subAccount.id).isEqualTo(spendsSubAccount.id)
-      assertThat(content[0].amount).isEqualTo(transaction.amount)
-      assertThat(content[0].postingType).isEqualTo(PostingType.CR)
-      assertThat(content[0].oppositePostings).hasSize(1)
-      assertThat(content[0].oppositePostings[0].subAccount.id).isEqualTo(cashSubAccount.id)
-      assertThat(content[0].oppositePostings[0].amount).isEqualTo(1L)
-      assertThat(content[0].oppositePostings[0].type).isEqualTo(PostingType.DR)
 
-      assertThat(content[1].subAccount.id).isEqualTo(cashSubAccount.id)
+      assertThat(content[0].subAccount.id).isEqualTo(cashSubAccount.id)
+      assertThat(content[0].amount).isEqualTo(transaction.amount)
+      assertThat(content[0].postingType).isEqualTo(PostingType.DR)
+      assertThat(content[0].oppositePostings).hasSize(1)
+      assertThat(content[0].oppositePostings[0].subAccount.id).isEqualTo(spendsSubAccount.id)
+      assertThat(content[0].oppositePostings[0].amount).isEqualTo(1L)
+      assertThat(content[0].oppositePostings[0].type).isEqualTo(PostingType.CR)
+
+      assertThat(content[1].subAccount.id).isEqualTo(spendsSubAccount.id)
       assertThat(content[1].amount).isEqualTo(transaction.amount)
-      assertThat(content[1].postingType).isEqualTo(PostingType.DR)
+      assertThat(content[1].postingType).isEqualTo(PostingType.CR)
       assertThat(content[1].oppositePostings).hasSize(1)
-      assertThat(content[1].oppositePostings[0].subAccount.id).isEqualTo(spendsSubAccount.id)
+      assertThat(content[1].oppositePostings[0].subAccount.id).isEqualTo(cashSubAccount.id)
       assertThat(content[1].oppositePostings[0].amount).isEqualTo(1L)
-      assertThat(content[1].oppositePostings[0].type).isEqualTo(PostingType.CR)
+      assertThat(content[1].oppositePostings[0].type).isEqualTo(PostingType.DR)
+    }
+
+    @Test
+    fun `Should return postings ordered by transaction timestamp, transaction entrySequence, and posting entrySequence`() {
+      val prisonerAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
+      val timestamp = Instant.now()
+
+      val subAccountTransactionEntry1Posting1 = integrationTestHelpers.createSubAccount(prisonerAccount.id, "T1-P1")
+      val subAccountTransactionEntry1Posting2 = integrationTestHelpers.createSubAccount(prisonerAccount.id, "T1-P2")
+      val transactionFirst = integrationTestHelpers.createOneToOneTransaction(
+        amount = 1L,
+        creditSubAccountId = subAccountTransactionEntry1Posting1.id,
+        debitSubAccountId = subAccountTransactionEntry1Posting2.id,
+        transactionReference = "TX",
+        description = "Transaction Entry Sequence 1",
+        timestamp = timestamp,
+        transactionEntrySequence = 1,
+        postingEntrySequence = Pair(1L, 2L),
+      )
+
+      val subAccountTransactionEntry2Posting3 = integrationTestHelpers.createSubAccount(prisonerAccount.id, "T2-P3")
+      val subAccountTransactionEntry2Posting4 = integrationTestHelpers.createSubAccount(prisonerAccount.id, "T2-P4")
+      val transactionSecond = integrationTestHelpers.createOneToOneTransaction(
+        amount = 2L,
+        creditSubAccountId = subAccountTransactionEntry2Posting3.id,
+        debitSubAccountId = subAccountTransactionEntry2Posting4.id,
+        transactionReference = "TX",
+        description = "Transaction Entry Sequence 2",
+        timestamp = timestamp,
+        transactionEntrySequence = 2,
+        postingEntrySequence = Pair(3L, 4L),
+      )
+
+      val subAccountTransactionInThePastPostin1 = integrationTestHelpers.createSubAccount(prisonerAccount.id, "TPast-P1")
+      val subAccountTransactionInThePastPostin2 = integrationTestHelpers.createSubAccount(prisonerAccount.id, "TPast-P2")
+      val transactionInThePast = integrationTestHelpers.createOneToOneTransaction(
+        amount = 3L,
+        creditSubAccountId = subAccountTransactionInThePastPostin1.id,
+        debitSubAccountId = subAccountTransactionInThePastPostin2.id,
+        transactionReference = "TX",
+        description = "Transaction in the past",
+        timestamp = timestamp.minusSeconds(1000),
+        transactionEntrySequence = 1,
+        postingEntrySequence = Pair(1L, 2L),
+      )
+
+      val statementEntryResponse = webTestClient.get()
+        .uri("/accounts/${prisonerAccount.id}/statement")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk()
+        .expectBody<PagedResponse<StatementEntryResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      val content = statementEntryResponse.content
+
+      assertThat(content).hasSize(6)
+
+      // Transaction EntrySequence 2 Posting 4
+      assertThat(content[0].description).isEqualTo(transactionSecond.description)
+      assertThat(content[0].amount).isEqualTo(transactionSecond.amount)
+      assertThat(content[0].subAccount.id).isEqualTo(subAccountTransactionEntry2Posting4.id)
+
+      // Transaction EntrySequence 2 Posting 3
+      assertThat(content[1].description).isEqualTo(transactionSecond.description)
+      assertThat(content[1].amount).isEqualTo(transactionSecond.amount)
+      assertThat(content[1].subAccount.id).isEqualTo(subAccountTransactionEntry2Posting3.id)
+
+      // Transaction EntrySequence 1 Posting 2
+      assertThat(content[2].description).isEqualTo(transactionFirst.description)
+      assertThat(content[2].amount).isEqualTo(transactionFirst.amount)
+      assertThat(content[2].subAccount.id).isEqualTo(subAccountTransactionEntry1Posting2.id)
+
+      // Transaction EntrySequence 1 Posting 1
+      assertThat(content[3].description).isEqualTo(transactionFirst.description)
+      assertThat(content[3].amount).isEqualTo(transactionFirst.amount)
+      assertThat(content[3].subAccount.id).isEqualTo(subAccountTransactionEntry1Posting1.id)
+
+      // Transaction in the past posting 2
+      assertThat(content[4].description).isEqualTo(transactionInThePast.description)
+      assertThat(content[4].amount).isEqualTo(transactionInThePast.amount)
+      assertThat(content[4].subAccount.id).isEqualTo(subAccountTransactionInThePastPostin2.id)
+
+      // Transaction in the past posting 1
+      assertThat(content[5].description).isEqualTo(transactionInThePast.description)
+      assertThat(content[5].amount).isEqualTo(transactionInThePast.amount)
+      assertThat(content[5].subAccount.id).isEqualTo(subAccountTransactionInThePastPostin1.id)
     }
 
     @Test

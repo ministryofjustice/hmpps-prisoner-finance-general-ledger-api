@@ -25,8 +25,11 @@ class StatementService(
     val pageReq = PageRequest.of(
       zeroIndexedPage,
       pageSize,
-      Sort.Direction.DESC,
-      "transactionEntity.timestamp",
+      Sort.by(
+        Sort.Order.desc("transactionEntity.timestamp"),
+        Sort.Order.desc("transactionEntity.entrySequence"),
+        Sort.Order.desc("entrySequence"),
+      ),
     )
 
     val page = postingsDataRepository.getPostingsByAccountId(

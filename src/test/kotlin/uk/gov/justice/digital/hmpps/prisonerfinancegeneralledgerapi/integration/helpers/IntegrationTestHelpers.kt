@@ -122,19 +122,28 @@ class IntegrationTestHelpers(
     return transactionResponse
   }
 
-  fun createOneToOneTransaction(amount: Long, debitSubAccountId: UUID, creditSubAccountId: UUID, transactionReference: String, description: String = "", timestamp: Instant = Instant.now()): TransactionResponse {
+  fun createOneToOneTransaction(
+    amount: Long,
+    debitSubAccountId: UUID,
+    creditSubAccountId: UUID,
+    transactionReference: String,
+    description: String = "",
+    timestamp: Instant = Instant.now(),
+    transactionEntrySequence: Long = 1,
+    postingEntrySequence: Pair<Long, Long> = Pair(1, 2),
+  ): TransactionResponse {
     val postings = listOf(
       CreatePostingRequest(
         subAccountId = creditSubAccountId,
         amount = amount,
         type = PostingType.CR,
-        entrySequence = 1L,
+        entrySequence = postingEntrySequence.first,
       ),
       CreatePostingRequest(
         subAccountId = debitSubAccountId,
         amount = amount,
         type = PostingType.DR,
-        entrySequence = 2L,
+        entrySequence = postingEntrySequence.second,
       ),
     )
     val transactionPayload = CreateTransactionRequest(
@@ -143,7 +152,7 @@ class IntegrationTestHelpers(
       timestamp = timestamp,
       amount = amount,
       postings = postings,
-      entrySequence = 1,
+      entrySequence = transactionEntrySequence,
     )
 
     val transactionResponse = webTestClient.post().uri("/transactions")
