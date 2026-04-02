@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services
 
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.PagedResponse
@@ -20,7 +22,19 @@ class StatementService(
 
     val zeroIndexedPage = pageNumber - 1
 
-    val page = postingsDataRepository.getPostingsByAccountId(accountId, startDate = startDate?.toUtcStartOfDay(), endDate = endDate?.toUtcEndOfDay(), pageNumber = zeroIndexedPage, pageSize = pageSize)
+    val pageReq = PageRequest.of(
+      zeroIndexedPage,
+      pageSize,
+      Sort.Direction.DESC,
+      "transactionEntity.timestamp",
+    )
+
+    val page = postingsDataRepository.getPostingsByAccountId(
+      accountId,
+      page = pageReq,
+      startDate = startDate?.toUtcStartOfDay(),
+      endDate = endDate?.toUtcEndOfDay(),
+    )
 
     return page.toPageResponse { content -> content.map { StatementEntryResponse.fromEntity(it) } }
   }

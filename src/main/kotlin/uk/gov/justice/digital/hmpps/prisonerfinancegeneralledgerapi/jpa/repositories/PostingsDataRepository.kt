@@ -1,9 +1,7 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories
 
 import org.springframework.data.domain.Page
-import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
-import org.springframework.data.domain.Sort
 import org.springframework.data.jpa.domain.Specification
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor
@@ -23,11 +21,9 @@ interface PostingsDataRepository :
 
   fun getPostingsByAccountId(
     accountId: UUID,
+    page: Pageable,
     startDate: Instant? = null,
     endDate: Instant? = null,
-    pageSize: Int = 25,
-    pageNumber: Int = 0,
-    page: Pageable = PageRequest.of(pageNumber, pageSize, Sort.Direction.DESC, "transactionEntity.timestamp"),
   ): Page<PostingEntity> {
     val spec = Specification.where(PostingsSpecification.byParentAccountId(accountId)).and(PostingsSpecification.createdBetween(startDate, endDate))
 

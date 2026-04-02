@@ -13,6 +13,8 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
@@ -38,6 +40,8 @@ class StatementServiceTest {
 
   private val serviceTestHelpers = ServiceTestHelpers()
 
+  private val pageReq = PageRequest.of(0, 25, Sort.Direction.DESC, "transactionEntity.timestamp")
+
   @Nested
   inner class GetStatement {
 
@@ -55,7 +59,7 @@ class StatementServiceTest {
     fun `should return empty list when no postings for an account`() {
       val prisonerId = UUID.randomUUID()
       whenever { accountService.readAccount(prisonerId) }.thenReturn(AccountEntity(id = prisonerId))
-      whenever { postingsDataRepository.getPostingsByAccountId(prisonerId) }.thenReturn(Page.empty())
+      whenever { postingsDataRepository.getPostingsByAccountId(prisonerId, pageReq) }.thenReturn(Page.empty())
 
       val postings = statementService.listStatementEntries(prisonerId)
 
@@ -79,7 +83,7 @@ class StatementServiceTest {
 
       val page = PageImpl(listOf(posting1, posting2))
 
-      whenever { postingsDataRepository.getPostingsByAccountId(prisonerId) }
+      whenever { postingsDataRepository.getPostingsByAccountId(prisonerId, pageReq) }
         .thenReturn(page)
 
       val statementEntries = statementService.listStatementEntries(prisonerId)?.content!!
@@ -117,7 +121,7 @@ class StatementServiceTest {
 
       val page = PageImpl(listOf(posting1))
 
-      whenever { postingsDataRepository.getPostingsByAccountId(prisonerId) }
+      whenever { postingsDataRepository.getPostingsByAccountId(prisonerId, pageReq) }
         .thenReturn(page)
 
       val statementEntries = statementService.listStatementEntries(prisonerId)?.content!!
@@ -156,7 +160,7 @@ class StatementServiceTest {
 
       val page = PageImpl(listOf(prisonPosting))
 
-      whenever { postingsDataRepository.getPostingsByAccountId(accountId = prisonAccountEntity.id) }
+      whenever { postingsDataRepository.getPostingsByAccountId(accountId = prisonAccountEntity.id, pageReq) }
         .thenReturn(page)
 
       val statementEntries = statementService.listStatementEntries(accountId = prisonAccountEntity.id)?.content!!
@@ -195,7 +199,7 @@ class StatementServiceTest {
 
       val page = PageImpl(listOf(posting1))
 
-      whenever { postingsDataRepository.getPostingsByAccountId(accountId = accountEntityOne.id) }
+      whenever { postingsDataRepository.getPostingsByAccountId(accountId = accountEntityOne.id, pageReq) }
         .thenReturn(page)
 
       val statementEntries = statementService.listStatementEntries(accountId = accountEntityOne.id)?.content!!
@@ -212,13 +216,14 @@ class StatementServiceTest {
     fun `should pass null to the repository if no dates are provided`() {
       val prisonerId = UUID.randomUUID()
       whenever { accountService.readAccount(accountUUID = prisonerId) }.thenReturn(AccountEntity(id = prisonerId))
-      whenever { postingsDataRepository.getPostingsByAccountId(accountId = prisonerId) }.thenReturn(PageImpl(emptyList()))
+      whenever { postingsDataRepository.getPostingsByAccountId(accountId = prisonerId, pageReq) }.thenReturn(PageImpl(emptyList()))
 
       val postings = statementService.listStatementEntries(accountId = prisonerId)?.content!!
 
       assertThat(postings).isEmpty()
       verify(postingsDataRepository, times(1)).getPostingsByAccountId(
         accountId = prisonerId,
+        page = pageReq,
         startDate = null,
         endDate = null,
       )
@@ -231,13 +236,14 @@ class StatementServiceTest {
       val christmasEveMidnight = LocalDateTime.of(2025, 12, 24, 0, 0, 0).toInstant(ZoneOffset.UTC)
 
       whenever { accountService.readAccount(accountUUID = prisonerId) }.thenReturn(AccountEntity(id = prisonerId))
-      whenever { postingsDataRepository.getPostingsByAccountId(accountId = prisonerId, startDate = christmasEveMidnight) }.thenReturn(PageImpl(emptyList()))
+      whenever { postingsDataRepository.getPostingsByAccountId(accountId = prisonerId, pageReq, startDate = christmasEveMidnight) }.thenReturn(PageImpl(emptyList()))
 
       val postings = statementService.listStatementEntries(accountId = prisonerId, startDate = christmasEveTenAM)?.content!!
 
       assertThat(postings).isEmpty()
       verify(postingsDataRepository, times(numInvocations = 1)).getPostingsByAccountId(
         accountId = prisonerId,
+        pageReq,
         startDate = christmasEveMidnight,
         endDate = null,
       )
@@ -253,6 +259,7 @@ class StatementServiceTest {
       whenever {
         postingsDataRepository.getPostingsByAccountId(
           accountId = prisonerId,
+          page = pageReq,
           startDate = null,
           endDate = christmasElevenFiftyNine,
         )
@@ -267,6 +274,7 @@ class StatementServiceTest {
       assertThat(postings!!.content).isEmpty()
       verify(postingsDataRepository, times(1)).getPostingsByAccountId(
         accountId = prisonerId,
+        page = pageReq,
         startDate = null,
         endDate = christmasElevenFiftyNine,
       )
@@ -279,9 +287,8 @@ class StatementServiceTest {
       whenever { accountService.readAccount(accountUUID = prisonerId) }.thenReturn(AccountEntity(id = prisonerId))
       whenever {
         postingsDataRepository.getPostingsByAccountId(
-          pageNumber = 0,
-          pageSize = 25,
           accountId = prisonerId,
+          page = pageReq,
         )
       }.thenReturn(PageImpl(emptyList()))
 
@@ -293,8 +300,7 @@ class StatementServiceTest {
 
       verify(postingsDataRepository, times(1)).getPostingsByAccountId(
         accountId = prisonerId,
-        pageNumber = 0,
-        pageSize = 25,
+        page = pageReq,
       )
     }
   }

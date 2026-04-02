@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest
 import org.springframework.context.annotation.Import
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.ContainersConfig
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
@@ -37,6 +39,8 @@ class PostingDataRepositoryTest @Autowired constructor(
   private lateinit var accountThree: AccountEntity
   private lateinit var accountThreeSubAccountOne: SubAccountEntity
 
+  private val pageReq = PageRequest.of(0, 25, Sort.Direction.DESC, "transactionEntity.timestamp")
+
   @BeforeEach
   fun setup() {
     repoTestHelpers.clearDb()
@@ -47,7 +51,7 @@ class PostingDataRepositoryTest @Autowired constructor(
     @Test
     fun `Should return an empty list when an account has no postings`() {
       val parentAccountId = UUID.randomUUID()
-      val postings = postingsDataRepository.getPostingsByAccountId(parentAccountId)
+      val postings = postingsDataRepository.getPostingsByAccountId(parentAccountId, pageReq)
       assertThat(postings).isEmpty()
     }
 
@@ -66,7 +70,7 @@ class PostingDataRepositoryTest @Autowired constructor(
         creditSubAccount = accountTwoSubAccountOne,
       )
 
-      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id)
+      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, pageReq)
       assertThat(postings).hasSize(1)
     }
 
@@ -83,7 +87,7 @@ class PostingDataRepositoryTest @Autowired constructor(
         creditSubAccount = accountOneSubAccountTwo,
       )
 
-      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id)
+      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, pageReq)
       assertThat(postings).hasSize(2)
     }
 
@@ -121,7 +125,7 @@ class PostingDataRepositoryTest @Autowired constructor(
         creditSubAccount = accountOneSubAccountTwo,
       )
 
-      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, startDate = timeTodayAtMidnight).content
+      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, pageReq, startDate = timeTodayAtMidnight).content
 
       // two tx today with 4 postings for the account/subaccount transfer == 4 posting
       assertThat(postings).hasSize(4)
@@ -164,7 +168,7 @@ class PostingDataRepositoryTest @Autowired constructor(
         creditSubAccount = accountOneSubAccountTwo,
       )
 
-      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, endDate = timeTodayAtMidnight).content
+      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, pageReq, endDate = timeTodayAtMidnight).content
 
       // two tx today with 4 postings for the account/subaccount transfer == 4 posting
       assertThat(postings).hasSize(4)
@@ -217,7 +221,7 @@ class PostingDataRepositoryTest @Autowired constructor(
         creditSubAccount = accountOneSubAccountTwo,
       )
 
-      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, startDate = timeTodayAtMidnight, endDate = timeTomorrowAtMidnight).content
+      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, pageReq, startDate = timeTodayAtMidnight, endDate = timeTomorrowAtMidnight).content
 
       // two tx today with 4 postings for the account/subaccount transfer == 4 posting
       assertThat(postings).hasSize(4)
@@ -270,7 +274,7 @@ class PostingDataRepositoryTest @Autowired constructor(
         creditSubAccount = accountOneSubAccountTwo,
       )
 
-      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, startDate = timeTomorrowAtMidnight, endDate = timeTodayAtMidnight).content
+      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, pageReq, startDate = timeTomorrowAtMidnight, endDate = timeTodayAtMidnight).content
 
       assertThat(postings).hasSize(0)
     }
@@ -326,7 +330,7 @@ class PostingDataRepositoryTest @Autowired constructor(
         ),
       )
 
-      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id)
+      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, pageReq)
 
       assertThat(postings.content).hasSize(12)
 
@@ -358,7 +362,7 @@ class PostingDataRepositoryTest @Autowired constructor(
         )
       }
 
-      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, pageSize = pageSize)
+      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, page = PageRequest.of(0, pageSize, Sort.Direction.DESC, "transactionEntity.timestamp"))
 
       assertThat(postings.content).hasSize(pageSize)
 
@@ -389,12 +393,12 @@ class PostingDataRepositoryTest @Autowired constructor(
         )
       }
 
-      val pageZero = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, pageNumber = 0)
+      val pageZero = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, pageReq)
       assertThat(pageZero.size).isEqualTo(25)
       val feb28 = LocalDate.of(2026, 2, 28).atStartOfDay().toInstant(java.time.ZoneOffset.UTC)
       assertThat(pageZero.content.all { it.transactionEntity.timestamp.isAfter(feb28) }).isTrue
 
-      val pageOne = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, pageNumber = 1)
+      val pageOne = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, PageRequest.of(1, 25, Sort.Direction.DESC, "transactionEntity.timestamp"))
       assertThat(pageOne.size).isEqualTo(25)
       val march1 = LocalDate.of(2026, 3, 1).atStartOfDay().toInstant(java.time.ZoneOffset.UTC)
       assertThat(pageOne.content.all { it.transactionEntity.timestamp.isBefore(march1) }).isTrue
@@ -416,7 +420,7 @@ class PostingDataRepositoryTest @Autowired constructor(
         )
       }
 
-      val pageTen = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, pageNumber = 10)
+      val pageTen = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, PageRequest.of(99, 25, Sort.Direction.DESC, "transactionEntity.timestamp"))
 
       assertThat(pageTen.content.size).isEqualTo(0)
     }
