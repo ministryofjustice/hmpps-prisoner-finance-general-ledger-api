@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.controllers
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
-import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -46,12 +45,6 @@ class StatementController(
       ApiResponse(
         responseCode = "200",
         description = "Return Statement Entries list for the account",
-        content = [
-          Content(
-            mediaType = "application/json",
-            array = ArraySchema(schema = Schema(StatementEntryResponse::class)),
-          ),
-        ],
       ),
       ApiResponse(
         responseCode = "400",
@@ -85,7 +78,7 @@ class StatementController(
     scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO, ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW],
   )
   @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO','$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
-  @GetMapping(value = ["/accounts/{accountId}/statement"])
+  @GetMapping(value = ["/accounts/{accountId}/statement"], produces = ["application/json"])
   fun getStatementForAccountId(
     @PathVariable accountId: UUID,
     @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") startDate: LocalDate? = null,
