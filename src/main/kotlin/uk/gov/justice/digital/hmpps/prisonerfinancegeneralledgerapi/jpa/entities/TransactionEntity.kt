@@ -5,6 +5,7 @@ import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.Index
 import jakarta.persistence.OneToMany
+import jakarta.persistence.OrderBy
 import jakarta.persistence.Table
 import java.time.Instant
 import java.util.UUID
@@ -35,6 +36,10 @@ class TransactionEntity(
   @Column(name = "amount", nullable = false)
   val amount: Long = 0,
 
+  @Column(name = "entry_sequence", nullable = false)
+  val entrySequence: Long,
+
   @OneToMany(mappedBy = "transactionEntity", fetch = jakarta.persistence.FetchType.EAGER)
+  @OrderBy("entrySequence DESC")
   val postings: MutableList<PostingEntity> = mutableListOf(),
 )

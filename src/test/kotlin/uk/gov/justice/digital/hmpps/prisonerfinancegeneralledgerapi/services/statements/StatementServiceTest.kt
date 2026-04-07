@@ -40,7 +40,15 @@ class StatementServiceTest {
 
   private val serviceTestHelpers = ServiceTestHelpers()
 
-  private val pageReq = PageRequest.of(0, 25, Sort.Direction.DESC, "transactionEntity.timestamp")
+  private val pageReq = PageRequest.of(
+    0,
+    25,
+    Sort.by(
+      Sort.Order.desc("transactionEntity.timestamp"),
+      Sort.Order.desc("transactionEntity.entrySequence"),
+      Sort.Order.desc("entrySequence"),
+    ),
+  )
 
   @Nested
   inner class GetStatement {

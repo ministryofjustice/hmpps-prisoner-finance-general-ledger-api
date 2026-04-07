@@ -40,6 +40,7 @@ class ServiceTestHelpers {
       description = description,
       amount = transactionAmount,
       timestamp = timeStamp ?: transactionDateTime,
+      entrySequence = 1,
     )
     val postings = listOf(
       PostingEntity(
@@ -48,6 +49,7 @@ class ServiceTestHelpers {
         amount = transactionAmount,
         subAccountEntity = debitSubAccount,
         transactionEntity = txInThePast,
+        entrySequence = 1,
       ),
       PostingEntity(
         createdAt = transactionDateTime,
@@ -55,6 +57,7 @@ class ServiceTestHelpers {
         amount = transactionAmount,
         subAccountEntity = creditSubAccount,
         transactionEntity = txInThePast,
+        entrySequence = 2,
       ),
     )
 
@@ -76,6 +79,7 @@ class ServiceTestHelpers {
       reference = ref,
       amount = overallDebitAmount,
       description = description,
+      entrySequence = 1,
     )
 
     val postings = mutableListOf<PostingEntity>(
@@ -84,6 +88,7 @@ class ServiceTestHelpers {
         amount = overallDebitAmount,
         transactionEntity = transaction,
         type = PostingType.DR,
+        entrySequence = 1,
       ),
     )
 
@@ -93,6 +98,7 @@ class ServiceTestHelpers {
         transactionEntity = transaction,
         type = PostingType.CR,
         amount = amountToCreditEachSubAccount,
+        entrySequence = i + 2L,
       )
       postings.add(creditPosting)
     }

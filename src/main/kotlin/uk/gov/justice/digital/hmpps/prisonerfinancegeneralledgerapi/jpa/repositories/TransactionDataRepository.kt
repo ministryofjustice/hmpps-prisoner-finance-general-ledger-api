@@ -16,14 +16,14 @@ interface TransactionDataRepository : JpaRepository<TransactionEntity, UUID> {
     SELECT t
     FROM TransactionEntity t
     WHERE EXISTS (
-        SELECT 1
-        FROM PostingEntity p
-        JOIN p.subAccountEntity sa
-        WHERE p.transactionEntity = t
-          AND sa.parentAccountEntity.id = :accountId 
-    )
-    ORDER BY t.timestamp DESC
-    """,
+      SELECT 1
+      FROM PostingEntity p
+      JOIN p.subAccountEntity sa
+      WHERE p.transactionEntity = t
+      AND sa.parentAccountEntity.id = :accountId
+  )
+  ORDER BY t.timestamp DESC, t.entrySequence DESC
+  """,
   )
   fun findTransactionsByAccountId(@Param("accountId") accountId: UUID): List<TransactionEntity>
 }

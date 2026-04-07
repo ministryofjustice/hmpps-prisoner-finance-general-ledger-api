@@ -45,27 +45,30 @@ class RepoTestHelpers(
     return subAccountEntity
   }
 
-  fun createOneToOneTransaction(transactionAmount: Long, timestamp: Instant, debitSubAccount: SubAccountEntity, creditSubAccount: SubAccountEntity, createdAtTime: Instant = Instant.now()): TransactionEntity {
+  fun createOneToOneTransaction(transactionAmount: Long, postingCreatedAt: Instant, debitSubAccount: SubAccountEntity, creditSubAccount: SubAccountEntity, debitEntrySequence: Long = 1, creditEntrySequence: Long = 2, transactionEntrySequence: Long = 1, transactionTimeStamp: Instant): TransactionEntity {
     val txInThePast = TransactionEntity(
       reference = UUID.randomUUID().toString(),
       description = "TEST_DESCRIPTION_PAST",
       amount = transactionAmount,
-      timestamp = timestamp,
+      timestamp = transactionTimeStamp,
+      entrySequence = transactionEntrySequence,
     )
     val postingsInThePast = listOf(
       PostingEntity(
-        createdAt = createdAtTime,
+        createdAt = postingCreatedAt,
         type = PostingType.DR,
         amount = transactionAmount,
         subAccountEntity = debitSubAccount,
         transactionEntity = txInThePast,
+        entrySequence = debitEntrySequence,
       ),
       PostingEntity(
-        createdAt = createdAtTime,
+        createdAt = postingCreatedAt,
         type = PostingType.CR,
         amount = transactionAmount,
         subAccountEntity = creditSubAccount,
         transactionEntity = txInThePast,
+        entrySequence = creditEntrySequence,
       ),
     )
 
@@ -88,6 +91,7 @@ class RepoTestHelpers(
     val transaction = TransactionEntity(
       reference = ref,
       amount = overallDebitAmount,
+      entrySequence = 1,
     )
 
     val postings = mutableListOf<PostingEntity>(
@@ -96,6 +100,7 @@ class RepoTestHelpers(
         amount = overallDebitAmount,
         transactionEntity = transaction,
         type = PostingType.DR,
+        entrySequence = 1,
       ),
     )
 
@@ -105,6 +110,7 @@ class RepoTestHelpers(
         transactionEntity = transaction,
         type = PostingType.CR,
         amount = amountToCreditEachSubAccount,
+        entrySequence = i + 2L,
       )
       postings.add(creditPosting)
     }
