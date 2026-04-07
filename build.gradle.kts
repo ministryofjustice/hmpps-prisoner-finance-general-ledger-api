@@ -6,8 +6,8 @@ plugins {
   kotlin("plugin.jpa") version "2.3.20"
 }
 
-jacoco {
-  version = "0.8.11"
+configure<JacocoPluginExtension> {
+  toolVersion = "0.8.14"
 }
 configurations {
   testImplementation { exclude(group = "org.junit.vintage") }
