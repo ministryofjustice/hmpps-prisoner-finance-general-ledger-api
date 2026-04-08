@@ -17,7 +17,15 @@ class StatementService(
   private val postingsDataRepository: PostingsDataRepository,
   private val accountService: AccountService,
 ) {
-  fun listStatementEntries(accountId: UUID, startDate: LocalDate? = null, endDate: LocalDate? = null, pageNumber: Int = 1, pageSize: Int = 25): PagedResponse<StatementEntryResponse>? {
+  fun listStatementEntries(
+    accountId: UUID,
+    startDate: LocalDate? = null,
+    endDate: LocalDate? = null,
+    pageNumber: Int = 1,
+    pageSize: Int = 25,
+    credit: Boolean = false,
+    debit: Boolean = false,
+  ): PagedResponse<StatementEntryResponse>? {
     accountService.readAccount(accountId) ?: return null
 
     val zeroIndexedPage = pageNumber - 1
@@ -37,6 +45,8 @@ class StatementService(
       page = pageReq,
       startDate = startDate?.toUtcStartOfDay(),
       endDate = endDate?.toUtcEndOfDay(),
+      credit = credit,
+      debit = debit,
     )
 
     return page.toPageResponse { content -> content.map { StatementEntryResponse.fromEntity(it) } }

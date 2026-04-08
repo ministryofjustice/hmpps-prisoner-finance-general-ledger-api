@@ -480,6 +480,95 @@ class PostingDataRepositoryTest @Autowired constructor(
 
       assertThat(pageTen.content.size).isEqualTo(0)
     }
+
+    @Test
+    fun `should return all postings filtered by credit`() {
+      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
+      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
+      accountOneSubAccountTwo = repoTestHelpers.createSubAccount(ref = "SPENDS", account = accountOne)
+
+      repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionTimeStamp = Instant.now(),
+        postingCreatedAt = Instant.now(),
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+      )
+
+      repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionTimeStamp = Instant.now(),
+        postingCreatedAt = Instant.now(),
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+      )
+
+      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, pageReq, credit = true).content
+
+      assertThat(postings).hasSize(2)
+
+      assertThat(postings.all { posting -> posting.type == PostingType.CR }).isTrue()
+    }
+
+    @Test
+    fun `should return all postings filtered by debit`() {
+      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
+      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
+      accountOneSubAccountTwo = repoTestHelpers.createSubAccount(ref = "SPENDS", account = accountOne)
+
+      repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionTimeStamp = Instant.now(),
+        postingCreatedAt = Instant.now(),
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+      )
+
+      repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionTimeStamp = Instant.now(),
+        postingCreatedAt = Instant.now(),
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+      )
+
+      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, pageReq, debit = true).content
+
+      assertThat(postings).hasSize(2)
+
+      assertThat(postings.all { posting -> posting.type == PostingType.DR }).isTrue()
+    }
+
+    @Test
+    fun `should return all postings filtered by debit & debit`() {
+      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
+      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
+      accountOneSubAccountTwo = repoTestHelpers.createSubAccount(ref = "SPENDS", account = accountOne)
+
+      repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionTimeStamp = Instant.now(),
+        postingCreatedAt = Instant.now(),
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+      )
+
+      repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionTimeStamp = Instant.now(),
+        postingCreatedAt = Instant.now(),
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+      )
+
+      val postingsBothFilteredIn = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, pageReq, credit = true, debit = true).content
+
+      assertThat(postingsBothFilteredIn).hasSize(4)
+
+      val postingsBothFilteredOut = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, pageReq, credit = false, debit = false).content
+
+      assertThat(postingsBothFilteredOut).hasSize(4)
+    }
   }
 
   @Nested
