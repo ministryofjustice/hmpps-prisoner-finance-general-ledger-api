@@ -8,6 +8,7 @@ import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.oppositePostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.IdempotencyKeyDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
@@ -80,21 +81,28 @@ class IntegrationTestHelpers(
     return subAccount
   }
 
-  fun createOneToManyTransaction(amountToCreditEachAccount: Long, debitSubAccountId: UUID, creditSubAccountIds: List<UUID>, transactionReference: String, description: String = ""): TransactionResponse {
+  fun createOneToManyTransaction(
+    amountPerAccount: Long,
+    oneToManySubAccountId: UUID,
+    manyToOneSubAccountIds: List<UUID>,
+    transactionReference: String,
+    description: String = "",
+    oneToManyPostingType: PostingType = PostingType.DR,
+  ): TransactionResponse {
     val postings = mutableListOf<CreatePostingRequest>(
       CreatePostingRequest(
-        subAccountId = debitSubAccountId,
-        amount = amountToCreditEachAccount * creditSubAccountIds.size,
-        type = PostingType.DR,
+        subAccountId = oneToManySubAccountId,
+        amount = amountPerAccount * manyToOneSubAccountIds.size,
+        type = oneToManyPostingType,
         entrySequence = 1,
       ),
     )
-    for ((i, creditSubAccountId) in creditSubAccountIds.withIndex()) {
+    for ((i, subAccountId) in manyToOneSubAccountIds.withIndex()) {
       postings.add(
         CreatePostingRequest(
-          subAccountId = creditSubAccountId,
-          amount = amountToCreditEachAccount,
-          type = PostingType.CR,
+          subAccountId = subAccountId,
+          amount = amountPerAccount,
+          type = oneToManyPostingType.oppositePostingType(),
           entrySequence = i + 2L,
         ),
       )
@@ -104,7 +112,7 @@ class IntegrationTestHelpers(
       reference = transactionReference,
       description = description,
       timestamp = Instant.now(),
-      amount = amountToCreditEachAccount * creditSubAccountIds.size,
+      amount = amountPerAccount * manyToOneSubAccountIds.size,
       postings = postings,
       entrySequence = 1,
     )

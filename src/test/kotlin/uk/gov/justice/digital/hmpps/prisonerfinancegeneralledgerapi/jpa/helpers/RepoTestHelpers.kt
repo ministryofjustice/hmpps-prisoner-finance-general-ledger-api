@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.TransactionEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.oppositePostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.IdempotencyKeyDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
@@ -82,37 +83,38 @@ class RepoTestHelpers(
 
   fun createOneToManyTransaction(
     ref: String,
-    debitSubAccount: SubAccountEntity,
-    creditSubAccounts: List<SubAccountEntity>,
-    amountToCreditEachSubAccount: Long,
+    oneToManySubAccount: SubAccountEntity,
+    manyToOneSubAccounts: List<SubAccountEntity>,
+    amountPerSubAccount: Long,
+    oneToManyPostingType: PostingType = PostingType.DR,
   ): TransactionEntity {
-    val overallDebitAmount = amountToCreditEachSubAccount * creditSubAccounts.size
+    val overallOneToManyAmount = amountPerSubAccount * manyToOneSubAccounts.size
 
     val transaction = TransactionEntity(
       reference = ref,
-      amount = overallDebitAmount,
+      amount = overallOneToManyAmount,
       entrySequence = 1,
     )
 
     val postings = mutableListOf<PostingEntity>(
       PostingEntity(
-        subAccountEntity = debitSubAccount,
-        amount = overallDebitAmount,
+        subAccountEntity = oneToManySubAccount,
+        amount = overallOneToManyAmount,
         transactionEntity = transaction,
-        type = PostingType.DR,
+        type = oneToManyPostingType,
         entrySequence = 1,
       ),
     )
 
-    for (i in 0..<creditSubAccounts.size) {
-      val creditPosting = PostingEntity(
-        subAccountEntity = creditSubAccounts[i],
+    for (i in 0..<manyToOneSubAccounts.size) {
+      val posting = PostingEntity(
+        subAccountEntity = manyToOneSubAccounts[i],
         transactionEntity = transaction,
-        type = PostingType.CR,
-        amount = amountToCreditEachSubAccount,
+        type = oneToManyPostingType.oppositePostingType(),
+        amount = amountPerSubAccount,
         entrySequence = i + 2L,
       )
-      postings.add(creditPosting)
+      postings.add(posting)
     }
 
     transaction.postings.addAll(postings)

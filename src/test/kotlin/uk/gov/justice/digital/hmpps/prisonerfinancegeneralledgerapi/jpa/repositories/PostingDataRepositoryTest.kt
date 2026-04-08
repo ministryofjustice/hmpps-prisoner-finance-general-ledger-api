@@ -326,7 +326,7 @@ class PostingDataRepositoryTest @Autowired constructor(
         ),
       )
 
-      val marchTransactions = listOf(
+      listOf(
         repoTestHelpers.createOneToOneTransaction(
           transactionAmount = 1,
           transactionTimeStamp = LocalDate.of(2026, 3, 15).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
@@ -343,7 +343,7 @@ class PostingDataRepositoryTest @Autowired constructor(
         ),
       )
 
-      val febTransactionsTwo = listOf(
+      listOf(
         repoTestHelpers.createOneToOneTransaction(
           transactionAmount = 1,
           transactionTimeStamp = LocalDate.of(2026, 2, 11).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
@@ -482,7 +482,7 @@ class PostingDataRepositoryTest @Autowired constructor(
     }
 
     @Test
-    fun `should return all postings filtered by credit`() {
+    fun `should return all postings filtered by credit for prisoner`() {
       accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
       accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
       accountOneSubAccountTwo = repoTestHelpers.createSubAccount(ref = "SPENDS", account = accountOne)
@@ -511,7 +511,33 @@ class PostingDataRepositoryTest @Autowired constructor(
     }
 
     @Test
-    fun `should return all postings filtered by debit`() {
+    fun `should return all postings filtered by credit for prison`() {
+      val prisonAccount = repoTestHelpers.createAccount(ref = "LEI")
+      val prisonCanteenSubAccount = repoTestHelpers.createSubAccount(ref = "1001:CANT", account = prisonAccount)
+
+      val prisonerAccountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
+      val prisonerAccountOneSubAccount = repoTestHelpers.createSubAccount(ref = "CASH", account = prisonerAccountOne)
+
+      val prisonerAccountTwo = repoTestHelpers.createAccount(ref = "ZXC123XX")
+      val prisonerAccountTwoSubAccount = repoTestHelpers.createSubAccount(ref = "CASH", account = prisonerAccountTwo)
+
+      repoTestHelpers.createOneToManyTransaction(
+        ref = "CANT spends",
+        manyToOneSubAccounts = listOf(prisonerAccountOneSubAccount, prisonerAccountTwoSubAccount),
+        oneToManySubAccount = prisonCanteenSubAccount,
+        amountPerSubAccount = 1,
+        oneToManyPostingType = PostingType.CR,
+      )
+
+      val postings = postingsDataRepository.getPostingsByAccountId(accountId = prisonAccount.id, pageReq, credit = true).content
+
+      assertThat(postings).hasSize(1)
+
+      assertThat(postings.all { posting -> posting.type == PostingType.CR }).isTrue()
+    }
+
+    @Test
+    fun `should return all postings filtered by debit for prisoner`() {
       accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
       accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
       accountOneSubAccountTwo = repoTestHelpers.createSubAccount(ref = "SPENDS", account = accountOne)
@@ -540,7 +566,32 @@ class PostingDataRepositoryTest @Autowired constructor(
     }
 
     @Test
-    fun `should return all postings filtered by debit & debit`() {
+    fun `should return all postings filtered by debit for prison`() {
+      val prisonAccount = repoTestHelpers.createAccount(ref = "LEI")
+      val prisonCanteenSubAccount = repoTestHelpers.createSubAccount(ref = "1001:CANT", account = prisonAccount)
+
+      val prisonerAccountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
+      val prisonerAccountOneSubAccount = repoTestHelpers.createSubAccount(ref = "CASH", account = prisonerAccountOne)
+
+      val prisonerAccountTwo = repoTestHelpers.createAccount(ref = "ZXC123XX")
+      val prisonerAccountTwoSubAccount = repoTestHelpers.createSubAccount(ref = "CASH", account = prisonerAccountTwo)
+
+      repoTestHelpers.createOneToManyTransaction(
+        ref = "CANT spends",
+        oneToManySubAccount = prisonCanteenSubAccount,
+        manyToOneSubAccounts = listOf(prisonerAccountOneSubAccount, prisonerAccountTwoSubAccount),
+        amountPerSubAccount = 1,
+      )
+
+      val postings = postingsDataRepository.getPostingsByAccountId(accountId = prisonAccount.id, pageReq, debit = true).content
+
+      assertThat(postings).hasSize(1)
+
+      assertThat(postings.all { posting -> posting.type == PostingType.DR }).isTrue()
+    }
+
+    @Test
+    fun `should return all postings filtered by credit & debit for prisoner`() {
       accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
       accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
       accountOneSubAccountTwo = repoTestHelpers.createSubAccount(ref = "SPENDS", account = accountOne)
@@ -568,6 +619,41 @@ class PostingDataRepositoryTest @Autowired constructor(
       val postingsBothFilteredOut = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, pageReq, credit = false, debit = false).content
 
       assertThat(postingsBothFilteredOut).hasSize(4)
+    }
+
+    @Test
+    fun `should return all postings filtered by credit & debit for prison`() {
+      val prisonAccount = repoTestHelpers.createAccount(ref = "LEI")
+      val prisonCanteenSubAccount = repoTestHelpers.createSubAccount(ref = "1001:CANT", account = prisonAccount)
+
+      val prisonerAccountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
+      val prisonerAccountOneSubAccount = repoTestHelpers.createSubAccount(ref = "CASH", account = prisonerAccountOne)
+
+      val prisonerAccountTwo = repoTestHelpers.createAccount(ref = "ZXC123XX")
+      val prisonerAccountTwoSubAccount = repoTestHelpers.createSubAccount(ref = "CASH", account = prisonerAccountTwo)
+
+      repoTestHelpers.createOneToManyTransaction(
+        ref = "CANT spends",
+        oneToManySubAccount = prisonCanteenSubAccount,
+        manyToOneSubAccounts = listOf(prisonerAccountOneSubAccount, prisonerAccountTwoSubAccount),
+        amountPerSubAccount = 1,
+      )
+
+      repoTestHelpers.createOneToManyTransaction(
+        ref = "CANT spends",
+        manyToOneSubAccounts = listOf(prisonerAccountOneSubAccount, prisonerAccountTwoSubAccount),
+        oneToManySubAccount = prisonCanteenSubAccount,
+        amountPerSubAccount = 1,
+        oneToManyPostingType = PostingType.DR,
+      )
+
+      val postingsBothFilteredIn = postingsDataRepository.getPostingsByAccountId(accountId = prisonAccount.id, pageReq, debit = true, credit = true).content
+
+      assertThat(postingsBothFilteredIn).hasSize(2)
+
+      val postingsBothFilteredOut = postingsDataRepository.getPostingsByAccountId(accountId = prisonAccount.id, pageReq, debit = false, credit = false).content
+
+      assertThat(postingsBothFilteredOut).hasSize(2)
     }
   }
 

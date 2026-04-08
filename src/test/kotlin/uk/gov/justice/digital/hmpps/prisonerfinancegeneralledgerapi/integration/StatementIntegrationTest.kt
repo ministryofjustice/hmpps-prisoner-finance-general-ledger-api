@@ -233,9 +233,9 @@ class StatementIntegrationTest : IntegrationTestBase() {
       val canteenAccount = integrationTestHelpers.createSubAccount(prisonAccount.id, "1001:CANT")
 
       integrationTestHelpers.createOneToManyTransaction(
-        amountToCreditEachAccount = 1L,
-        debitSubAccountId = canteenAccount.id,
-        creditSubAccountIds = listOf(cashSubAccountOne.id, cashSubAccountTwo.id),
+        amountPerAccount = 1L,
+        oneToManySubAccountId = canteenAccount.id,
+        manyToOneSubAccountIds = listOf(cashSubAccountOne.id, cashSubAccountTwo.id),
         transactionReference = "TX",
         description = "CASH to SPENDS transaction",
       )
@@ -274,9 +274,9 @@ class StatementIntegrationTest : IntegrationTestBase() {
       val canteenAccount = integrationTestHelpers.createSubAccount(prisonAccount.id, "1001:CANT")
 
       integrationTestHelpers.createOneToManyTransaction(
-        amountToCreditEachAccount = 1L,
-        debitSubAccountId = canteenAccount.id,
-        creditSubAccountIds = listOf(cashSubAccountOne.id, cashSubAccountTwo.id),
+        amountPerAccount = 1L,
+        oneToManySubAccountId = canteenAccount.id,
+        manyToOneSubAccountIds = listOf(cashSubAccountOne.id, cashSubAccountTwo.id),
         transactionReference = "TX",
         description = "CASH to SPENDS transaction",
       )
@@ -589,7 +589,7 @@ class StatementIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `return a list of statements filtered on credit type`() {
+    fun `return a list of statements filtered on credit type for prisoner`() {
       val prisonerOneAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
 
       val cashSubAccountOne = integrationTestHelpers.createSubAccount(prisonerOneAccount.id, "CASH")
@@ -630,7 +630,43 @@ class StatementIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `return a list of statements filtered on debit type`() {
+    fun `return a list of statements filtered on credit type for prison`() {
+      val prisonerOneAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
+      val cashSubAccountOne = integrationTestHelpers.createSubAccount(prisonerOneAccount.id, "CASH")
+
+      val prisonerTwoAccount = integrationTestHelpers.createAccount("Z9234BC", AccountType.PRISONER)
+      val cashSubAccountTwo = integrationTestHelpers.createSubAccount(prisonerTwoAccount.id, "CASH")
+
+      val prisonAccount = integrationTestHelpers.createAccount("LEI", AccountType.PRISON)
+      val canteenSubAccount = integrationTestHelpers.createSubAccount(prisonAccount.id, "CANT")
+
+      integrationTestHelpers.createOneToManyTransaction(
+        amountPerAccount = 1L,
+        oneToManySubAccountId = canteenSubAccount.id,
+        manyToOneSubAccountIds = listOf(cashSubAccountOne.id, cashSubAccountTwo.id),
+        transactionReference = "TX",
+        description = "Transaction 1",
+        oneToManyPostingType = PostingType.CR,
+      )
+
+      val statementEntryResponse = webTestClient.get()
+        .uri("/accounts/${prisonAccount.id}/statement?credit=true")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk()
+        .expectBody<PagedResponse<StatementEntryResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      val content = statementEntryResponse.content
+
+      assertThat(content).hasSize(1)
+
+      assertThat(content.all { posting -> posting.postingType == PostingType.CR }).isTrue()
+    }
+
+    @Test
+    fun `return a list of statements filtered on debit type for prisoner`() {
       val prisonerOneAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
 
       val cashSubAccountOne = integrationTestHelpers.createSubAccount(prisonerOneAccount.id, "CASH")
@@ -671,7 +707,43 @@ class StatementIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `return a list of statements filtered on credit & debit type`() {
+    fun `return a list of statements filtered on debit type for prison`() {
+      val prisonerOneAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
+      val cashSubAccountOne = integrationTestHelpers.createSubAccount(prisonerOneAccount.id, "CASH")
+
+      val prisonerTwoAccount = integrationTestHelpers.createAccount("Z9234BC", AccountType.PRISONER)
+      val cashSubAccountTwo = integrationTestHelpers.createSubAccount(prisonerTwoAccount.id, "CASH")
+
+      val prisonAccount = integrationTestHelpers.createAccount("LEI", AccountType.PRISON)
+      val canteenSubAccount = integrationTestHelpers.createSubAccount(prisonAccount.id, "CANT")
+
+      integrationTestHelpers.createOneToManyTransaction(
+        amountPerAccount = 1L,
+        oneToManySubAccountId = canteenSubAccount.id,
+        manyToOneSubAccountIds = listOf(cashSubAccountOne.id, cashSubAccountTwo.id),
+        transactionReference = "TX",
+        description = "Transaction 1",
+        oneToManyPostingType = PostingType.DR,
+      )
+
+      val statementEntryResponse = webTestClient.get()
+        .uri("/accounts/${prisonAccount.id}/statement?debit=true")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk()
+        .expectBody<PagedResponse<StatementEntryResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      val content = statementEntryResponse.content
+
+      assertThat(content).hasSize(1)
+
+      assertThat(content.all { posting -> posting.postingType == PostingType.DR }).isTrue()
+    }
+
+    @Test
+    fun `return a list of statements filtered on credit & debit type for prisoner`() {
       val prisonerOneAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
 
       val cashSubAccountOne = integrationTestHelpers.createSubAccount(prisonerOneAccount.id, "CASH")
@@ -720,6 +792,62 @@ class StatementIntegrationTest : IntegrationTestBase() {
       val contentNotFilteredOnBoth = statementEntryResponse.content
 
       assertThat(contentNotFilteredOnBoth).hasSize(4)
+    }
+
+    @Test
+    fun `return a list of statements filtered on credit & debit type for prison`() {
+      val prisonerOneAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
+      val cashSubAccountOne = integrationTestHelpers.createSubAccount(prisonerOneAccount.id, "CASH")
+
+      val prisonerTwoAccount = integrationTestHelpers.createAccount("Z9234BC", AccountType.PRISONER)
+      val cashSubAccountTwo = integrationTestHelpers.createSubAccount(prisonerTwoAccount.id, "CASH")
+
+      val prisonAccount = integrationTestHelpers.createAccount("LEI", AccountType.PRISON)
+      val canteenSubAccount = integrationTestHelpers.createSubAccount(prisonAccount.id, "CANT")
+
+      integrationTestHelpers.createOneToManyTransaction(
+        amountPerAccount = 1L,
+        oneToManySubAccountId = canteenSubAccount.id,
+        manyToOneSubAccountIds = listOf(cashSubAccountOne.id, cashSubAccountTwo.id),
+        transactionReference = "TX",
+        description = "Transaction 1",
+        oneToManyPostingType = PostingType.DR,
+      )
+
+      integrationTestHelpers.createOneToManyTransaction(
+        amountPerAccount = 1L,
+        oneToManySubAccountId = canteenSubAccount.id,
+        manyToOneSubAccountIds = listOf(cashSubAccountOne.id, cashSubAccountTwo.id),
+        transactionReference = "TX",
+        description = "Transaction 2",
+        oneToManyPostingType = PostingType.CR,
+      )
+
+      val statementEntryResponseForBoth = webTestClient.get()
+        .uri("/accounts/${prisonAccount.id}/statement?debit=true&credit=true")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk()
+        .expectBody<PagedResponse<StatementEntryResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      var content = statementEntryResponseForBoth.content
+
+      assertThat(content).hasSize(2)
+
+      val statementEntryResponseForNone = webTestClient.get()
+        .uri("/accounts/${prisonAccount.id}/statement?debit=false&credit=false")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk()
+        .expectBody<PagedResponse<StatementEntryResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      content = statementEntryResponseForNone.content
+
+      assertThat(content).hasSize(2)
     }
 
     @Test
