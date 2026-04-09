@@ -24,8 +24,13 @@ interface PostingsDataRepository :
     page: Pageable,
     startDate: Instant? = null,
     endDate: Instant? = null,
+    credit: Boolean = false,
+    debit: Boolean = false,
   ): Page<PostingEntity> {
-    val spec = Specification.where(PostingsSpecification.byParentAccountId(accountId)).and(PostingsSpecification.createdBetween(startDate, endDate))
+    val spec = Specification
+      .where(PostingsSpecification.byParentAccountId(accountId))
+      .and(PostingsSpecification.createdBetween(startDate, endDate))
+      .and(PostingsSpecification.byPostingType(credit, debit))
 
     return this.findAll(spec, page)
   }

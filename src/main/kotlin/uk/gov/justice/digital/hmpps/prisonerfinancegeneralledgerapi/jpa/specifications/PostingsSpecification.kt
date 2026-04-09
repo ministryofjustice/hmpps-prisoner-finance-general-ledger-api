@@ -5,6 +5,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.TransactionEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import java.time.Instant
 import java.util.UUID
 
@@ -33,6 +34,14 @@ object PostingsSpecification {
 
       else ->
         cb.lessThanOrEqualTo(parentTransaction.get("timestamp"), endDate)
+    }
+  }
+
+  fun byPostingType(credit: Boolean, debit: Boolean): Specification<PostingEntity> = Specification { root, _, cb ->
+    return@Specification when {
+      credit && !debit -> cb.equal(root.get<PostingEntity>("type"), PostingType.CR)
+      !credit && debit -> cb.equal(root.get<PostingEntity>("type"), PostingType.DR)
+      else -> null
     }
   }
 }

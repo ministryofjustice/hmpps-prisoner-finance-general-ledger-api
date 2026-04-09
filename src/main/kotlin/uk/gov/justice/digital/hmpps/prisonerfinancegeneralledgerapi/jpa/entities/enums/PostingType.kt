@@ -4,3 +4,11 @@ enum class PostingType {
   CR,
   DR,
 }
+
+fun PostingType.oppositePostingType(): PostingType {
+  if (this == PostingType.CR) {
+    return PostingType.DR
+  } else {
+    return PostingType.CR
+  }
+}
