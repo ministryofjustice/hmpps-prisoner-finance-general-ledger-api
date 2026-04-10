@@ -19,6 +19,7 @@ class StatementService(
 ) {
   fun listStatementEntries(
     accountId: UUID,
+    subAccountId: UUID? = null,
     startDate: LocalDate? = null,
     endDate: LocalDate? = null,
     pageNumber: Int = 1,
@@ -43,6 +44,7 @@ class StatementService(
     val page = postingsDataRepository.getPostingsByAccountId(
       accountId,
       page = pageReq,
+      subAccountId = subAccountId,
       startDate = startDate?.toUtcStartOfDay(),
       endDate = endDate?.toUtcEndOfDay(),
       credit = credit,
