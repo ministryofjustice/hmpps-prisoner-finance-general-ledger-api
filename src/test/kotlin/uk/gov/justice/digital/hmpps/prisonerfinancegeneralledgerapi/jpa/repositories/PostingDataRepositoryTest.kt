@@ -655,6 +655,76 @@ class PostingDataRepositoryTest @Autowired constructor(
 
       assertThat(postingsBothFilteredOut).hasSize(2)
     }
+
+    @Test
+    fun `should return all postings filtered by subAccount for prison`() {
+      val prisonAccount = repoTestHelpers.createAccount(ref = "LEI")
+      val prisonCanteenSubAccount = repoTestHelpers.createSubAccount(ref = "1001:CANT", account = prisonAccount)
+      val prisonAdvanceSubAccount = repoTestHelpers.createSubAccount(ref = "1502:ADV", account = prisonAccount)
+
+      val prisonerAccountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
+      val prisonerAccountOneSubAccount = repoTestHelpers.createSubAccount(ref = "CASH", account = prisonerAccountOne)
+
+      val prisonerAccountTwo = repoTestHelpers.createAccount(ref = "ZXC123XX")
+      val prisonerAccountTwoSubAccount = repoTestHelpers.createSubAccount(ref = "CASH", account = prisonerAccountTwo)
+
+      repoTestHelpers.createOneToManyTransaction(
+        ref = "CANT spends",
+        oneToManySubAccount = prisonCanteenSubAccount,
+        manyToOneSubAccounts = listOf(prisonerAccountOneSubAccount, prisonerAccountTwoSubAccount),
+        amountPerSubAccount = 1,
+      )
+
+      repoTestHelpers.createOneToManyTransaction(
+        ref = "ADV spends",
+        oneToManySubAccount = prisonAdvanceSubAccount,
+        manyToOneSubAccounts = listOf(prisonerAccountOneSubAccount, prisonerAccountTwoSubAccount),
+        amountPerSubAccount = 1,
+      )
+
+      val postingsCanteen = postingsDataRepository.getPostingsByAccountId(accountId = prisonAccount.id, subAccountId = prisonCanteenSubAccount.id, page = pageReq).content
+
+      assertThat(postingsCanteen).hasSize(1)
+      assertThat(postingsCanteen.all { posting -> posting.subAccountEntity.id == prisonCanteenSubAccount.id }).isTrue()
+
+      val postingsAdvance = postingsDataRepository.getPostingsByAccountId(accountId = prisonAccount.id, subAccountId = prisonAdvanceSubAccount.id, page = pageReq).content
+
+      assertThat(postingsAdvance).hasSize(1)
+      assertThat(postingsAdvance.all { posting -> posting.subAccountEntity.id == prisonAdvanceSubAccount.id }).isTrue()
+    }
+
+    @Test
+    fun `should return all postings filtered by subAccount for prisoner`() {
+      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
+      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
+      accountOneSubAccountTwo = repoTestHelpers.createSubAccount(ref = "SPENDS", account = accountOne)
+
+      repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionTimeStamp = Instant.now(),
+        postingCreatedAt = Instant.now(),
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+      )
+
+      repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionTimeStamp = Instant.now(),
+        postingCreatedAt = Instant.now(),
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+      )
+
+      val postingsSubOne = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, subAccountId = accountOneSubAccountOne.id, page = pageReq).content
+
+      assertThat(postingsSubOne).hasSize(2)
+      assertThat(postingsSubOne.all { posting -> posting.subAccountEntity.id == accountOneSubAccountOne.id }).isTrue()
+
+      val postingsSubTwo = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, subAccountId = accountOneSubAccountTwo.id, page = pageReq).content
+
+      assertThat(postingsSubTwo).hasSize(2)
+      assertThat(postingsSubTwo.all { posting -> posting.subAccountEntity.id == accountOneSubAccountTwo.id }).isTrue()
+    }
   }
 
   @Nested

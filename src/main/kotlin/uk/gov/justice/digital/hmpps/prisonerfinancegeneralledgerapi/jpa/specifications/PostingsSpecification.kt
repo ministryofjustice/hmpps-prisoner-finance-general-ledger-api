@@ -19,6 +19,14 @@ object PostingsSpecification {
     cb.equal(parentAccount.get<UUID>("id"), accountId)
   }
 
+  fun bySubAccountId(subAccountId: UUID?): Specification<PostingEntity> = Specification { root, _, cb ->
+    if (subAccountId == null) return@Specification null
+
+    val subAccount = root.join<PostingEntity, SubAccountEntity>("subAccountEntity")
+
+    return@Specification cb.equal(subAccount.get<UUID>("id"), subAccountId)
+  }
+
   fun createdBetween(startDate: Instant?, endDate: Instant?): Specification<PostingEntity> = Specification { root, _, cb ->
 
     if (startDate == null && endDate == null) return@Specification null
