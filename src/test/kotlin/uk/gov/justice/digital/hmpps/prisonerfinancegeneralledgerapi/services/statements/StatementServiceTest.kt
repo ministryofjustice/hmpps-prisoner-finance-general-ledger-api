@@ -327,7 +327,7 @@ class StatementServiceTest {
     }
 
     @Test
-    fun `should call the repository with the correct parameters when null values are provided`() {
+    fun `should call the repository with the correct parameters when default arguments are used`() {
       val prisonerId = UUID.randomUUID()
 
       whenever { accountService.readAccount(accountUUID = prisonerId) }.thenReturn(AccountEntity(id = prisonerId))
