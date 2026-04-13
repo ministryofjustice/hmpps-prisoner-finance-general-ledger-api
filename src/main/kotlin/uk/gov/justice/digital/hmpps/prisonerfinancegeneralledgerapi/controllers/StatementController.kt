@@ -40,6 +40,7 @@ class StatementController(
       Parameter(name = "endDate", description = "Filter statements to end date (inclusive) in a yyyy-MM-dd format", required = false, example = "2025-12-25"),
       Parameter(name = "pageNumber", description = "Filter statements from page number"),
       Parameter(name = "pageSize", description = "Sets the page size when returning the pages results"),
+      Parameter(name = "subAccountId", description = "Filter statements by sub-account id (UUID format)"),
       Parameter(name = "credit", description = "Filter statements using the PostingType CR"),
       Parameter(name = "debit", description = "Filter statements using the PostingType DR"),
     ],
@@ -89,10 +90,20 @@ class StatementController(
     @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") endDate: LocalDate? = null,
     @RequestParam @Min(1) pageNumber: Int = 1,
     @RequestParam @Min(1) pageSize: Int = 25,
+    @RequestParam subAccountId: UUID? = null,
     @RequestParam credit: Boolean = false,
     @RequestParam debit: Boolean = false,
   ): ResponseEntity<PagedResponse<StatementEntryResponse>> {
-    val pagedStatementEntryResponses = statementService.listStatementEntries(accountId, startDate, endDate, pageNumber, pageSize, credit, debit)
+    val pagedStatementEntryResponses = statementService.listStatementEntries(
+      accountId = accountId,
+      subAccountId = subAccountId,
+      startDate = startDate,
+      endDate = endDate,
+      pageNumber = pageNumber,
+      pageSize = pageSize,
+      credit = credit,
+      debit = debit,
+    )
 
     if (pagedStatementEntryResponses == null) {
       throw CustomException(message = "Account not found", status = HttpStatus.NOT_FOUND)

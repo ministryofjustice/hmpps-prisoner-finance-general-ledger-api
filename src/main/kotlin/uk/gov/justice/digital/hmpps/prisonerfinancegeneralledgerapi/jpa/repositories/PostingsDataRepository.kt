@@ -22,6 +22,7 @@ interface PostingsDataRepository :
   fun getPostingsByAccountId(
     accountId: UUID,
     page: Pageable,
+    subAccountId: UUID? = null,
     startDate: Instant? = null,
     endDate: Instant? = null,
     credit: Boolean = false,
@@ -29,6 +30,7 @@ interface PostingsDataRepository :
   ): Page<PostingEntity> {
     val spec = Specification
       .where(PostingsSpecification.byParentAccountId(accountId))
+      .and(PostingsSpecification.bySubAccountId(subAccountId))
       .and(PostingsSpecification.createdBetween(startDate, endDate))
       .and(PostingsSpecification.byPostingType(credit, debit))
 

@@ -8,12 +8,16 @@ import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
@@ -21,7 +25,10 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.reposito
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.AccountService
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.StatementService
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.helpers.ServiceTestHelpers
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.utils.toUtcEndOfDay
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.utils.toUtcStartOfDay
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.UUID
@@ -221,23 +228,6 @@ class StatementServiceTest {
     }
 
     @Test
-    fun `should pass null to the repository if no dates are provided`() {
-      val prisonerId = UUID.randomUUID()
-      whenever { accountService.readAccount(accountUUID = prisonerId) }.thenReturn(AccountEntity(id = prisonerId))
-      whenever { postingsDataRepository.getPostingsByAccountId(accountId = prisonerId, pageReq) }.thenReturn(PageImpl(emptyList()))
-
-      val postings = statementService.listStatementEntries(accountId = prisonerId)?.content!!
-
-      assertThat(postings).isEmpty()
-      verify(postingsDataRepository, times(1)).getPostingsByAccountId(
-        accountId = prisonerId,
-        page = pageReq,
-        startDate = null,
-        endDate = null,
-      )
-    }
-
-    @Test
     fun `should pass midnight of start date to the repository if start date is provided`() {
       val prisonerId = UUID.randomUUID()
       val christmasEveTenAM = LocalDateTime.of(2025, 12, 24, 10, 30, 0).toLocalDate()
@@ -289,27 +279,86 @@ class StatementServiceTest {
     }
 
     @Test
-    fun `should call the repository with the correct page number and size`() {
+    fun `should call the repository with the correct parameters`() {
       val prisonerId = UUID.randomUUID()
 
       whenever { accountService.readAccount(accountUUID = prisonerId) }.thenReturn(AccountEntity(id = prisonerId))
       whenever {
         postingsDataRepository.getPostingsByAccountId(
-          accountId = prisonerId,
-          page = pageReq,
+          any<UUID>(),
+          any<Pageable>(),
+          anyOrNull<UUID>(),
+          anyOrNull<Instant>(),
+          anyOrNull<Instant>(),
+          anyOrNull<Boolean>(),
+          anyOrNull<Boolean>(),
+        )
+      }.thenReturn(PageImpl(emptyList()))
+
+      val subAccountId = UUID.randomUUID()
+      val startDate = LocalDate.now()
+      val endDate = LocalDate.now()
+      val pageNumber = 1
+      val pageSize = 25
+
+      statementService.listStatementEntries(
+        accountId = prisonerId,
+        subAccountId = subAccountId,
+        pageNumber = pageNumber,
+        pageSize = pageSize,
+        startDate = startDate,
+        endDate = endDate,
+        credit = true,
+        debit = false,
+      )
+
+      val pageCapture = argumentCaptor<Pageable>()
+      verify(postingsDataRepository, times(1)).getPostingsByAccountId(
+        accountId = eq(prisonerId),
+        page = pageCapture.capture(),
+        subAccountId = eq(subAccountId),
+        startDate = eq(startDate.toUtcStartOfDay()),
+        endDate = eq(endDate.toUtcEndOfDay()),
+        credit = eq(true),
+        debit = eq(false),
+      )
+      assertThat(pageCapture.firstValue.pageNumber).isEqualTo(0)
+      assertThat(pageCapture.firstValue.pageSize).isEqualTo(pageSize)
+    }
+
+    @Test
+    fun `should call the repository with the correct parameters when default arguments are used`() {
+      val prisonerId = UUID.randomUUID()
+
+      whenever { accountService.readAccount(accountUUID = prisonerId) }.thenReturn(AccountEntity(id = prisonerId))
+      whenever {
+        postingsDataRepository.getPostingsByAccountId(
+          any<UUID>(),
+          any<Pageable>(),
+          anyOrNull<UUID>(),
+          anyOrNull<Instant>(),
+          anyOrNull<Instant>(),
+          anyOrNull<Boolean>(),
+          anyOrNull<Boolean>(),
         )
       }.thenReturn(PageImpl(emptyList()))
 
       statementService.listStatementEntries(
         accountId = prisonerId,
-        pageNumber = 1,
-        pageSize = 25,
       )
 
+      val pageCapture = argumentCaptor<Pageable>()
       verify(postingsDataRepository, times(1)).getPostingsByAccountId(
-        accountId = prisonerId,
-        page = pageReq,
+        accountId = eq(prisonerId),
+        page = pageCapture.capture(),
+        subAccountId = eq(null),
+        startDate = eq(null),
+        endDate = eq(null),
+        credit = eq(false),
+        debit = eq(false),
       )
+      assertThat(pageCapture.firstValue.pageNumber).isEqualTo(0)
+      assertThat(pageCapture.firstValue.pageSize).isEqualTo(25)
     }
   }
 }
