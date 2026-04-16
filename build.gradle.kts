@@ -15,6 +15,7 @@ configurations {
 
 dependencies {
   implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:2.2.0")
+  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:7.0.0")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
@@ -30,6 +31,7 @@ dependencies {
   }
 
   testImplementation("org.testcontainers:postgresql:1.21.4")
+  testImplementation("org.testcontainers:localstack:1.21.4")
   testImplementation("org.springframework.boot:spring-boot-testcontainers")
   testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
   testImplementation("org.springframework.boot:spring-boot-starter-webflux-test")
@@ -43,6 +45,11 @@ kotlin {
 }
 
 tasks {
+
+  // Disable the test task as we run the integration and unit tests separately
+  named<Test>("test") {
+    enabled = false
+  }
 
   withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_25

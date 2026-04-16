@@ -1,16 +1,19 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration.helpers
 
+import org.awaitility.Awaitility.await
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.expectBody
+import software.amazon.awssdk.services.sqs.model.QueueAttributeName
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.oppositePostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.IdempotencyKeyDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingBalanceDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.StatementBalanceDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
@@ -22,7 +25,9 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.reque
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.TransactionResponse
+import uk.gov.justice.hmpps.sqs.HmppsQueueService
 import uk.gov.justice.hmpps.test.kotlin.auth.JwtAuthorisationHelper
+import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 
@@ -33,6 +38,7 @@ class IntegrationTestHelpers(
   private val idempotencyKeyDataRepository: IdempotencyKeyDataRepository,
   private val statementBalanceDataRepository: StatementBalanceDataRepository,
   private val postingsDataRepository: PostingsDataRepository,
+  private val postingBalanceDataRepository: PostingBalanceDataRepository,
   private val transactionDataRepository: TransactionDataRepository,
   private val subAccountDataRepository: SubAccountDataRepository,
   private val accountDataRepository: AccountDataRepository,
@@ -176,9 +182,55 @@ class IntegrationTestHelpers(
     return transactionResponse
   }
 
+  fun waitUntilEmpty(queueId: String, hmppsQueueService: HmppsQueueService, waitSeconds: Long = 3) {
+    val hmppsQueue = hmppsQueueService.findByQueueId(queueId)
+      ?: throw IllegalArgumentException("Queue $queueId not found")
+
+    val sqsClient = hmppsQueue.sqsClient
+    val queueUrl = hmppsQueue.queueUrl
+    val queueUrlDlq = hmppsQueue.dlqUrl
+
+    await()
+      .alias("Wait for SQS queue '$queueId' to become empty")
+      .atMost(Duration.ofSeconds(waitSeconds)).until {
+        val response = sqsClient.getQueueAttributes { builder ->
+          builder.queueUrl(queueUrl)
+            .attributeNames(
+              QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES,
+              QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES_NOT_VISIBLE,
+            )
+        }.get()
+
+        val visible = response.attributes()[QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES]?.toInt() ?: 0
+        val inFlight = response.attributes()[QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES_NOT_VISIBLE]?.toInt() ?: 0
+        println("[$queueId] Checking if empty -> Visible: $visible, In-Flight: $inFlight")
+
+        (visible + inFlight) == 0
+      }
+
+    await()
+      .alias("Wait for SQS dlq '$queueId' to become empty")
+      .atMost(Duration.ofSeconds(waitSeconds)).until {
+        val response = sqsClient.getQueueAttributes { builder ->
+          builder.queueUrl(queueUrlDlq)
+            .attributeNames(
+              QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES,
+              QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES_NOT_VISIBLE,
+            )
+        }.get()
+
+        val visible = response.attributes()[QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES]?.toInt() ?: 0
+        val inFlight = response.attributes()[QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES_NOT_VISIBLE]?.toInt() ?: 0
+        println("[$queueId] Checking DLQ if empty -> Visible: $visible, In-Flight: $inFlight")
+
+        (visible + inFlight) == 0
+      }
+  }
+
   fun clearDB() {
     idempotencyKeyDataRepository.deleteAllInBatch()
     statementBalanceDataRepository.deleteAllInBatch()
+    postingBalanceDataRepository.deleteAllInBatch()
     postingsDataRepository.deleteAllInBatch()
     transactionDataRepository.deleteAllInBatch()
     subAccountDataRepository.deleteAllInBatch()

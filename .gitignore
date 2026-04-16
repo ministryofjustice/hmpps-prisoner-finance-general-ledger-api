@@ -8,6 +8,9 @@
 .kotlin/
 build/
 
+# localstack
+volume/
+
 # CMake
 cmake-build-debug/
 

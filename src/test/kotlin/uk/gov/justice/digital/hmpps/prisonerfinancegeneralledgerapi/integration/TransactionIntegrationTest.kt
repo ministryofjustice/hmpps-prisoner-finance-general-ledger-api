@@ -31,13 +31,13 @@ class TransactionIntegrationTest : IntegrationTestBase() {
   }
 
   @Nested
-  inner class PostTransaction {
+  open inner class PostTransaction {
 
     var accounts: MutableList<AccountResponse> = mutableListOf()
     var subAccounts: MutableList<SubAccountResponse> = mutableListOf()
 
     @BeforeEach
-    fun setup() {
+    open fun setup() {
       for (i in 0..3) {
         val accountResponseBody = integrationTestHelpers.createAccount("TEST_ACCOUNT_$i", AccountType.PRISONER)
         accounts.add(accountResponseBody)
@@ -462,14 +462,14 @@ class TransactionIntegrationTest : IntegrationTestBase() {
   }
 
   @Nested
-  inner class GetTransaction {
+  open inner class GetTransaction {
 
     var accounts: MutableList<AccountResponse> = mutableListOf()
     var subAccounts: MutableList<SubAccountResponse> = mutableListOf()
     lateinit var transaction: TransactionResponse
 
     @BeforeEach
-    fun setUp() {
+    open fun setUp() {
       for (i in 2 downTo 0 step 1) {
         accounts.add(integrationTestHelpers.createAccount("$i", AccountType.PRISONER))
       }

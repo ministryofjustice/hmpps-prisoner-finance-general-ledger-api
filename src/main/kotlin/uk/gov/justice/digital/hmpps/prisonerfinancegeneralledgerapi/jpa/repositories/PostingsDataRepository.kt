@@ -37,6 +37,14 @@ interface PostingsDataRepository :
     return this.findAll(spec, page)
   }
 
+  @Query(
+    """
+    SELECT p.id FROM PostingEntity p 
+    order by p.transactionEntity.timestamp, p.transactionEntity.entrySequence, p.entrySequence
+  """,
+  )
+  fun getAllPostingsOrdered(): List<UUID>
+
   @Query("SELECT p FROM PostingEntity p WHERE p.subAccountEntity.id = :subAccountId")
   fun getPostingsForSubAccountId(@Param("subAccountId") subAccountId: UUID): List<PostingEntity>
 
@@ -86,4 +94,25 @@ WHERE sa.account_id = :prisonerId
     nativeQuery = true,
   )
   fun getBalanceForAPrisonerAtAPrison(@Param("prisonId") prisonId: UUID, @Param("prisonerId") prisonerId: UUID): Long
+
+  @Query(
+    """
+    SELECT p 
+    FROM PostingEntity p
+    WHERE   p.id <> :postingId 
+        AND p.subAccountEntity.id = :subAccountId
+        AND p.transactionEntity.timestamp >= :transactionTimestamp
+        AND p.transactionEntity.entrySequence >= :transactionEntrySequence
+        and p.entrySequence >= :postingEntrySequence
+    ORDER BY p.transactionEntity.timestamp, p.transactionEntity.entrySequence, p.entrySequence
+    LIMIT 1
+  """,
+  )
+  fun getTheNextSubAccountPostingOrDefault(
+    postingId: UUID,
+    subAccountId: UUID,
+    transactionTimestamp: Instant,
+    transactionEntrySequence: Long,
+    postingEntrySequence: Long,
+  ): PostingEntity?
 }
