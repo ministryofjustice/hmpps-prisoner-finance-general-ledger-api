@@ -27,10 +27,9 @@ class PostingCalculatedBalanceEntity(
   @Column(name = "total_account_balance", nullable = false)
   val totalAccountBalance: Long = 0,
 
-  @Column(name = "created_by", nullable = false)
-  val createdBy: String = postingEntity.createdBy,
-
   @Column(name = "created_at", nullable = false)
   val createdAt: Instant = Instant.now(),
 
+  @Column(name = "updated_at", nullable = true)
+  val updatedAt: Instant? = null,
 )
