@@ -10,11 +10,10 @@ import java.time.Instant
 import java.util.UUID
 
 @Entity
-@Table(name = "posting_calculated_balance")
-class PostingCalculatedBalanceEntity(
-
+@Table(name = "posting_balance")
+class PostingBalanceEntity(
   @Id
-  @Column(name = "posting_calculated_balance_id", nullable = false, unique = true)
+  @Column(name = "posting_balance_id", nullable = false, unique = true)
   val id: UUID = UUID.randomUUID(),
 
   @OneToOne(optional = false, fetch = jakarta.persistence.FetchType.LAZY)
@@ -29,7 +28,4 @@ class PostingCalculatedBalanceEntity(
 
   @Column(name = "created_at", nullable = false)
   val createdAt: Instant = Instant.now(),
-
-  @Column(name = "updated_at", nullable = true)
-  val updatedAt: Instant? = null,
 )
