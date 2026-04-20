@@ -70,6 +70,8 @@ class PostingBalanceService(
   fun calculatePostingBalance(
     posting: PostingEntity,
   ){
+    val previousTotalAccountPostingBalance = postingBalanceDataRepository.getLatestAccountBalance(
+      posting.subAccountEntity.parentAccountEntity.id, posting.transactionEntity.timestamp)
     val previousPostingBalance = postingBalanceDataRepository.getSubAccountBalanceOrDefault(
       posting.subAccountEntity.id, posting.transactionEntity.timestamp)
     val previousStatementBalance = statementBalanceDataRepository.getLatestStatementBalanceForSubAccountId(
@@ -82,11 +84,13 @@ class PostingBalanceService(
       previousPostingBalance = previousPostingBalance,
       previousStatementBalance = previousStatementBalance
     )
+
+    val newTotalBalance = (previousTotalAccountPostingBalance?.totalAccountBalance ?: 0) + applyPostingType(posting.amount, posting.type)
     postingBalanceDataRepository.save(
       PostingBalanceEntity(
         postingEntity = posting,
         totalSubAccountBalance = newBalance,
-        totalAccountBalance = newBalance,
+        totalAccountBalance = newTotalBalance,
       )
     )
   }
