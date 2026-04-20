@@ -8,17 +8,23 @@ import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.StatementBalanceEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingBalanceDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.StatementBalanceDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.PostingBalanceService
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.helpers.ServiceTestHelpers
 import java.time.Instant
+import java.util.UUID
 
 @ExtendWith(MockitoExtension::class)
 class PostingBalanceServiceTest {
 
   @Mock
   lateinit var postingBalanceDataRepository: PostingBalanceDataRepository
+
+  @Mock
+  lateinit var statementBalanceDataRepository: StatementBalanceDataRepository
 
   @InjectMocks
   lateinit var postingBalanceService: PostingBalanceService
@@ -53,13 +59,26 @@ class PostingBalanceServiceTest {
         transaction.timestamp)
     ).thenReturn(postingBalances.first)
 
+    whenever(statementBalanceDataRepository
+      .getLatestStatementBalanceForSubAccountId(subAccount1.id))
+      .thenReturn(
+        StatementBalanceEntity(
+          id= UUID.randomUUID(),
+          subAccountEntity=subAccount1,
+          balanceDateTime=transaction.timestamp.minusSeconds(123213),
+          amount=333,
+        )
+      )
+
     postingBalanceService.calculatePostingBalance(
-      subAccountId = subAccount1.id,
       transaction.postings.first(),
     )
 
     verify(postingBalanceDataRepository, times(1)).getSubAccountBalanceOrDefault(
       subAccountId = subAccount1.id,
       transactionTimestamp = transaction.timestamp)
-    }
+
+    verify(statementBalanceDataRepository, times(1))
+      .getLatestStatementBalanceForSubAccountId(subAccount1.id)
+  }
 }
