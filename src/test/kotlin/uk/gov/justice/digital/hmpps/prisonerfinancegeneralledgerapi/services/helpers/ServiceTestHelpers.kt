@@ -121,10 +121,9 @@ class ServiceTestHelpers {
     transactionAmount: Long,
     subAccountBalance1: Long,
     subAccountBalance2: Long,
-    totalAccountBalance: Long, // todo think about this
     transactionEntrySequence: Long = 1,
     postingsEntrySequences: Pair<Long, Long> = Pair(1, 2),
-    ): Pair<PostingBalanceEntity, PostingBalanceEntity>{
+  ): Pair<PostingBalanceEntity, PostingBalanceEntity> {
     val transactionEntity = TransactionEntity(
       id = UUID.randomUUID(),
       reference = "TEST_REF",
@@ -161,14 +160,12 @@ class ServiceTestHelpers {
       id = UUID.randomUUID(),
       postingEntity = postingEntity1,
       totalSubAccountBalance = subAccountBalance1,
-      totalAccountBalance = totalAccountBalance,
     )
 
     val postingBalanceSubAccount2 = PostingBalanceEntity(
       id = UUID.randomUUID(),
       postingEntity = postingEntity2,
       totalSubAccountBalance = subAccountBalance2,
-      totalAccountBalance = totalAccountBalance,
     )
 
     return Pair(postingBalanceSubAccount1, postingBalanceSubAccount2)

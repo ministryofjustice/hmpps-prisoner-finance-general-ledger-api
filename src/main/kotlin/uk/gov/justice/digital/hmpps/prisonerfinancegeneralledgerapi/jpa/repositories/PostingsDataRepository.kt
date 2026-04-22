@@ -37,6 +37,12 @@ interface PostingsDataRepository :
     return this.findAll(spec, page)
   }
 
+  @Query("""
+    SELECT p FROM PostingEntity p 
+    order by p.transactionEntity.timestamp, p.transactionEntity.entrySequence, p.entrySequence
+  """)
+  fun getAllPostingsOrdered(): List<PostingEntity>
+
   @Query("SELECT p FROM PostingEntity p WHERE p.subAccountEntity.id = :subAccountId")
   fun getPostingsForSubAccountId(@Param("subAccountId") subAccountId: UUID): List<PostingEntity>
 

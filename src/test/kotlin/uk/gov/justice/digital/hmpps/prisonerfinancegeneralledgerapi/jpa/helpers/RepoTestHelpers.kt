@@ -145,8 +145,7 @@ class RepoTestHelpers(
     totalAccountBalance: Long, // todo think about this
     transactionEntrySequence: Long = 1,
     postingsEntrySequences: Pair<Long, Long> = Pair(1, 2),
-    ){
-
+  ) {
     val transactionEntity = TransactionEntity(
       id = UUID.randomUUID(),
       reference = "TEST_REF",
@@ -183,14 +182,12 @@ class RepoTestHelpers(
       id = UUID.randomUUID(),
       postingEntity = postingEntity1,
       totalSubAccountBalance = subAccountBalance1,
-      totalAccountBalance = totalAccountBalance,
     )
 
     val postingBalance2 = PostingBalanceEntity(
       id = UUID.randomUUID(),
       postingEntity = postingEntity2,
       totalSubAccountBalance = subAccountBalance2,
-      totalAccountBalance = totalAccountBalance,
     )
 
     entityManager.persist(transactionEntity)
