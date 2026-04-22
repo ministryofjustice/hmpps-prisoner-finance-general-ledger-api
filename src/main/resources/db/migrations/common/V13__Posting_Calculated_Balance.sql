@@ -3,7 +3,6 @@ CREATE TABLE posting_balance
     posting_balance_id       UUID NOT NULL,
     posting_id                          UUID NOT NULL,
     total_sub_account_balance           BIGINT NOT NULL DEFAULT 0,
-    total_account_balance               BIGINT NOT NULL DEFAULT 0,
     created_at                          TIMESTAMPTZ NOT NULL,
 
     CONSTRAINT pk_posting_balance
