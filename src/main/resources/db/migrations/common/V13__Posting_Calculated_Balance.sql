@@ -19,7 +19,6 @@ CREATE TABLE posting_balance
 CREATE INDEX idx_posting_balance_posting_id
     ON posting_balance(posting_id);
 
-
 ALTER TABLE postings
     ADD COLUMN posting_balance_id UUID,
     ADD CONSTRAINT uc_postings_posting_balance UNIQUE (posting_balance_id),
