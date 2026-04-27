@@ -18,6 +18,6 @@ interface StatementBalanceDataRepository : JpaRepository<StatementBalanceEntity,
     LIMIT 1
     """,
     nativeQuery = true,
-  )
+  ) // TODO fix bug, we are not passing the posting timestamp here
   fun getLatestStatementBalanceForSubAccountId(@Param("subAccountId")subAccountId: UUID): StatementBalanceEntity?
 }

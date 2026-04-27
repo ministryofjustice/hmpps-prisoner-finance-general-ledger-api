@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.helpers
 
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingBalanceEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.StatementBalanceEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
@@ -111,5 +112,62 @@ class ServiceTestHelpers {
   fun createStatementBalance(subAccount: SubAccountEntity, amount: Long, balanceDateTime: Instant): StatementBalanceEntity {
     val statementBalance = StatementBalanceEntity(amount = amount, balanceDateTime = balanceDateTime, subAccountEntity = subAccount)
     return statementBalance
+  }
+
+  fun createPostingBalance(
+    subAccount1: SubAccountEntity,
+    subAccount2: SubAccountEntity,
+    transactionTimeStamp: Instant,
+    transactionAmount: Long,
+    subAccountBalance1: Long,
+    subAccountBalance2: Long,
+    transactionEntrySequence: Long = 1,
+    postingsEntrySequences: Pair<Long, Long> = Pair(1, 2),
+  ): Pair<PostingBalanceEntity, PostingBalanceEntity> {
+    val transactionEntity = TransactionEntity(
+      id = UUID.randomUUID(),
+      reference = "TEST_REF",
+      amount = transactionAmount,
+      timestamp = transactionTimeStamp,
+      postings = mutableListOf(),
+      entrySequence = transactionEntrySequence,
+    )
+
+    val postingEntity1 = PostingEntity(
+      id = UUID.randomUUID(),
+      createdAt = Instant.now(),
+      type = PostingType.DR,
+      amount = subAccountBalance1,
+      subAccountEntity = subAccount1,
+      transactionEntity = transactionEntity,
+      entrySequence = postingsEntrySequences.first,
+    )
+
+    val postingEntity2 = PostingEntity(
+      id = UUID.randomUUID(),
+      createdAt = Instant.now(),
+      type = PostingType.DR,
+      amount = subAccountBalance2,
+      subAccountEntity = subAccount2,
+      transactionEntity = transactionEntity,
+      entrySequence = postingsEntrySequences.second,
+    )
+
+    transactionEntity.postings.add(postingEntity1)
+    transactionEntity.postings.add(postingEntity2)
+
+    val postingBalanceSubAccount1 = PostingBalanceEntity(
+      id = UUID.randomUUID(),
+      postingEntity = postingEntity1,
+      totalSubAccountBalance = subAccountBalance1,
+    )
+
+    val postingBalanceSubAccount2 = PostingBalanceEntity(
+      id = UUID.randomUUID(),
+      postingEntity = postingEntity2,
+      totalSubAccountBalance = subAccountBalance2,
+    )
+
+    return Pair(postingBalanceSubAccount1, postingBalanceSubAccount2)
   }
 }
