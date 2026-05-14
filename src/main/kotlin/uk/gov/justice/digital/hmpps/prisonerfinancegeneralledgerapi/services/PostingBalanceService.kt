@@ -118,10 +118,4 @@ class PostingBalanceService(
       postingEntrySequence = posting.entrySequence,
     )?.let { ProcessBalanceRequest.fromPostingEntity(it) }
   }
-
-  fun migrateAllPostingBalances() {
-    postingsDataRepository.getAllPostingsOrdered().forEach { postingId ->
-      calculatePostingBalance(postingId)
-    }
-  }
 }

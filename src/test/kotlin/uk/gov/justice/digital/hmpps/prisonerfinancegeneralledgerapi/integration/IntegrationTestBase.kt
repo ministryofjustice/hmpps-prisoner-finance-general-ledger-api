@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration
 
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
@@ -82,7 +83,7 @@ abstract class IntegrationTestBase {
       ?: throw MissingQueueException("Queue calculated_balance not found")
   }
 
-  @BeforeEach
+  @AfterEach
   fun tearDownAndRecreateCalculatedBalanceQueue() {
     val sqsClient = calculatedBalanceQueue.sqsClient
 

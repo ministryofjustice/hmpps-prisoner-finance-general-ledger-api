@@ -39,11 +39,21 @@ interface PostingsDataRepository :
 
   @Query(
     """
-    SELECT p.id FROM PostingEntity p 
-    order by p.transactionEntity.timestamp, p.transactionEntity.entrySequence, p.entrySequence
+      SELECT p.id 
+      FROM PostingEntity p 
+      WHERE NOT EXISTS (
+          SELECT 1 
+          FROM PostingEntity p2 
+          WHERE p2.subAccountEntity.id = p.subAccountEntity.id
+            AND (
+                p2.transactionEntity.timestamp < p.transactionEntity.timestamp 
+                OR (p2.transactionEntity.timestamp = p.transactionEntity.timestamp AND p2.transactionEntity.entrySequence < p.transactionEntity.entrySequence)
+                OR (p2.transactionEntity.timestamp = p.transactionEntity.timestamp AND p2.transactionEntity.entrySequence = p.transactionEntity.entrySequence AND p2.entrySequence < p.entrySequence)
+            )
+      )
   """,
   )
-  fun getAllPostingsOrdered(): List<UUID>
+  fun getAllFirstPostingsForEachSubAccount(): List<UUID>
 
   @Query("SELECT p FROM PostingEntity p WHERE p.subAccountEntity.id = :subAccountId")
   fun getPostingsForSubAccountId(@Param("subAccountId") subAccountId: UUID): List<PostingEntity>

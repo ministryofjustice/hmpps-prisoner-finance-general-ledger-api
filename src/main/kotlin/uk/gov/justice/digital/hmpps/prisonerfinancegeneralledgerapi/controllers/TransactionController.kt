@@ -119,6 +119,8 @@ class TransactionController(
 
       val transactionEntity = transactionService.createTransaction(body, createdBy = user.name, idempotencyKey = idempotencyKey)
 
+      // We might need to add some arbitrary time when we don't want to calculate balances,
+      // for instance: a transaction from a week ago? do we calculate it or skip?
       calculatedBalanceEventPublisher.requestCalculatedBalanceForTransaction(transactionEntity)
 
       return ResponseEntity<TransactionResponse>.status(HttpStatus.CREATED).body(
