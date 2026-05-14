@@ -121,7 +121,7 @@ class PostingBalanceServiceTest {
   }
 
   @Nested
-  inner class calculatePostingBalance {
+  inner class CalculatePostingBalance {
     @ParameterizedTest
     @CsvSource(
       "false, 1, 10",
