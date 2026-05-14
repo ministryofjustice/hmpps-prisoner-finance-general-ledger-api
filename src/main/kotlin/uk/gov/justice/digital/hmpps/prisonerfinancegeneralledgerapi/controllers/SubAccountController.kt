@@ -31,6 +31,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.respo
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountBalanceResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.SubAccountService
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.sqs.CalculatedBalanceEventPublisher
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.validators.referenceStringValidator.ValidReferenceString
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.security.Principal
@@ -40,6 +41,7 @@ import java.util.UUID
 @RestController
 class SubAccountController(
   private val subAccountService: SubAccountService,
+  private val calculatedBalanceEventPublisher: CalculatedBalanceEventPublisher,
 ) {
   @Operation(
     summary = "Create a new sub-account",
@@ -329,6 +331,9 @@ class SubAccountController(
     if (subAccountStatementBalance == null) {
       throw CustomException(message = "Sub Account not found", status = HttpStatus.NOT_FOUND)
     }
+
+    calculatedBalanceEventPublisher.requestCalculatedBalanceForStatementBalance(subAccountStatementBalance)
+
     return ResponseEntity.status(201).body(StatementBalanceResponse.fromEntity(subAccountStatementBalance))
   }
 }

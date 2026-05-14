@@ -28,14 +28,12 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.CustomExcept
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateTransactionRequest
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.ProcessBalanceRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.PrisonerTransactionListResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.TransactionResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.AccountService
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.IdempotencyService
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.TransactionService
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.sqs.MessagePublisher
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.sqs.SqsQueues
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.sqs.CalculatedBalanceEventPublisher
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.security.Principal
 import java.util.UUID
@@ -46,7 +44,7 @@ class TransactionController(
   private val transactionService: TransactionService,
   private val idempotencyService: IdempotencyService,
   private val accountService: AccountService,
-  private val messagePublisher: MessagePublisher,
+  private val calculatedBalanceEventPublisher: CalculatedBalanceEventPublisher,
 ) {
   @Operation(
     summary = "Create a new transaction",
@@ -121,12 +119,7 @@ class TransactionController(
 
       val transactionEntity = transactionService.createTransaction(body, createdBy = user.name, idempotencyKey = idempotencyKey)
 
-      transactionEntity.postings.forEach { postingEntity ->
-        messagePublisher.sendMessage(
-          payloadDataClass = ProcessBalanceRequest.fromPostingEntity(postingEntity),
-          queueId = SqsQueues.CALCULATED_BALANCE,
-        )
-      }
+      calculatedBalanceEventPublisher.requestCalculatedBalanceForTransaction(transactionEntity)
 
       return ResponseEntity<TransactionResponse>.status(HttpStatus.CREATED).body(
         TransactionResponse.fromEntity(transactionEntity = transactionEntity),

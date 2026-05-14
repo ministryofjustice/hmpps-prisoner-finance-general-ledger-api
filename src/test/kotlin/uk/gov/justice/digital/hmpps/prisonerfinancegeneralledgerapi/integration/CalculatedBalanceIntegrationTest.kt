@@ -306,5 +306,79 @@ class CalculatedBalanceIntegrationTest : IntegrationTestBase() {
       assertThat(content[1].amount).isEqualTo(amountSecond)
       assertThat(content[1].postingBalance).isEqualTo(amountSecond)
     }
+
+    @Test
+    fun `Should re-calculate balances when a statement balance is created in the past`() {
+      val amountFirst = 77L
+      val amountStatementBalance = 27L
+
+      // TXN
+      val createPostingRequestsFirst: List<CreatePostingRequest> = listOf(
+        CreatePostingRequest(subAccountId = subAccounts[0].id, type = PostingType.CR, amount = amountFirst, entrySequence = 1),
+        CreatePostingRequest(subAccountId = subAccounts[1].id, type = PostingType.DR, amount = amountFirst, entrySequence = 2),
+      )
+      webTestClient.post()
+        .uri("/transactions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .headers(setIdempotencyKey(UUID.randomUUID()))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(
+          CreateTransactionRequest(
+            reference = "TX",
+            description = "DESCRIPTION",
+            amount = amountFirst,
+            timestamp = Instant.now(),
+            postings = createPostingRequestsFirst,
+            entrySequence = 1,
+          ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+
+      integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE, hmppsQueueService)
+
+      var statementEntryResponse = webTestClient.get()
+        .uri("/accounts/${accounts[0].id}/statement?subAccountId=${subAccounts[0].id}")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk()
+        .expectBody<PagedResponse<StatementEntryResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      var content = statementEntryResponse.content
+
+      assertThat(content).hasSize(1)
+      assertThat(content[0].amount).isEqualTo(amountFirst)
+      assertThat(content[0].postingBalance).isEqualTo(amountFirst)
+
+      // Insert statement balance
+      val statementBalanceResponse = webTestClient.post()
+        .uri("/sub-accounts/${subAccounts[0].id}/balance")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateStatementBalanceRequest(amount = amountStatementBalance, balanceDateTime = Instant.now().minusSeconds(120)))
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody<StatementBalanceResponse>()
+        .returnResult().responseBody!!
+
+      integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE, hmppsQueueService)
+
+      statementEntryResponse = webTestClient.get()
+        .uri("/accounts/${accounts[0].id}/statement?subAccountId=${subAccounts[0].id}")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk()
+        .expectBody<PagedResponse<StatementEntryResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      content = statementEntryResponse.content
+
+      assertThat(content).hasSize(1)
+      assertThat(content[0].amount).isEqualTo(amountFirst)
+      assertThat(content[0].postingBalance).isEqualTo(amountStatementBalance + amountFirst)
+    }
   }
 }

@@ -40,14 +40,14 @@ class CalculatedBalanceEventListenerTest {
   lateinit var messagePublisher: MessagePublisher
 
   @InjectMocks
-  lateinit var calculatedBalanceEventListener: CalculateBalanceEventListener
+  lateinit var calculatedBalanceEventListener: CalculatedBalanceEventListener
 
   private lateinit var listAppender: ListAppender<ILoggingEvent>
   private lateinit var eventLogger: Logger
 
   @BeforeEach
   fun setupLogger() {
-    eventLogger = LoggerFactory.getLogger(CalculateBalanceEventListener::class.java) as Logger
+    eventLogger = LoggerFactory.getLogger(CalculatedBalanceEventListener::class.java) as Logger
 
     listAppender = ListAppender<ILoggingEvent>()
     listAppender.start()

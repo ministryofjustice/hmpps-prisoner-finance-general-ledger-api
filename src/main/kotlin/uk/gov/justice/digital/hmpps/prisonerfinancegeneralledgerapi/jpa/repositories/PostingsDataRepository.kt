@@ -51,6 +51,18 @@ interface PostingsDataRepository :
   @Query("SELECT p FROM PostingEntity p WHERE p.subAccountEntity.id = :subAccountId AND p.transactionEntity.timestamp > :dateTime")
   fun getPostingsForSubAccountIdAfterDateTime(@Param("subAccountId") subAccountId: UUID, @Param("dateTime") dateTime: Instant): List<PostingEntity>
 
+  @Query(
+    """
+    SELECT p FROM PostingEntity p 
+    WHERE 
+        p.subAccountEntity.id = :subAccountId AND 
+        p.transactionEntity.timestamp > :dateTime
+    order by p.transactionEntity.timestamp, p.transactionEntity.entrySequence, p.entrySequence
+    limit 1
+    """,
+  )
+  fun getFirstPostingsForSubAccountIdAfterDateTime(subAccountId: UUID, dateTime: Instant): PostingEntity?
+
   fun getBalanceForSubAccount(subAccountId: UUID, latestStatementBalanceDateTime: Instant? = null): Long {
     lateinit var postingsForSubAccount: List<PostingEntity>
 

@@ -9,7 +9,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.reque
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.PostingBalanceService
 
 @Service
-class CalculateBalanceEventListener(
+class CalculatedBalanceEventListener(
   private val objectMapper: ObjectMapper,
   private val postingBalanceService: PostingBalanceService,
   private val messagePublisher: MessagePublisher,
