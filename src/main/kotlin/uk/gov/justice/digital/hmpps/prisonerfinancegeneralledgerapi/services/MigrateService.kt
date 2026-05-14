@@ -13,7 +13,7 @@ class MigrateService(
 ) {
   fun migrateAllPostingBalances() {
     postingsDataRepository.getAllFirstPostingsForEachSubAccount().forEach { postingId ->
-      val nextPosting = postingBalanceService.calculatePostingBalance(postingId)
+      val nextPosting = postingBalanceService.processBalance(postingId)
 
       if (nextPosting != null) {
         messagePublisher.sendMessage(

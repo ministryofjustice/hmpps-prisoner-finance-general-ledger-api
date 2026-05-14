@@ -26,7 +26,6 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.reposito
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.PostingBalanceService
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.helpers.ServiceTestHelpers
 import java.time.Instant
-import java.util.Optional
 import java.util.UUID
 import kotlin.math.abs
 
@@ -109,10 +108,6 @@ class PostingBalanceServiceTest {
       ),
     ).thenReturn(postingBalanceEntity)
 
-    whenever {
-      postingDataRepository.findById(posting.id)
-    }.thenReturn(Optional.of(posting))
-
     whenever(
       statementBalanceDataRepository
         .getLatestStatementBalanceForSubAccountId(
@@ -126,7 +121,7 @@ class PostingBalanceServiceTest {
   }
 
   @Nested
-  inner class SubAccountCalculation {
+  inner class calculatePostingBalance {
     @ParameterizedTest
     @CsvSource(
       "false, 1, 10",
@@ -146,7 +141,7 @@ class PostingBalanceServiceTest {
         subAccount = subAccount1,
       )
 
-      postingBalanceService.calculatePostingBalance(postingId = transaction.postings[postingIndex].id)
+      postingBalanceService.calculatePostingBalance(posting = transaction.postings[postingIndex])
 
       verifyService(
         transaction = transaction,
@@ -180,7 +175,7 @@ class PostingBalanceServiceTest {
           .findByPostingEntity(transaction.postings[1]),
       ).thenReturn(existingPostingBalance)
 
-      postingBalanceService.calculatePostingBalance(postingId = transaction.postings[1].id)
+      postingBalanceService.calculatePostingBalance(posting = transaction.postings[1])
 
       assertThat(existingPostingBalance.totalSubAccountBalance).isEqualTo(amount)
       assertThat(existingPostingBalance.updatedAt).isNotNull()
@@ -207,7 +202,7 @@ class PostingBalanceServiceTest {
         subAccount = subAccount1,
       )
 
-      postingBalanceService.calculatePostingBalance(postingId = transaction.postings[1].id)
+      postingBalanceService.calculatePostingBalance(posting = transaction.postings[1])
 
       verifyService(
         transaction = transaction,
@@ -236,7 +231,7 @@ class PostingBalanceServiceTest {
         subAccount = subAccount1,
       )
       postingBalanceService.calculatePostingBalance(
-        postingId = transaction.postings[1].id,
+        posting = transaction.postings[1],
       )
 
       verifyService(
@@ -268,7 +263,7 @@ class PostingBalanceServiceTest {
       )
 
       postingBalanceService.calculatePostingBalance(
-        postingId = transaction.postings[1].id,
+        posting = transaction.postings[1],
       )
 
       verifyService(

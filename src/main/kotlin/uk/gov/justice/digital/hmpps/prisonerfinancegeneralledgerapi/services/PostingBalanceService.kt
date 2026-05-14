@@ -27,12 +27,14 @@ class PostingBalanceService(
 
   private fun applyPostingType(amount: Long, type: PostingType) = if (type == PostingType.CR) amount else -amount
 
-  private fun compareTimestamps(timestamp1: Instant?, timestamp2: Instant?): Int {
-    if (timestamp1 == null || timestamp2 == null) return 0
-    return if (timestamp1 > timestamp2) {
-      1
+  private fun compareTimestamps(previousPostingTimeStamp: Instant?, statementBalanceTimestamp: Instant?): BalanceCalculationType {
+    if (previousPostingTimeStamp == null || statementBalanceTimestamp == null) {
+      throw Exception("Unexpected pathway in balance calculation when comparing timestamps")
+    }
+    if (previousPostingTimeStamp > statementBalanceTimestamp) {
+      return BalanceCalculationType.FromPreviousPostingBalance
     } else {
-      -1
+      return BalanceCalculationType.FromPreviousStatementBalance
     }
   }
 
@@ -61,22 +63,15 @@ class PostingBalanceService(
     previousPostingBalance == null && previousStatementBalance == null -> BalanceCalculationType.FirstPosting
     previousPostingBalance != null && previousStatementBalance == null -> BalanceCalculationType.FromPreviousPostingBalance
     previousPostingBalance == null && previousStatementBalance != null -> BalanceCalculationType.FromPreviousStatementBalance
-    compareTimestamps(
+    else -> compareTimestamps(
       previousPostingBalance?.postingEntity?.transactionEntity?.timestamp,
       previousStatementBalance?.balanceDateTime,
-    ) == 1 -> BalanceCalculationType.FromPreviousPostingBalance
-    compareTimestamps(
-      previousPostingBalance?.postingEntity?.transactionEntity?.timestamp,
-      previousStatementBalance?.balanceDateTime,
-    ) == -1 -> BalanceCalculationType.FromPreviousStatementBalance
-    else -> throw Exception("Unexpected pathway in balance calculation")
+    )
   }
 
-  @Transactional
   fun calculatePostingBalance(
-    postingId: UUID,
-  ): ProcessBalanceRequest? {
-    val posting = postingsDataRepository.findById(postingId).orElseThrow { Exception("Posting not found") }
+    posting: PostingEntity,
+  ) {
     val previousPostingBalance = postingBalanceDataRepository.getSubAccountBalanceOrDefault(
       posting.id,
       posting.subAccountEntity.id,
@@ -109,7 +104,12 @@ class PostingBalanceService(
         totalSubAccountBalance = newBalance,
       ),
     )
+  }
 
+  @Transactional
+  fun processBalance(postingId: UUID): ProcessBalanceRequest? {
+    val posting = postingsDataRepository.findById(postingId).orElseThrow { Exception("Posting not found") }
+    calculatePostingBalance(posting = posting)
     return postingsDataRepository.getTheNextSubAccountPostingOrDefault(
       postingId = posting.id,
       subAccountId = posting.subAccountEntity.id,

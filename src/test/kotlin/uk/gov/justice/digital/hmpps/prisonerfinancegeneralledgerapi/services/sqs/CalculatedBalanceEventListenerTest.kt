@@ -80,7 +80,7 @@ class CalculatedBalanceEventListenerTest {
 
     calculatedBalanceEventListener.handleEvents(message)
 
-    verify(postingBalanceService).calculatePostingBalance(postingId)
+    verify(postingBalanceService).processBalance(postingId)
     verify(messagePublisher, never()).sendMessage(any<PayloadDataClass>(), any())
   }
 
@@ -103,11 +103,11 @@ class CalculatedBalanceEventListenerTest {
     """.trimIndent()
 
     val nextPosting = mock<ProcessBalanceRequest>()
-    whenever { postingBalanceService.calculatePostingBalance(postingId) }.thenReturn(nextPosting)
+    whenever { postingBalanceService.processBalance(postingId) }.thenReturn(nextPosting)
 
     calculatedBalanceEventListener.handleEvents(message)
 
-    verify(postingBalanceService).calculatePostingBalance(postingId)
+    verify(postingBalanceService).processBalance(postingId)
     verify(messagePublisher).sendMessage(nextPosting, SqsQueues.CALCULATED_BALANCE)
   }
 
@@ -130,11 +130,11 @@ class CalculatedBalanceEventListenerTest {
     """.trimIndent()
 
     val exceptionMessage = "Test error"
-    whenever { postingBalanceService.calculatePostingBalance(postingId) }.thenThrow(RuntimeException(exceptionMessage))
+    whenever { postingBalanceService.processBalance(postingId) }.thenThrow(RuntimeException(exceptionMessage))
 
     assertThatThrownBy { calculatedBalanceEventListener.handleEvents(message) }.isInstanceOf(RuntimeException::class.java)
 
-    verify(postingBalanceService).calculatePostingBalance(postingId)
+    verify(postingBalanceService).processBalance(postingId)
 
     val logList = listAppender.list
     assertThat(logList).hasSize(1)

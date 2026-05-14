@@ -19,7 +19,7 @@ class CalculatedBalanceEventListener(
   fun handleEvents(requestJson: String?) {
     try {
       val processBalanceRequest = objectMapper.readValue(requestJson, ProcessBalanceRequest::class.java)
-      val nextPosting = postingBalanceService.calculatePostingBalance(processBalanceRequest.postingId)
+      val nextPosting = postingBalanceService.processBalance(processBalanceRequest.postingId)
 
       if (nextPosting != null) {
         messagePublisher.sendMessage(
