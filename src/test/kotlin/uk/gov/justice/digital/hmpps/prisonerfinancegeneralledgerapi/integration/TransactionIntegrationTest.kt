@@ -31,7 +31,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
   }
 
   @Nested
-  open inner class PostTransaction {
+  inner class PostTransaction {
 
     var accounts: MutableList<AccountResponse> = mutableListOf()
     var subAccounts: MutableList<SubAccountResponse> = mutableListOf()
@@ -462,7 +462,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
   }
 
   @Nested
-  open inner class GetTransaction {
+  inner class GetTransaction {
 
     var accounts: MutableList<AccountResponse> = mutableListOf()
     var subAccounts: MutableList<SubAccountResponse> = mutableListOf()
