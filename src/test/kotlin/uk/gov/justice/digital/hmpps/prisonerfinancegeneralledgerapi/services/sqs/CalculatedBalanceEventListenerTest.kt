@@ -4,6 +4,9 @@ import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.Logger
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.read.ListAppender
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterEach
@@ -13,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.Mockito.mock
+import org.mockito.Spy
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
 import org.mockito.kotlin.never
@@ -25,6 +29,11 @@ import java.util.UUID
 
 @ExtendWith(MockitoExtension::class)
 class CalculatedBalanceEventListenerTest {
+
+//  This is unused in the test but required for the service
+  @Spy
+  var objectMapper: ObjectMapper = jacksonObjectMapper()
+    .registerModule(JavaTimeModule())
 
   @Mock
   lateinit var postingBalanceService: PostingBalanceService

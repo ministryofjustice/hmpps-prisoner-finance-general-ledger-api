@@ -121,12 +121,20 @@ WHERE sa.account_id = :prisonerId
     """
     SELECT p 
     FROM PostingEntity p
-    WHERE   p.id <> :postingId 
-        AND p.subAccountEntity.id = :subAccountId
-        AND p.transactionEntity.timestamp >= :transactionTimestamp
-        AND p.transactionEntity.entrySequence >= :transactionEntrySequence
-        and p.entrySequence >= :postingEntrySequence
-    ORDER BY p.transactionEntity.timestamp, p.transactionEntity.entrySequence, p.entrySequence
+    WHERE p.subAccountEntity.id = :subAccountId
+      AND (
+          p.transactionEntity.timestamp > :transactionTimestamp
+          OR (
+              p.transactionEntity.timestamp = :transactionTimestamp 
+              AND p.transactionEntity.entrySequence > :transactionEntrySequence
+          )
+          OR (
+              p.transactionEntity.timestamp = :transactionTimestamp 
+              AND p.transactionEntity.entrySequence = :transactionEntrySequence 
+              AND p.entrySequence > :postingEntrySequence
+          )
+      )
+    ORDER BY p.transactionEntity.timestamp ASC, p.transactionEntity.entrySequence ASC, p.entrySequence ASC
     LIMIT 1
   """,
   )

@@ -113,7 +113,7 @@ class RepoTestHelpers(
         transactionEntity = transaction,
         type = oneToManyPostingType.oppositePostingType(),
         amount = amountPerSubAccount,
-        entrySequence = i + 2L,
+        entrySequence = i + 2L, // 1 is the one to one posting, so the next posting sequence is 2
       )
       postings.add(posting)
     }
