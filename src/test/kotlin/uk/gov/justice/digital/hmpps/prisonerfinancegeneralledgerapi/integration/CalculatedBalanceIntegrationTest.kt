@@ -101,7 +101,7 @@ class CalculatedBalanceIntegrationTest(
         .exchange()
         .expectStatus().isCreated
 
-      integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE, hmppsQueueService)
+      integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE_QUEUE_ID, hmppsQueueService)
 
       val statementEntryResponse = webTestClient.get()
         .uri("/accounts/${accounts[0].id}/statement?subAccountId=${subAccounts[0].id}")
@@ -116,9 +116,9 @@ class CalculatedBalanceIntegrationTest(
 
       assertThat(content).hasSize(2)
       assertThat(content[0].amount).isEqualTo(amountSecond)
-      assertThat(content[0].postingBalance).isEqualTo(amountFirst - amountSecond)
+      assertThat(content[0].runningBalance).isEqualTo(amountFirst - amountSecond)
       assertThat(content[1].amount).isEqualTo(amountFirst)
-      assertThat(content[1].postingBalance).isEqualTo(amountFirst)
+      assertThat(content[1].runningBalance).isEqualTo(amountFirst)
     }
 
     @Test
@@ -147,7 +147,7 @@ class CalculatedBalanceIntegrationTest(
         .exchange()
         .expectStatus().isCreated
 
-      integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE, hmppsQueueService)
+      integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE_QUEUE_ID, hmppsQueueService)
 
       val statementEntryResponse = webTestClient.get()
         .uri("/accounts/${accounts[0].id}/statement?subAccountId=${subAccounts[0].id}")
@@ -162,7 +162,7 @@ class CalculatedBalanceIntegrationTest(
 
       assertThat(content).hasSize(1)
       assertThat(content[0].amount).isEqualTo(amount)
-      assertThat(content[0].postingBalance).isEqualTo(amount)
+      assertThat(content[0].runningBalance).isEqualTo(amount)
     }
 
     @Test
@@ -203,7 +203,7 @@ class CalculatedBalanceIntegrationTest(
         .exchange()
         .expectStatus().isCreated
 
-      integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE, hmppsQueueService)
+      integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE_QUEUE_ID, hmppsQueueService)
 
       val statementEntryResponse = webTestClient.get()
         .uri("/accounts/${accounts[0].id}/statement?subAccountId=${subAccounts[0].id}")
@@ -218,7 +218,7 @@ class CalculatedBalanceIntegrationTest(
 
       assertThat(content).hasSize(1)
       assertThat(content[0].amount).isEqualTo(amount)
-      assertThat(content[0].postingBalance).isEqualTo(statementBalanceAmount + amount)
+      assertThat(content[0].runningBalance).isEqualTo(statementBalanceAmount + amount)
     }
 
     @Test
@@ -249,7 +249,7 @@ class CalculatedBalanceIntegrationTest(
         .exchange()
         .expectStatus().isCreated
 
-      integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE, hmppsQueueService)
+      integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE_QUEUE_ID, hmppsQueueService)
 
       var statementEntryResponse = webTestClient.get()
         .uri("/accounts/${accounts[0].id}/statement?subAccountId=${subAccounts[0].id}")
@@ -264,7 +264,7 @@ class CalculatedBalanceIntegrationTest(
 
       assertThat(content).hasSize(1)
       assertThat(content[0].amount).isEqualTo(amountFirst)
-      assertThat(content[0].postingBalance).isEqualTo(amountFirst)
+      assertThat(content[0].runningBalance).isEqualTo(amountFirst)
 
       // txn 2 in the past
       val createPostingRequestsSecond: List<CreatePostingRequest> = listOf(
@@ -289,7 +289,7 @@ class CalculatedBalanceIntegrationTest(
         .exchange()
         .expectStatus().isCreated
 
-      integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE, hmppsQueueService)
+      integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE_QUEUE_ID, hmppsQueueService)
 
       statementEntryResponse = webTestClient.get()
         .uri("/accounts/${accounts[0].id}/statement?subAccountId=${subAccounts[0].id}")
@@ -304,9 +304,9 @@ class CalculatedBalanceIntegrationTest(
 
       assertThat(content).hasSize(2)
       assertThat(content[0].amount).isEqualTo(amountFirst)
-      assertThat(content[0].postingBalance).isEqualTo(amountFirst + amountSecond)
+      assertThat(content[0].runningBalance).isEqualTo(amountFirst + amountSecond)
       assertThat(content[1].amount).isEqualTo(amountSecond)
-      assertThat(content[1].postingBalance).isEqualTo(amountSecond)
+      assertThat(content[1].runningBalance).isEqualTo(amountSecond)
     }
 
     @Test
@@ -337,7 +337,7 @@ class CalculatedBalanceIntegrationTest(
         .exchange()
         .expectStatus().isCreated
 
-      integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE, hmppsQueueService)
+      integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE_QUEUE_ID, hmppsQueueService)
 
       var statementEntryResponse = webTestClient.get()
         .uri("/accounts/${accounts[0].id}/statement?subAccountId=${subAccounts[0].id}")
@@ -352,7 +352,7 @@ class CalculatedBalanceIntegrationTest(
 
       assertThat(content).hasSize(1)
       assertThat(content[0].amount).isEqualTo(amountFirst)
-      assertThat(content[0].postingBalance).isEqualTo(amountFirst)
+      assertThat(content[0].runningBalance).isEqualTo(amountFirst)
 
       // Insert statement balance
       val statementBalanceResponse = webTestClient.post()
@@ -365,7 +365,7 @@ class CalculatedBalanceIntegrationTest(
         .expectBody<StatementBalanceResponse>()
         .returnResult().responseBody!!
 
-      integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE, hmppsQueueService)
+      integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE_QUEUE_ID, hmppsQueueService)
 
       statementEntryResponse = webTestClient.get()
         .uri("/accounts/${accounts[0].id}/statement?subAccountId=${subAccounts[0].id}")
@@ -380,7 +380,7 @@ class CalculatedBalanceIntegrationTest(
 
       assertThat(content).hasSize(1)
       assertThat(content[0].amount).isEqualTo(amountFirst)
-      assertThat(content[0].postingBalance).isEqualTo(amountStatementBalance + amountFirst)
+      assertThat(content[0].runningBalance).isEqualTo(amountStatementBalance + amountFirst)
     }
   }
 
@@ -439,7 +439,7 @@ class CalculatedBalanceIntegrationTest(
         .expectStatus().isCreated
 
       // waiting for sqs to empty and then clearing balances
-      integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE, hmppsQueueService)
+      integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE_QUEUE_ID, hmppsQueueService)
       postingBalanceDataRepository.deleteAllInBatch()
 
       var statementEntryResponse = webTestClient.get()
@@ -454,8 +454,8 @@ class CalculatedBalanceIntegrationTest(
       var content = statementEntryResponse.content
 
       assertThat(content).hasSize(2)
-      assertThat(content[0].postingBalance).isNull()
-      assertThat(content[1].postingBalance).isNull()
+      assertThat(content[0].runningBalance).isNull()
+      assertThat(content[1].runningBalance).isNull()
 
       webTestClient.post()
         .uri("/migrate/subAccountBalances")
@@ -464,7 +464,7 @@ class CalculatedBalanceIntegrationTest(
         .expectStatus().isOk()
         .returnResult()
 
-      integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE, hmppsQueueService)
+      integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE_QUEUE_ID, hmppsQueueService)
 
       statementEntryResponse = webTestClient.get()
         .uri("/accounts/${accounts[0].id}/statement?subAccountId=${subAccounts[0].id}")
@@ -478,9 +478,9 @@ class CalculatedBalanceIntegrationTest(
       content = statementEntryResponse.content
 
       assertThat(content[0].amount).isEqualTo(amountSecond)
-      assertThat(content[0].postingBalance).isEqualTo(amountSecond + amountFirst)
+      assertThat(content[0].runningBalance).isEqualTo(amountSecond + amountFirst)
       assertThat(content[1].amount).isEqualTo(amountFirst)
-      assertThat(content[1].postingBalance).isEqualTo(amountFirst)
+      assertThat(content[1].runningBalance).isEqualTo(amountFirst)
     }
   }
 }

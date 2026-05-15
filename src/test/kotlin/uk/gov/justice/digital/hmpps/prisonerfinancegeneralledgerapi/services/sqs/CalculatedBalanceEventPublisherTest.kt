@@ -56,7 +56,7 @@ class CalculatedBalanceEventPublisherTest {
   val prisonerAccount = serviceTestHelpers.createAccount("ABC123XZ", AccountType.PRISONER)
   val prisonerCashAccount = serviceTestHelpers.createSubAccount("CASH", prisonerAccount)
 
-  val prisonAccount = serviceTestHelpers.createAccount("ABC123XZ", AccountType.PRISON)
+  val prisonAccount = serviceTestHelpers.createAccount("LEI", AccountType.PRISON)
   val prisonCantAccount = serviceTestHelpers.createSubAccount("CANT:1010", prisonAccount)
 
   val transaction = serviceTestHelpers.createOneToOneTransaction(
@@ -76,7 +76,7 @@ class CalculatedBalanceEventPublisherTest {
       val messageRequestCaptor = argumentCaptor<ProcessBalanceRequest>()
 
       verify(messagePublisher, times(transaction.postings.size))
-        .sendMessage(messageRequestCaptor.capture(), eq(SqsQueues.CALCULATED_BALANCE))
+        .sendMessage(messageRequestCaptor.capture(), eq(SqsQueues.CALCULATED_BALANCE_QUEUE_ID))
 
       val capturedRequests = messageRequestCaptor.allValues
 
@@ -92,7 +92,7 @@ class CalculatedBalanceEventPublisherTest {
       whenever(
         messagePublisher.sendMessage(
           payloadDataClass = any<ProcessBalanceRequest>(),
-          queueId = eq(SqsQueues.CALCULATED_BALANCE),
+          queueId = eq(SqsQueues.CALCULATED_BALANCE_QUEUE_ID),
         ),
       )
         .thenThrow(expectedException)
@@ -128,7 +128,7 @@ class CalculatedBalanceEventPublisherTest {
     @Test
     fun `Should get the next posting if there is one and send a balance calculation request`() {
       whenever {
-        postingsDataRepository.getFirstPostingsForSubAccountIdAfterDateTime(
+        postingsDataRepository.getFirstPostingForSubAccountIdAfterDateTime(
           subAccountId = prisonerCashAccount.id,
           dateTime = statementEntity.balanceDateTime,
         )
@@ -139,7 +139,7 @@ class CalculatedBalanceEventPublisherTest {
       val messageRequestCaptor = argumentCaptor<ProcessBalanceRequest>()
       verify(messagePublisher).sendMessage(
         payloadDataClass = messageRequestCaptor.capture(),
-        queueId = eq(SqsQueues.CALCULATED_BALANCE),
+        queueId = eq(SqsQueues.CALCULATED_BALANCE_QUEUE_ID),
       )
       assertThat(messageRequestCaptor.firstValue.postingId).isEqualTo(transaction.postings.first().id)
     }
@@ -147,7 +147,7 @@ class CalculatedBalanceEventPublisherTest {
     @Test
     fun `Should not send a balance calculation request if there is no next posting`() {
       whenever {
-        postingsDataRepository.getFirstPostingsForSubAccountIdAfterDateTime(
+        postingsDataRepository.getFirstPostingForSubAccountIdAfterDateTime(
           subAccountId = prisonerCashAccount.id,
           dateTime = statementEntity.balanceDateTime,
         )
@@ -157,14 +157,14 @@ class CalculatedBalanceEventPublisherTest {
 
       verify(messagePublisher, never()).sendMessage(
         payloadDataClass = any<ProcessBalanceRequest>(),
-        queueId = eq(SqsQueues.CALCULATED_BALANCE),
+        queueId = eq(SqsQueues.CALCULATED_BALANCE_QUEUE_ID),
       )
     }
 
     @Test
     fun `Should log error when sending message fails`() {
       whenever {
-        postingsDataRepository.getFirstPostingsForSubAccountIdAfterDateTime(
+        postingsDataRepository.getFirstPostingForSubAccountIdAfterDateTime(
           subAccountId = prisonerCashAccount.id,
           dateTime = statementEntity.balanceDateTime,
         )
@@ -173,7 +173,7 @@ class CalculatedBalanceEventPublisherTest {
       whenever {
         messagePublisher.sendMessage(
           payloadDataClass = any<ProcessBalanceRequest>(),
-          queueId = eq(SqsQueues.CALCULATED_BALANCE),
+          queueId = eq(SqsQueues.CALCULATED_BALANCE_QUEUE_ID),
         )
       }.thenThrow(expectedException)
 

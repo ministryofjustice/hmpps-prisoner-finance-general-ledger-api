@@ -37,7 +37,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
     var subAccounts: MutableList<SubAccountResponse> = mutableListOf()
 
     @BeforeEach
-    open fun setup() {
+    fun setup() {
       for (i in 0..3) {
         val accountResponseBody = integrationTestHelpers.createAccount("TEST_ACCOUNT_$i", AccountType.PRISONER)
         accounts.add(accountResponseBody)
@@ -469,7 +469,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
     lateinit var transaction: TransactionResponse
 
     @BeforeEach
-    open fun setUp() {
+    fun setUp() {
       for (i in 2 downTo 0 step 1) {
         accounts.add(integrationTestHelpers.createAccount("$i", AccountType.PRISONER))
       }

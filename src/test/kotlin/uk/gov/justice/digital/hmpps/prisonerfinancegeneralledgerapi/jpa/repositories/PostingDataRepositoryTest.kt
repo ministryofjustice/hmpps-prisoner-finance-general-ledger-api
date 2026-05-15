@@ -921,7 +921,7 @@ class PostingDataRepositoryTest @Autowired constructor(
   }
 
   @Nested
-  inner class GetTheNextSubAccountPostingOrDefault {
+  inner class GetTheNextSubAccountPostingOrNull {
 
     @Test
     fun `Should return the next subAccount Posting when there is one`() {
@@ -948,7 +948,7 @@ class PostingDataRepositoryTest @Autowired constructor(
       )
 
       val posting = transactionOne.postings.first()
-      val nextPosting = postingsDataRepository.getTheNextSubAccountPostingOrDefault(
+      val nextPosting = postingsDataRepository.getTheNextSubAccountPostingOrNull(
         postingId = posting.id,
         subAccountId = posting.subAccountEntity.id,
         transactionTimestamp = posting.transactionEntity.timestamp,
@@ -960,24 +960,24 @@ class PostingDataRepositoryTest @Autowired constructor(
     }
 
     @Test
-    fun `Should return the next posting and order by timestamp, transaction entrySequence,  posting EntrySequence`() {
+    fun `Should return the next posting ordered by timestamp, transaction entrySequence, posting EntrySequence`() {
       accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
       accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
 
       accountTwo = repoTestHelpers.createAccount(ref = "LEI")
       accountTwoSubAccountOne = repoTestHelpers.createSubAccount(ref = "1001:CANT", account = accountTwo)
+      val transactionTimestamp = Instant.now()
 
-      val transactionOne = repoTestHelpers.createOneToOneTransaction(
+      val initialTransaction = repoTestHelpers.createOneToOneTransaction(
         transactionAmount = 1,
-        postingCreatedAt = Instant.now().minusSeconds(60),
-        transactionTimeStamp = Instant.now().minusSeconds(60),
+        postingCreatedAt = transactionTimestamp,
+        transactionTimeStamp = transactionTimestamp,
         debitSubAccount = accountOneSubAccountOne,
         creditSubAccount = accountTwoSubAccountOne,
       )
 
-      val transactionTimestamp = Instant.now()
-
-      val transactionInTheFuture = repoTestHelpers.createOneToOneTransaction(
+//      Transaction timestamp after initial
+      val transactionAfterInitial = repoTestHelpers.createOneToOneTransaction(
         transactionAmount = 1,
         postingCreatedAt = transactionTimestamp.plusSeconds(60),
         transactionTimeStamp = transactionTimestamp.plusSeconds(60),
@@ -985,18 +985,9 @@ class PostingDataRepositoryTest @Autowired constructor(
         creditSubAccount = accountTwoSubAccountOne,
       )
 
-      val transactionEntryTwo = repoTestHelpers.createOneToOneTransaction(
-        transactionAmount = 1,
-        postingCreatedAt = transactionTimestamp,
-        transactionTimeStamp = transactionTimestamp,
-        debitSubAccount = accountOneSubAccountOne,
-        debitEntrySequence = 3,
-        creditSubAccount = accountTwoSubAccountOne,
-        creditEntrySequence = 4,
-        transactionEntrySequence = 2,
-      )
-
-      val transactionEntryOne = repoTestHelpers.createOneToOneTransaction(
+//      2 part transaction with the same timestamp as initial
+//      Batch transactions will be ordered by transactionEntrySequence
+      val batchTransactionPart1 = repoTestHelpers.createOneToOneTransaction(
         transactionAmount = 1,
         postingCreatedAt = transactionTimestamp,
         transactionTimeStamp = transactionTimestamp,
@@ -1007,16 +998,28 @@ class PostingDataRepositoryTest @Autowired constructor(
         transactionEntrySequence = 1,
       )
 
-      val posting = transactionOne.postings.first()
-      val nextPosting = postingsDataRepository.getTheNextSubAccountPostingOrDefault(
-        postingId = posting.id,
-        subAccountId = posting.subAccountEntity.id,
-        transactionTimestamp = posting.transactionEntity.timestamp,
-        transactionEntrySequence = posting.transactionEntity.entrySequence,
-        postingEntrySequence = posting.entrySequence,
+      val batchTransactionPart2 = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        postingCreatedAt = transactionTimestamp,
+        transactionTimeStamp = transactionTimestamp,
+        debitSubAccount = accountOneSubAccountOne,
+        debitEntrySequence = 3,
+        creditSubAccount = accountTwoSubAccountOne,
+        creditEntrySequence = 4,
+        transactionEntrySequence = 2,
       )
 
-      assertThat(nextPosting).isEqualTo(transactionEntryOne.postings.first())
+      val initialPosting = initialTransaction.postings.first()
+      val nextPosting = postingsDataRepository.getTheNextSubAccountPostingOrNull(
+        postingId = initialPosting.id,
+        subAccountId = initialPosting.subAccountEntity.id,
+        transactionTimestamp = initialPosting.transactionEntity.timestamp,
+        transactionEntrySequence = initialPosting.transactionEntity.entrySequence,
+        postingEntrySequence = initialPosting.entrySequence,
+      )
+
+      assertThat(nextPosting).isEqualTo(batchTransactionPart1.postings.first())
+      assertThat(nextPosting?.transactionEntity?.timestamp).isEqualTo(transactionTimestamp)
       assertThat(nextPosting?.entrySequence).isEqualTo(1)
       assertThat(nextPosting?.transactionEntity?.entrySequence).isEqualTo(1)
     }
@@ -1029,7 +1032,7 @@ class PostingDataRepositoryTest @Autowired constructor(
       accountTwo = repoTestHelpers.createAccount(ref = "LEI")
       accountTwoSubAccountOne = repoTestHelpers.createSubAccount(ref = "1001:CANT", account = accountTwo)
 
-      val transactionOne = repoTestHelpers.createOneToOneTransaction(
+      val transaction = repoTestHelpers.createOneToOneTransaction(
         transactionAmount = 1,
         postingCreatedAt = Instant.now().minusSeconds(60),
         transactionTimeStamp = Instant.now().minusSeconds(60),
@@ -1037,8 +1040,8 @@ class PostingDataRepositoryTest @Autowired constructor(
         creditSubAccount = accountTwoSubAccountOne,
       )
 
-      val posting = transactionOne.postings.first()
-      val nextPosting = postingsDataRepository.getTheNextSubAccountPostingOrDefault(
+      val posting = transaction.postings.first()
+      val nextPosting = postingsDataRepository.getTheNextSubAccountPostingOrNull(
         postingId = posting.id,
         subAccountId = posting.subAccountEntity.id,
         transactionTimestamp = posting.transactionEntity.timestamp,
@@ -1051,7 +1054,7 @@ class PostingDataRepositoryTest @Autowired constructor(
   }
 
   @Nested
-  inner class GetFirstPostingsForSubAccountIdAfterDateTime {
+  inner class GetFirstPostingForSubAccountIdAfterDateTime {
 
     @Test
     fun `Should return the next subAccount Posting when there is one`() {
@@ -1070,7 +1073,7 @@ class PostingDataRepositoryTest @Autowired constructor(
       )
 
       val posting = transactionOne.postings.first()
-      val nextPosting = postingsDataRepository.getFirstPostingsForSubAccountIdAfterDateTime(
+      val nextPosting = postingsDataRepository.getFirstPostingForSubAccountIdAfterDateTime(
         dateTime = transactionOne.timestamp.minusSeconds(60),
         subAccountId = posting.subAccountEntity.id,
       )
@@ -1127,7 +1130,7 @@ class PostingDataRepositoryTest @Autowired constructor(
       )
 
       val posting = transactionEntryOne.postings.first()
-      val nextPosting = postingsDataRepository.getFirstPostingsForSubAccountIdAfterDateTime(
+      val nextPosting = postingsDataRepository.getFirstPostingForSubAccountIdAfterDateTime(
         dateTime = transactionEntryOne.timestamp.minusSeconds(60),
         subAccountId = posting.subAccountEntity.id,
       )
@@ -1153,7 +1156,7 @@ class PostingDataRepositoryTest @Autowired constructor(
         creditSubAccount = accountTwoSubAccountOne,
       )
 
-      val nextPosting = postingsDataRepository.getFirstPostingsForSubAccountIdAfterDateTime(
+      val nextPosting = postingsDataRepository.getFirstPostingForSubAccountIdAfterDateTime(
         dateTime = transactionOne.timestamp.plusSeconds(10),
         subAccountId = transactionOne.postings.first().subAccountEntity.id,
       )

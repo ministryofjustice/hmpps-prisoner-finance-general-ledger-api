@@ -14,7 +14,6 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.oppositePostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.IdempotencyKeyDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingBalanceDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.TransactionDataRepository
@@ -25,7 +24,6 @@ import java.util.UUID
 @TestConfiguration
 class RepoTestHelpers(
   private val entityManager: TestEntityManager,
-  private val postingBalanceDataRepository: PostingBalanceDataRepository,
   private val postingsDataRepository: PostingsDataRepository,
   private val transactionDataRepository: TransactionDataRepository,
   private val subAccountDataRepository: SubAccountDataRepository,
@@ -142,7 +140,6 @@ class RepoTestHelpers(
     transactionAmount: Long,
     subAccountBalance1: Long,
     subAccountBalance2: Long,
-    totalAccountBalance: Long, // todo think about this
     transactionEntrySequence: Long = 1,
     postingsEntrySequences: Pair<Long, Long> = Pair(1, 2),
   ): Pair<PostingBalanceEntity, PostingBalanceEntity> {

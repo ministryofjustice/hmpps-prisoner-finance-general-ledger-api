@@ -12,13 +12,13 @@ class MigrateService(
   val messagePublisher: MessagePublisher,
 ) {
   fun migrateAllPostingBalances() {
-    postingsDataRepository.getAllFirstPostingsForEachSubAccount().forEach { postingId ->
+    postingsDataRepository.getFirstPostingsForAllSubAccounts().forEach { postingId ->
       val nextPosting = postingBalanceService.processBalance(postingId)
 
       if (nextPosting != null) {
         messagePublisher.sendMessage(
           payloadDataClass = nextPosting,
-          queueId = SqsQueues.CALCULATED_BALANCE,
+          queueId = SqsQueues.CALCULATED_BALANCE_QUEUE_ID,
         )
       }
     }

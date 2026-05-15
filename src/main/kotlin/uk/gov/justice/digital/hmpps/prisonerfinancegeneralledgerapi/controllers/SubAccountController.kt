@@ -332,8 +332,6 @@ class SubAccountController(
       throw CustomException(message = "Sub Account not found", status = HttpStatus.NOT_FOUND)
     }
 
-    // We might need to add some arbitrary time when we don't want to calculate balances,
-    // for instance: a statement balance from a week ago? do we calculate it or skip?
     calculatedBalanceEventPublisher.requestCalculatedBalanceForStatementBalance(subAccountStatementBalance)
 
     return ResponseEntity.status(201).body(StatementBalanceResponse.fromEntity(subAccountStatementBalance))

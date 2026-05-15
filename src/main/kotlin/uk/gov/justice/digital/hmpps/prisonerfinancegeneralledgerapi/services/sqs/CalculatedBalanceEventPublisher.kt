@@ -18,7 +18,7 @@ class CalculatedBalanceEventPublisher(
       try {
         messagePublisher.sendMessage(
           payloadDataClass = ProcessBalanceRequest.fromPostingEntity(posting),
-          queueId = SqsQueues.CALCULATED_BALANCE,
+          queueId = SqsQueues.CALCULATED_BALANCE_QUEUE_ID,
         )
       } catch (e: Exception) {
         log.error("Failed send balanceCalculation to queue for Transaction: ${transactionEntity.id} Posting: ${posting.id}", e)
@@ -28,7 +28,7 @@ class CalculatedBalanceEventPublisher(
 
   fun requestCalculatedBalanceForStatementBalance(statementBalanceEntity: StatementBalanceEntity) {
     try {
-      val posting = postingsDataRepository.getFirstPostingsForSubAccountIdAfterDateTime(
+      val posting = postingsDataRepository.getFirstPostingForSubAccountIdAfterDateTime(
         subAccountId = statementBalanceEntity.subAccountEntity.id,
         dateTime = statementBalanceEntity.balanceDateTime,
       )
@@ -36,7 +36,7 @@ class CalculatedBalanceEventPublisher(
       if (posting != null) {
         messagePublisher.sendMessage(
           payloadDataClass = ProcessBalanceRequest.fromPostingEntity(posting),
-          queueId = SqsQueues.CALCULATED_BALANCE,
+          queueId = SqsQueues.CALCULATED_BALANCE_QUEUE_ID,
         )
       }
     } catch (e: Exception) {

@@ -146,7 +146,7 @@ class ServiceTestHelpers {
     val postingEntity2 = PostingEntity(
       id = UUID.randomUUID(),
       createdAt = Instant.now(),
-      type = PostingType.DR,
+      type = PostingType.CR,
       amount = subAccountBalance2,
       subAccountEntity = subAccount2,
       transactionEntity = transactionEntity,

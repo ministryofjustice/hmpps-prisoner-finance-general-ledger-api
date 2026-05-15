@@ -79,7 +79,7 @@ abstract class IntegrationTestBase {
   lateinit var hmppsQueueService: HmppsQueueService
 
   protected val calculatedBalanceQueue by lazy {
-    hmppsQueueService.findByQueueId(SqsQueues.CALCULATED_BALANCE)
+    hmppsQueueService.findByQueueId(SqsQueues.CALCULATED_BALANCE_QUEUE_ID)
       ?: throw MissingQueueException("Queue calculated_balance not found")
   }
 

@@ -15,7 +15,7 @@ class CalculatedBalanceEventListener(
   private val messagePublisher: MessagePublisher,
 ) {
 
-  @SqsListener(SqsQueues.CALCULATED_BALANCE, factory = "hmppsQueueContainerFactoryProxy")
+  @SqsListener(SqsQueues.CALCULATED_BALANCE_QUEUE_ID, factory = "hmppsQueueContainerFactoryProxy")
   fun handleEvents(requestJson: String?) {
     try {
       val processBalanceRequest = objectMapper.readValue(requestJson, ProcessBalanceRequest::class.java)
@@ -24,7 +24,7 @@ class CalculatedBalanceEventListener(
       if (nextPosting != null) {
         messagePublisher.sendMessage(
           payloadDataClass = nextPosting,
-          queueId = SqsQueues.CALCULATED_BALANCE,
+          queueId = SqsQueues.CALCULATED_BALANCE_QUEUE_ID,
         )
       }
     } catch (e: Exception) {

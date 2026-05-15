@@ -15,7 +15,7 @@ object LocalStackConfig {
 
   fun setLocalStackProperties(localStackContainer: LocalStackContainer?, registry: DynamicPropertyRegistry) {
     if (localStackContainer != null) {
-      val localstackUrl = localStackContainer.getEndpointOverride(LocalStackContainer.Service.SNS).toString()
+      val localstackUrl = localStackContainer.getEndpointOverride(LocalStackContainer.Service.SQS).toString()
       val region = localStackContainer.region
       registry.add("hmpps.sqs.localstackUrl") { localstackUrl }
       registry.add("hmpps.sqs.region") { region }
@@ -31,7 +31,7 @@ object LocalStackConfig {
     return LocalStackContainer(
       DockerImageName.parse("localstack/localstack").withTag("4"),
     ).apply {
-      withServices(LocalStackContainer.Service.SQS, LocalStackContainer.Service.SNS)
+      withServices(LocalStackContainer.Service.SQS)
       withEnv("DEFAULT_REGION", "eu-west-2")
       waitingFor(
         Wait.forLogMessage(".*Ready.*", 1),
@@ -45,7 +45,7 @@ object LocalStackConfig {
     val serverSocket = ServerSocket(4566)
     log.info("Localstack is not running, starting testContainer")
     serverSocket.localPort == 0
-  } catch (e: IOException) {
+  } catch (_: IOException) {
     log.warn("Localstack is already running, using existing container")
     true
   }

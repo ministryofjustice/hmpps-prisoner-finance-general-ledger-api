@@ -26,7 +26,7 @@ interface PostingBalanceDataRepository : JpaRepository<PostingBalanceEntity, Lon
       limit 1
     """,
   )
-  fun getSubAccountBalanceOrDefault(
+  fun getPreviousPostingBalanceOrNull(
     postingId: UUID,
     subAccountId: UUID,
     transactionTimestamp: Instant,

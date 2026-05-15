@@ -77,7 +77,7 @@ class PostingBalanceServiceTest {
   }
 
   fun verifyService(transaction: TransactionEntity, posting: PostingEntity, subAccountAmount: Long, subAccount: SubAccountEntity) {
-    verify(postingBalanceDataRepository, times(1)).getSubAccountBalanceOrDefault(
+    verify(postingBalanceDataRepository, times(1)).getPreviousPostingBalanceOrNull(
       postingId = posting.id,
       subAccountId = subAccount.id,
       transactionTimestamp = transaction.timestamp,
@@ -101,7 +101,7 @@ class PostingBalanceServiceTest {
     subAccount: SubAccountEntity,
   ) {
     whenever(
-      postingBalanceDataRepository.getSubAccountBalanceOrDefault(
+      postingBalanceDataRepository.getPreviousPostingBalanceOrNull(
         postingId = posting.id,
         subAccountId = subAccount.id,
         transactionTimestamp = transaction.timestamp,
@@ -127,7 +127,7 @@ class PostingBalanceServiceTest {
       "false, 1, 10",
       "true, 0, -10",
     )
-    fun `Should calculate posting balance after transaction when there is not previous posting balance or migration`(
+    fun `Should calculate posting balance after transaction when there is not previous posting balance or statement balance`(
       isDebit: Boolean,
       postingIndex: Int,
       amount: Long,
@@ -183,11 +183,11 @@ class PostingBalanceServiceTest {
     }
 
     @Test
-    fun `Should calculate posting balance after transaction when there is no previous posting balance and a previous migration`() {
+    fun `Should calculate posting balance after transaction when there is a previous statement balance but no previous posting balance`() {
       val amount = 10L
       val transaction = createTransaction(isDebit = false, timestamp = Instant.now(), amount = amount)
 
-      val migration = StatementBalanceEntity(
+      val statementBalance = StatementBalanceEntity(
         id = UUID.randomUUID(),
         subAccountEntity = subAccount1,
         balanceDateTime = transaction.timestamp.minusSeconds(123213),
@@ -198,7 +198,7 @@ class PostingBalanceServiceTest {
         transaction = transaction,
         posting = transaction.postings[1],
         postingBalanceEntity = null,
-        statementBalanceEntity = migration,
+        statementBalanceEntity = statementBalance,
         subAccount = subAccount1,
       )
 
@@ -207,17 +207,17 @@ class PostingBalanceServiceTest {
       verifyService(
         transaction = transaction,
         posting = transaction.postings[1],
-        subAccountAmount = migration.amount + amount,
+        subAccountAmount = statementBalance.amount + amount,
         subAccount = subAccount1,
       )
     }
 
     @Test
-    fun `Should calculate posting balance after transaction when there the previous posting balance is more recent than the previous migration`() {
+    fun `Should calculate posting balance after transaction when the previous posting balance is more recent than the previous statement balance`() {
       val amount = 10L
       val transaction = createTransaction(isDebit = false, timestamp = Instant.now(), amount = amount)
 
-      val migration = StatementBalanceEntity(
+      val statementBalance = StatementBalanceEntity(
         id = UUID.randomUUID(),
         subAccountEntity = subAccount1,
         balanceDateTime = postingBalances.first.postingEntity.transactionEntity.timestamp.minusSeconds(60),
@@ -227,7 +227,7 @@ class PostingBalanceServiceTest {
         transaction = transaction,
         posting = transaction.postings[1],
         postingBalanceEntity = postingBalances.first,
-        statementBalanceEntity = migration,
+        statementBalanceEntity = statementBalance,
         subAccount = subAccount1,
       )
       postingBalanceService.calculatePostingBalance(
@@ -243,11 +243,11 @@ class PostingBalanceServiceTest {
     }
 
     @Test
-    fun `Should calculate posting balance after transaction when the previous migration is more recent than the previous posting balance`() {
+    fun `Should calculate posting balance after transaction when the previous statement balance is more recent than the previous posting balance`() {
       val amount = 10L
       val transaction = createTransaction(isDebit = false, timestamp = Instant.now(), amount = amount)
 
-      val migration = StatementBalanceEntity(
+      val statementBalance = StatementBalanceEntity(
         id = UUID.randomUUID(),
         subAccountEntity = subAccount1,
         balanceDateTime = postingBalances.first.postingEntity.transactionEntity.timestamp.plusSeconds(60),
@@ -258,7 +258,7 @@ class PostingBalanceServiceTest {
         transaction = transaction,
         posting = transaction.postings[1],
         postingBalanceEntity = postingBalances.first,
-        statementBalanceEntity = migration,
+        statementBalanceEntity = statementBalance,
         subAccount = subAccount1,
       )
 
@@ -269,7 +269,7 @@ class PostingBalanceServiceTest {
       verifyService(
         transaction = transaction,
         posting = transaction.postings[1],
-        subAccountAmount = migration.amount + amount,
+        subAccountAmount = statementBalance.amount + amount,
         subAccount = subAccount1,
       )
     }

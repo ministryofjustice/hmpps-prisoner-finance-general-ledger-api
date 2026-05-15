@@ -53,7 +53,7 @@ interface PostingsDataRepository :
       )
   """,
   )
-  fun getAllFirstPostingsForEachSubAccount(): List<UUID>
+  fun getFirstPostingsForAllSubAccounts(): List<UUID>
 
   @Query("SELECT p FROM PostingEntity p WHERE p.subAccountEntity.id = :subAccountId")
   fun getPostingsForSubAccountId(@Param("subAccountId") subAccountId: UUID): List<PostingEntity>
@@ -71,7 +71,7 @@ interface PostingsDataRepository :
     limit 1
     """,
   )
-  fun getFirstPostingsForSubAccountIdAfterDateTime(subAccountId: UUID, dateTime: Instant): PostingEntity?
+  fun getFirstPostingForSubAccountIdAfterDateTime(subAccountId: UUID, dateTime: Instant): PostingEntity?
 
   fun getBalanceForSubAccount(subAccountId: UUID, latestStatementBalanceDateTime: Instant? = null): Long {
     lateinit var postingsForSubAccount: List<PostingEntity>
@@ -130,7 +130,7 @@ WHERE sa.account_id = :prisonerId
     LIMIT 1
   """,
   )
-  fun getTheNextSubAccountPostingOrDefault(
+  fun getTheNextSubAccountPostingOrNull(
     postingId: UUID,
     subAccountId: UUID,
     transactionTimestamp: Instant,
