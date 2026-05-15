@@ -79,3 +79,11 @@ springdoc:
   swagger-ui:
     version: 5.32.2
     enabled: false
+
+# TODO: UPDATE THIS FOR THE KUBE SECRET ONCE CREATED
+#hmpps.sqs:
+#  provider: aws
+#  queues:
+#    calculated_balance:
+#      queueName: ${CALCULATED_BALANCE_QUEUE_NAME}
+#      dlqName: ${CALCULATED_BALANCE_DLQ_NAME}

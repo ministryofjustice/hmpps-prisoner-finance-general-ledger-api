@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.sq
 
 class SqsQueues {
   companion object {
-    const val CALCULATED_BALANCE = "calculated_balance"
+//    TODO: needs to be updated to use kube secret queue id
+    const val CALCULATED_BALANCE_QUEUE_ID = "calculated_balance"
   }
 }
