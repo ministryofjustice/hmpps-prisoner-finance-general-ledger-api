@@ -22,3 +22,10 @@ springdoc:
   swagger-ui:
     version: 5.32.2
     enabled: true
+
+hmpps.sqs:
+  provider: localstack
+  queues:
+    calculated_balance:
+      queueName: calculated_balance_queue
+      dlqName: calculated_balance_queue-dlq

@@ -33,6 +33,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.respo
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.AccountService
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.IdempotencyService
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.TransactionService
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.sqs.CalculatedBalanceEventPublisher
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.security.Principal
 import java.util.UUID
@@ -43,6 +44,7 @@ class TransactionController(
   private val transactionService: TransactionService,
   private val idempotencyService: IdempotencyService,
   private val accountService: AccountService,
+  private val calculatedBalanceEventPublisher: CalculatedBalanceEventPublisher,
 ) {
   @Operation(
     summary = "Create a new transaction",
@@ -116,6 +118,9 @@ class TransactionController(
       if (idempotencyEntityOrNull != null) return ResponseEntity<TransactionResponse>.status(HttpStatus.OK).body(TransactionResponse.fromEntity(idempotencyEntityOrNull.transaction))
 
       val transactionEntity = transactionService.createTransaction(body, createdBy = user.name, idempotencyKey = idempotencyKey)
+
+      calculatedBalanceEventPublisher.requestCalculatedBalanceForTransaction(transactionEntity)
+
       return ResponseEntity<TransactionResponse>.status(HttpStatus.CREATED).body(
         TransactionResponse.fromEntity(transactionEntity = transactionEntity),
       )

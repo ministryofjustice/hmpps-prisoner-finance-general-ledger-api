@@ -93,5 +93,21 @@ class StatementBalanceDataRepositoryTest @Autowired constructor(
       assertThat(latestCreatedStatementBalance?.balanceDateTime).isEqualTo(statementBalanceForTestAccountOne.balanceDateTime)
       assertThat(latestCreatedStatementBalance?.subAccountEntity?.id).isEqualTo(testSubAccountOne.id)
     }
+
+    @Test
+    fun `Should only return the most recent balance before the timestamp provided`() {
+      val statementBalanceFirst = repoTestHelpers.createStatementBalance(amount = 100, balanceDateTime = LocalDateTime.now().minusDays(1).toInstant(java.time.ZoneOffset.UTC), subAccount = testSubAccountOne)
+      repoTestHelpers.createStatementBalance(amount = 10, balanceDateTime = Instant.now(), subAccount = testSubAccountOne)
+
+      val statementBalance = statementBalanceDataRepository
+        .getLatestStatementBalanceForSubAccountId(
+          testSubAccountOne.id,
+          statementBalanceFirst.balanceDateTime.plusSeconds(1),
+        )
+
+      assertThat(statementBalance?.amount).isEqualTo(statementBalanceFirst.amount)
+      assertThat(statementBalance?.balanceDateTime).isEqualTo(statementBalanceFirst.balanceDateTime)
+      assertThat(statementBalance?.subAccountEntity?.id).isEqualTo(testSubAccountOne.id)
+    }
   }
 }

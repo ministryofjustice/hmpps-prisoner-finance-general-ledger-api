@@ -10,6 +10,7 @@ import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -172,7 +173,7 @@ class SubAccountServiceTest {
     fun `Should combine latest statement balance amount with postings when there is statement balance date`() {
       val statementBalanceEntity = StatementBalanceEntity(id = UUID.randomUUID(), amount = 33L, subAccountEntity = dummySubAccountEntity)
       whenever(subAccountDataRepositoryMock.getSubAccountEntityById(dummySubAccountUUID)).thenReturn(dummySubAccountEntity)
-      whenever(statementBalanceDataRepository.getLatestStatementBalanceForSubAccountId(dummySubAccountUUID)).thenReturn(statementBalanceEntity)
+      whenever(statementBalanceDataRepository.getLatestStatementBalanceForSubAccountId(eq(dummySubAccountUUID), any<Instant>())).thenReturn(statementBalanceEntity)
       whenever(postingsDataRepository.getBalanceForSubAccount(dummySubAccountUUID, latestStatementBalanceDateTime = statementBalanceEntity.balanceDateTime)).thenReturn(10)
 
       val subAccountBalance = subAccountService.getSubAccountBalance(dummySubAccountUUID)

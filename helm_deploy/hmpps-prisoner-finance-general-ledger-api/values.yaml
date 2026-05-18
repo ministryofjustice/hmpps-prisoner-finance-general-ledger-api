@@ -2,6 +2,8 @@ generic-service:
   nameOverride: hmpps-prisoner-finance-general-ledger-api
   productId: "DPS099" # productId for the product that this belongs too, i.e. DPS001, see README.md for details
 
+  serviceAccountName: prisoner-finance-general-ledger
+
   replicaCount: 4
 
   image:
@@ -35,6 +37,12 @@ generic-service:
       DB_NAME: "database_name"
       DB_USER: "database_username"
       DB_PASS: "database_password"
+
+    prisoner-finance-general-ledger-queue-for-calculated-balances:
+      CALC_BALANCE_QUEUE_NAME: "sqs_queue_name"
+
+    prisoner-finance-general-ledger-queue-for-calculated-balances-dlq:
+      CALC_BALANCE_DLQ_NAME: "sqs_queue_name"
 
   allowlist:
     groups:

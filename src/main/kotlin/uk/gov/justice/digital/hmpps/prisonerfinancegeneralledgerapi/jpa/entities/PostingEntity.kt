@@ -8,6 +8,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.Index
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import java.time.Instant
@@ -44,4 +45,11 @@ class PostingEntity(
   @ManyToOne(optional = false, fetch = jakarta.persistence.FetchType.LAZY)
   @JoinColumn(name = "transaction_id", nullable = false)
   val transactionEntity: TransactionEntity,
+
+  @OneToOne(
+    mappedBy = "postingEntity",
+    optional = true,
+    fetch = jakarta.persistence.FetchType.LAZY,
+  )
+  var postingBalanceEntity: PostingBalanceEntity? = null,
 )

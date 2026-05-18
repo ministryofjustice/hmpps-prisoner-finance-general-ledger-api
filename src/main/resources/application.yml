@@ -79,3 +79,10 @@ springdoc:
   swagger-ui:
     version: 5.32.2
     enabled: false
+
+hmpps.sqs:
+  provider: aws
+  queues:
+    calculated_balance:
+      queueName: ${CALC_BALANCE_QUEUE_NAME}
+      dlqName: ${CALC_BALANCE_DLQ_NAME}

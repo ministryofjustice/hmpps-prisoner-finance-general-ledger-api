@@ -24,7 +24,6 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.respo
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.TransactionResponse
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.time.Instant
-import java.time.LocalDateTime
 import java.util.UUID
 
 class SubAccountIntegrationTest : IntegrationTestBase() {
@@ -499,12 +498,12 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
       assertThat(subAccountOneOriginalBalance.subAccountId).isEqualTo(dummySubAccountOne.id)
       assertThat(subAccountOneOriginalBalance.balanceDateTime).isInThePast
 
-      val balanceDateTimeTomorrow = LocalDateTime.now().plusDays(1).toInstant(java.time.ZoneOffset.UTC)
+      val balanceDateTime = Instant.now()
       val statementBalanceResponse = webTestClient.post()
         .uri("/sub-accounts/${dummySubAccountOne.id}/balance")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(CreateStatementBalanceRequest(amount = 10, balanceDateTime = balanceDateTimeTomorrow))
+        .bodyValue(CreateStatementBalanceRequest(amount = 10, balanceDateTime = balanceDateTime))
         .exchange()
         .expectStatus().isCreated
         .expectBody<StatementBalanceResponse>()
@@ -512,7 +511,7 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
 
       assertThat(statementBalanceResponse.amount).isEqualTo(10)
       assertThat(statementBalanceResponse.subAccountId).isEqualTo(dummySubAccountOne.id)
-      assertThat(statementBalanceResponse.balanceDateTime).isEqualTo(balanceDateTimeTomorrow)
+      assertThat(statementBalanceResponse.balanceDateTime).isEqualTo(balanceDateTime)
 
       val subAccountOneCurrentBalance = webTestClient.get()
         .uri("/sub-accounts/${dummySubAccountOne.id}/balance")

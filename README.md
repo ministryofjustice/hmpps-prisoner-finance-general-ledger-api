@@ -220,4 +220,55 @@ Portal. Refer to the developer portal at <https://developer-portal.hmpps.service
 product id. This is configured in `helm_deploy/<project_name>/values.yaml`.
 
 
+### LocalStack for local SQS queue
 
+LocalStack is a local implementation of AWS services so that we can run integration tests locally and be sure that they will work with live AWS services.
+Primarily we are only using SQS for the calculated balance queue though this may be added to in the future.
+
+Integration tests will run an instance of LocalStack automatically, these commands are intended to debug any future or failing tests to see what is currently still in the queue or the dead letter queue.
+
+Install awslocal for debuggging LocalStack SQS 
+```bash
+brew install awscli-local
+```
+Get the queue url
+```bash
+awslocal sqs get-queue-url \
+  --queue-name calculated_balance_queue \
+  --region eu-west-2
+```
+Peek at the queue
+```bash
+awslocal sqs receive-message \
+  --queue-url http://sqs.eu-west-2.localhost.localstack.cloud:4566/000000000000/calculated_balance_queue \
+  --region eu-west-2 \
+  --attribute-names All \
+  --message-attribute-names All \
+  --max-number-of-messages 10 \
+  --visibility-timeout 0
+```
+
+Purge/clear the queue
+```bash
+awslocal sqs purge-queue \
+  --queue-url http://sqs.eu-west-2.localhost.localstack.cloud:4566/000000000000/calculated_balance_queue \
+  --region eu-west-2
+```
+
+Peek at the dead letter queue
+```bash
+awslocal sqs receive-message \
+  --queue-url http://sqs.eu-west-2.localhost.localstack.cloud:4566/000000000000/calculated_balance_queue-dlq \
+  --region eu-west-2 \
+  --attribute-names All \
+  --message-attribute-names All \
+  --max-number-of-messages 10 \
+  --visibility-timeout 0
+```
+
+Purge/clear the dead letter queue
+```bash
+awslocal sqs purge-queue \
+  --queue-url http://sqs.eu-west-2.localhost.localstack.cloud:4566/000000000000/calculated_balance_queue-dlq \
+  --region eu-west-2
+```

@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.helpers.
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.util.UUID
 
 @DataJpaTest
@@ -107,9 +108,9 @@ class PostingDataRepositoryTest @Autowired constructor(
       accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
       accountOneSubAccountTwo = repoTestHelpers.createSubAccount(ref = "SPENDS", account = accountOne)
 
-      val timeYesterdayAtOneAM = LocalDate.now().minusDays(1).atStartOfDay().plusHours(1).toInstant(java.time.ZoneOffset.UTC)
-      val timeTodayAtMidnight = LocalDate.now().atStartOfDay().toInstant(java.time.ZoneOffset.UTC)
-      val timeTodayAtOneAM = LocalDate.now().atStartOfDay().plusHours(1).toInstant(java.time.ZoneOffset.UTC)
+      val timeYesterdayAtOneAM = LocalDate.now().minusDays(1).atStartOfDay().plusHours(1).toInstant(ZoneOffset.UTC)
+      val timeTodayAtMidnight = LocalDate.now().atStartOfDay().toInstant(ZoneOffset.UTC)
+      val timeTodayAtOneAM = LocalDate.now().atStartOfDay().plusHours(1).toInstant(ZoneOffset.UTC)
 
       // TX from 1 day ago
       repoTestHelpers.createOneToOneTransaction(
@@ -153,9 +154,9 @@ class PostingDataRepositoryTest @Autowired constructor(
       accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
       accountOneSubAccountTwo = repoTestHelpers.createSubAccount(ref = "SPENDS", account = accountOne)
 
-      val timeYesterdayAtOneAM = LocalDate.now().minusDays(1).atStartOfDay().plusHours(1).toInstant(java.time.ZoneOffset.UTC)
-      val timeTodayAtMidnight = LocalDate.now().atStartOfDay().toInstant(java.time.ZoneOffset.UTC)
-      val timeTomorrowAtMidnight = LocalDate.now().atStartOfDay().plusDays(1).toInstant(java.time.ZoneOffset.UTC)
+      val timeYesterdayAtOneAM = LocalDate.now().minusDays(1).atStartOfDay().plusHours(1).toInstant(ZoneOffset.UTC)
+      val timeTodayAtMidnight = LocalDate.now().atStartOfDay().toInstant(ZoneOffset.UTC)
+      val timeTomorrowAtMidnight = LocalDate.now().atStartOfDay().plusDays(1).toInstant(ZoneOffset.UTC)
 
       // TX from 1 day ago
       val txFromYesterday = repoTestHelpers.createOneToOneTransaction(
@@ -199,11 +200,11 @@ class PostingDataRepositoryTest @Autowired constructor(
       accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
       accountOneSubAccountTwo = repoTestHelpers.createSubAccount(ref = "SPENDS", account = accountOne)
 
-      val timeYesterdayAtOneAM = LocalDate.now().minusDays(1).atStartOfDay().plusHours(1).toInstant(java.time.ZoneOffset.UTC)
-      val timeTodayAtMidnight = LocalDate.now().atStartOfDay().toInstant(java.time.ZoneOffset.UTC)
-      val timeTodayAtNoon = LocalDate.now().atStartOfDay().plusHours(12).toInstant(java.time.ZoneOffset.UTC)
-      val timeTomorrowAtMidnight = LocalDate.now().atStartOfDay().plusDays(1).toInstant(java.time.ZoneOffset.UTC)
-      val timeTomorrowAtOneAM = LocalDate.now().atStartOfDay().plusDays(1).plusHours(1).toInstant(java.time.ZoneOffset.UTC)
+      val timeYesterdayAtOneAM = LocalDate.now().minusDays(1).atStartOfDay().plusHours(1).toInstant(ZoneOffset.UTC)
+      val timeTodayAtMidnight = LocalDate.now().atStartOfDay().toInstant(ZoneOffset.UTC)
+      val timeTodayAtNoon = LocalDate.now().atStartOfDay().plusHours(12).toInstant(ZoneOffset.UTC)
+      val timeTomorrowAtMidnight = LocalDate.now().atStartOfDay().plusDays(1).toInstant(ZoneOffset.UTC)
+      val timeTomorrowAtOneAM = LocalDate.now().atStartOfDay().plusDays(1).plusHours(1).toInstant(ZoneOffset.UTC)
 
       // TX from 1 day ago
       repoTestHelpers.createOneToOneTransaction(
@@ -256,11 +257,11 @@ class PostingDataRepositoryTest @Autowired constructor(
       accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
       accountOneSubAccountTwo = repoTestHelpers.createSubAccount(ref = "SPENDS", account = accountOne)
 
-      val timeYesterdayAtOneAM = LocalDate.now().minusDays(1).atStartOfDay().plusHours(1).toInstant(java.time.ZoneOffset.UTC)
-      val timeTodayAtMidnight = LocalDate.now().atStartOfDay().toInstant(java.time.ZoneOffset.UTC)
-      val timeTodayAtNoon = LocalDate.now().atStartOfDay().plusHours(12).toInstant(java.time.ZoneOffset.UTC)
-      val timeTomorrowAtMidnight = LocalDate.now().atStartOfDay().plusDays(1).toInstant(java.time.ZoneOffset.UTC)
-      val timeTomorrowAtOneAM = LocalDate.now().atStartOfDay().plusDays(1).plusHours(1).toInstant(java.time.ZoneOffset.UTC)
+      val timeYesterdayAtOneAM = LocalDate.now().minusDays(1).atStartOfDay().plusHours(1).toInstant(ZoneOffset.UTC)
+      val timeTodayAtMidnight = LocalDate.now().atStartOfDay().toInstant(ZoneOffset.UTC)
+      val timeTodayAtNoon = LocalDate.now().atStartOfDay().plusHours(12).toInstant(ZoneOffset.UTC)
+      val timeTomorrowAtMidnight = LocalDate.now().atStartOfDay().plusDays(1).toInstant(ZoneOffset.UTC)
+      val timeTomorrowAtOneAM = LocalDate.now().atStartOfDay().plusDays(1).plusHours(1).toInstant(ZoneOffset.UTC)
 
       // TX from 1 day ago
       repoTestHelpers.createOneToOneTransaction(
@@ -312,32 +313,15 @@ class PostingDataRepositoryTest @Autowired constructor(
       val februaryTransactionsOne = listOf(
         repoTestHelpers.createOneToOneTransaction(
           transactionAmount = 1,
-          transactionTimeStamp = LocalDate.of(2026, 2, 23).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
-          postingCreatedAt = LocalDate.of(2026, 2, 23).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          transactionTimeStamp = LocalDate.of(2026, 2, 23).atStartOfDay().toInstant(ZoneOffset.UTC),
+          postingCreatedAt = LocalDate.of(2026, 2, 23).atStartOfDay().toInstant(ZoneOffset.UTC),
           debitSubAccount = accountOneSubAccountOne,
           creditSubAccount = accountOneSubAccountTwo,
         ),
         repoTestHelpers.createOneToOneTransaction(
           transactionAmount = 1,
-          transactionTimeStamp = LocalDate.of(2026, 2, 22).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
-          postingCreatedAt = LocalDate.of(2026, 2, 22).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
-          debitSubAccount = accountOneSubAccountOne,
-          creditSubAccount = accountOneSubAccountTwo,
-        ),
-      )
-
-      listOf(
-        repoTestHelpers.createOneToOneTransaction(
-          transactionAmount = 1,
-          transactionTimeStamp = LocalDate.of(2026, 3, 15).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
-          postingCreatedAt = LocalDate.of(2026, 3, 15).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
-          debitSubAccount = accountOneSubAccountOne,
-          creditSubAccount = accountOneSubAccountTwo,
-        ),
-        repoTestHelpers.createOneToOneTransaction(
-          transactionAmount = 1,
-          transactionTimeStamp = LocalDate.of(2026, 3, 16).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
-          postingCreatedAt = LocalDate.of(2026, 3, 16).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          transactionTimeStamp = LocalDate.of(2026, 2, 22).atStartOfDay().toInstant(ZoneOffset.UTC),
+          postingCreatedAt = LocalDate.of(2026, 2, 22).atStartOfDay().toInstant(ZoneOffset.UTC),
           debitSubAccount = accountOneSubAccountOne,
           creditSubAccount = accountOneSubAccountTwo,
         ),
@@ -346,15 +330,32 @@ class PostingDataRepositoryTest @Autowired constructor(
       listOf(
         repoTestHelpers.createOneToOneTransaction(
           transactionAmount = 1,
-          transactionTimeStamp = LocalDate.of(2026, 2, 11).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
-          postingCreatedAt = LocalDate.of(2026, 2, 11).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          transactionTimeStamp = LocalDate.of(2026, 3, 15).atStartOfDay().toInstant(ZoneOffset.UTC),
+          postingCreatedAt = LocalDate.of(2026, 3, 15).atStartOfDay().toInstant(ZoneOffset.UTC),
           debitSubAccount = accountOneSubAccountOne,
           creditSubAccount = accountOneSubAccountTwo,
         ),
         repoTestHelpers.createOneToOneTransaction(
           transactionAmount = 1,
-          transactionTimeStamp = LocalDate.of(2026, 2, 10).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
-          postingCreatedAt = LocalDate.of(2026, 2, 10).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          transactionTimeStamp = LocalDate.of(2026, 3, 16).atStartOfDay().toInstant(ZoneOffset.UTC),
+          postingCreatedAt = LocalDate.of(2026, 3, 16).atStartOfDay().toInstant(ZoneOffset.UTC),
+          debitSubAccount = accountOneSubAccountOne,
+          creditSubAccount = accountOneSubAccountTwo,
+        ),
+      )
+
+      listOf(
+        repoTestHelpers.createOneToOneTransaction(
+          transactionAmount = 1,
+          transactionTimeStamp = LocalDate.of(2026, 2, 11).atStartOfDay().toInstant(ZoneOffset.UTC),
+          postingCreatedAt = LocalDate.of(2026, 2, 11).atStartOfDay().toInstant(ZoneOffset.UTC),
+          debitSubAccount = accountOneSubAccountOne,
+          creditSubAccount = accountOneSubAccountTwo,
+        ),
+        repoTestHelpers.createOneToOneTransaction(
+          transactionAmount = 1,
+          transactionTimeStamp = LocalDate.of(2026, 2, 10).atStartOfDay().toInstant(ZoneOffset.UTC),
+          postingCreatedAt = LocalDate.of(2026, 2, 10).atStartOfDay().toInstant(ZoneOffset.UTC),
           debitSubAccount = accountOneSubAccountOne,
           creditSubAccount = accountOneSubAccountTwo,
         ),
@@ -385,8 +386,8 @@ class PostingDataRepositoryTest @Autowired constructor(
         transactions.add(
           repoTestHelpers.createOneToOneTransaction(
             transactionAmount = 1,
-            transactionTimeStamp = LocalDate.of(2026, 2, 1 + index).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
-            postingCreatedAt = LocalDate.of(2026, 2, 1 + index).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+            transactionTimeStamp = LocalDate.of(2026, 2, 1 + index).atStartOfDay().toInstant(ZoneOffset.UTC),
+            postingCreatedAt = LocalDate.of(2026, 2, 1 + index).atStartOfDay().toInstant(ZoneOffset.UTC),
             debitSubAccount = subAccountOne,
             creditSubAccount = subAccountTwo,
           ),
@@ -421,8 +422,8 @@ class PostingDataRepositoryTest @Autowired constructor(
       repeat(25) { index ->
         repoTestHelpers.createOneToOneTransaction(
           transactionAmount = 1,
-          transactionTimeStamp = LocalDate.of(2026, 2, 1 + index).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
-          postingCreatedAt = LocalDate.of(2026, 2, 1 + index).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          transactionTimeStamp = LocalDate.of(2026, 2, 1 + index).atStartOfDay().toInstant(ZoneOffset.UTC),
+          postingCreatedAt = LocalDate.of(2026, 2, 1 + index).atStartOfDay().toInstant(ZoneOffset.UTC),
           debitSubAccount = subAccountOne,
           creditSubAccount = subAccountTwo,
         )
@@ -430,8 +431,8 @@ class PostingDataRepositoryTest @Autowired constructor(
       repeat(25) { index ->
         repoTestHelpers.createOneToOneTransaction(
           transactionAmount = 1,
-          transactionTimeStamp = LocalDate.of(2026, 3, 1 + index).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
-          postingCreatedAt = LocalDate.of(2026, 3, 1 + index).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          transactionTimeStamp = LocalDate.of(2026, 3, 1 + index).atStartOfDay().toInstant(ZoneOffset.UTC),
+          postingCreatedAt = LocalDate.of(2026, 3, 1 + index).atStartOfDay().toInstant(ZoneOffset.UTC),
           debitSubAccount = subAccountOne,
           creditSubAccount = subAccountTwo,
         )
@@ -439,12 +440,12 @@ class PostingDataRepositoryTest @Autowired constructor(
 
       val pageZero = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, pageReq)
       assertThat(pageZero.size).isEqualTo(25)
-      val feb28 = LocalDate.of(2026, 2, 28).atStartOfDay().toInstant(java.time.ZoneOffset.UTC)
+      val feb28 = LocalDate.of(2026, 2, 28).atStartOfDay().toInstant(ZoneOffset.UTC)
       assertThat(pageZero.content.all { it.transactionEntity.timestamp.isAfter(feb28) }).isTrue
 
       val pageOne = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, PageRequest.of(1, 25, Sort.Direction.DESC, "transactionEntity.timestamp"))
       assertThat(pageOne.size).isEqualTo(25)
-      val march1 = LocalDate.of(2026, 3, 1).atStartOfDay().toInstant(java.time.ZoneOffset.UTC)
+      val march1 = LocalDate.of(2026, 3, 1).atStartOfDay().toInstant(ZoneOffset.UTC)
       assertThat(pageOne.content.all { it.transactionEntity.timestamp.isBefore(march1) }).isTrue
     }
 
@@ -458,8 +459,8 @@ class PostingDataRepositoryTest @Autowired constructor(
       repeat(25) { index ->
         repoTestHelpers.createOneToOneTransaction(
           transactionAmount = 1,
-          transactionTimeStamp = LocalDate.of(2026, 2, 1 + index).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
-          postingCreatedAt = LocalDate.of(2026, 2, 1 + index).atStartOfDay().toInstant(java.time.ZoneOffset.UTC),
+          transactionTimeStamp = LocalDate.of(2026, 2, 1 + index).atStartOfDay().toInstant(ZoneOffset.UTC),
+          postingCreatedAt = LocalDate.of(2026, 2, 1 + index).atStartOfDay().toInstant(ZoneOffset.UTC),
           debitSubAccount = subAccountOne,
           creditSubAccount = subAccountTwo,
         )
@@ -781,10 +782,10 @@ class PostingDataRepositoryTest @Autowired constructor(
       assertThat(zeroBalance).isEqualTo(0)
 
       // txToIgnoreFromTwoDaysAgo
-      val twoDaysAgo = LocalDateTime.now().minusDays(2).toInstant(java.time.ZoneOffset.UTC)
+      val twoDaysAgo = LocalDateTime.now().minusDays(2).toInstant(ZoneOffset.UTC)
       repoTestHelpers.createOneToOneTransaction(transactionAmount = 100, postingCreatedAt = twoDaysAgo, debitSubAccount = accountOneSubAccountOne, creditSubAccount = accountWithNoMoney, transactionTimeStamp = twoDaysAgo)
 
-      val statementBalanceFromYesterday = StatementBalanceEntity(amount = 0, subAccountEntity = accountOneSubAccountOne, balanceDateTime = LocalDateTime.now().minusDays(1).toInstant(java.time.ZoneOffset.UTC))
+      val statementBalanceFromYesterday = StatementBalanceEntity(amount = 0, subAccountEntity = accountOneSubAccountOne, balanceDateTime = LocalDateTime.now().minusDays(1).toInstant(ZoneOffset.UTC))
 
       // txFromTodayToInclude
       repoTestHelpers.createOneToOneTransaction(50, Instant.now(), accountOneSubAccountOne, accountWithNoMoney, transactionTimeStamp = Instant.now())
@@ -917,6 +918,328 @@ class PostingDataRepositoryTest @Autowired constructor(
       )
       val balance = postingsDataRepository.calculateBalanceFromPostings(postings)
       assertThat(balance).isEqualTo(2)
+    }
+  }
+
+  @Nested
+  inner class GetTheNextSubAccountPostingOrNull {
+    @Test
+    fun `Should default to null when there is not a next posting`() {
+      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
+      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
+
+      accountTwo = repoTestHelpers.createAccount(ref = "LEI")
+      accountTwoSubAccountOne = repoTestHelpers.createSubAccount(ref = "1001:CANT", account = accountTwo)
+
+      val transaction = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        postingCreatedAt = Instant.now().minusSeconds(60),
+        transactionTimeStamp = Instant.now().minusSeconds(60),
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountTwoSubAccountOne,
+      )
+
+      val posting = transaction.postings.first()
+      val nextPosting = postingsDataRepository.getTheNextSubAccountPostingOrNull(
+        postingId = posting.id,
+        subAccountId = posting.subAccountEntity.id,
+        transactionTimestamp = posting.transactionEntity.timestamp,
+        transactionEntrySequence = posting.transactionEntity.entrySequence,
+        postingEntrySequence = posting.entrySequence,
+      )
+
+      assertThat(nextPosting).isNull()
+    }
+
+    @Test
+    fun `Should return the next subAccount Posting from the next transaction when the initial transaction contains no more postings for that sub account`() {
+      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
+      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
+
+      accountTwo = repoTestHelpers.createAccount(ref = "LEI")
+      accountTwoSubAccountOne = repoTestHelpers.createSubAccount(ref = "1001:CANT", account = accountTwo)
+
+      val transactionOne = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        postingCreatedAt = Instant.now().minusSeconds(60),
+        transactionTimeStamp = Instant.now().minusSeconds(60),
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountTwoSubAccountOne,
+      )
+
+      val transactionTwo = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        postingCreatedAt = Instant.now(),
+        transactionTimeStamp = Instant.now(),
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountTwoSubAccountOne,
+      )
+
+      val posting = transactionOne.postings.first()
+      val nextPosting = postingsDataRepository.getTheNextSubAccountPostingOrNull(
+        postingId = posting.id,
+        subAccountId = posting.subAccountEntity.id,
+        transactionTimestamp = posting.transactionEntity.timestamp,
+        transactionEntrySequence = posting.transactionEntity.entrySequence,
+        postingEntrySequence = posting.entrySequence,
+      )
+
+      assertThat(nextPosting).isEqualTo(transactionTwo.postings.first())
+    }
+
+    @Test
+    fun `Should return the next posting from another transaction when the next posting has a lower entry sequence than the initial posting`() {
+      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
+      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
+
+      accountTwo = repoTestHelpers.createAccount(ref = "LEI")
+      accountTwoSubAccountOne = repoTestHelpers.createSubAccount(ref = "1001:CANT", account = accountTwo)
+      val transactionTimestamp = Instant.now()
+
+      val initialTransaction = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        postingCreatedAt = transactionTimestamp,
+        transactionTimeStamp = transactionTimestamp,
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountTwoSubAccountOne,
+        debitEntrySequence = 2,
+        creditEntrySequence = 1,
+        transactionEntrySequence = 1,
+      )
+
+      val nextTransaction = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        postingCreatedAt = transactionTimestamp.plusSeconds(60),
+        transactionTimeStamp = transactionTimestamp.plusSeconds(60),
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountTwoSubAccountOne,
+        debitEntrySequence = 1,
+        creditEntrySequence = 2,
+        transactionEntrySequence = 1,
+      )
+
+      val initialPosting = initialTransaction.postings.first()
+
+      assertThat(initialPosting.entrySequence).isEqualTo(2)
+      assertThat(initialPosting.subAccountEntity.id).isEqualTo(accountOneSubAccountOne.id)
+
+      val nextPosting = postingsDataRepository.getTheNextSubAccountPostingOrNull(
+        postingId = initialPosting.id,
+        subAccountId = initialPosting.subAccountEntity.id,
+        transactionTimestamp = initialPosting.transactionEntity.timestamp,
+        transactionEntrySequence = initialPosting.transactionEntity.entrySequence,
+        postingEntrySequence = initialPosting.entrySequence,
+      )
+
+      assertThat(nextPosting?.entrySequence).isEqualTo(1)
+      assertThat(nextPosting?.subAccountEntity?.id).isEqualTo(accountOneSubAccountOne.id)
+      assertThat(nextPosting?.transactionEntity?.id).isEqualTo(nextTransaction.id)
+    }
+
+    @Test
+    fun `Should return the next posting from the a one to many transaction when the transaction contains multiple postings for the same sub account`() {
+      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
+      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
+
+      accountTwo = repoTestHelpers.createAccount(ref = "DEF456YY")
+      accountTwoSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountTwo)
+
+      accountThree = repoTestHelpers.createAccount(ref = "LEI")
+      accountThreeSubAccountOne = repoTestHelpers.createSubAccount(ref = "1001:CANT", account = accountThree)
+
+      val transaction = repoTestHelpers.createOneToManyTransaction(
+        ref = "PAYROLL",
+        oneToManySubAccount = accountThreeSubAccountOne,
+        manyToOneSubAccounts = listOf(
+//          we need postings before and after the posting we want to find the next posting to prove posting entry sequence
+          accountOneSubAccountOne, // This should be ignored
+          accountTwoSubAccountOne,
+          accountOneSubAccountOne, // This is the initial posting
+          accountTwoSubAccountOne,
+          accountOneSubAccountOne, // This is the next posting
+          accountTwoSubAccountOne,
+        ),
+        amountPerSubAccount = 1,
+        oneToManyPostingType = PostingType.CR,
+      )
+
+      val initialPosting = transaction.postings[3]
+      assertThat(initialPosting.entrySequence).isEqualTo(4)
+      assertThat(initialPosting.subAccountEntity.id).isEqualTo(accountOneSubAccountOne.id)
+
+      val nextPosting = postingsDataRepository.getTheNextSubAccountPostingOrNull(
+        postingId = initialPosting.id,
+        subAccountId = initialPosting.subAccountEntity.id,
+        transactionTimestamp = initialPosting.transactionEntity.timestamp,
+        transactionEntrySequence = initialPosting.transactionEntity.entrySequence,
+        postingEntrySequence = initialPosting.entrySequence,
+      )
+
+      assertThat(nextPosting?.entrySequence).isEqualTo(6)
+      assertThat(nextPosting?.subAccountEntity?.id).isEqualTo(accountOneSubAccountOne.id)
+      assertThat(nextPosting?.transactionEntity?.id).isEqualTo(transaction.id)
+    }
+
+    @Test
+    fun `Should return the next posting from a batch transaction split across 2 transactions`() {
+      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
+      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
+
+      accountTwo = repoTestHelpers.createAccount(ref = "LEI")
+      accountTwoSubAccountOne = repoTestHelpers.createSubAccount(ref = "1001:CANT", account = accountTwo)
+      val transactionTimestamp = Instant.now()
+
+//      2 part transaction with the same timestamp as
+//      Batch transactions will be ordered by transactionEntrySequence
+      val batchTransactionPart1 = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        postingCreatedAt = transactionTimestamp,
+        transactionTimeStamp = transactionTimestamp,
+        debitSubAccount = accountOneSubAccountOne,
+        debitEntrySequence = 1,
+        creditSubAccount = accountTwoSubAccountOne,
+        creditEntrySequence = 2,
+        transactionEntrySequence = 1,
+      )
+
+      val batchTransactionPart2 = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        postingCreatedAt = transactionTimestamp,
+        transactionTimeStamp = transactionTimestamp,
+        debitSubAccount = accountOneSubAccountOne,
+        debitEntrySequence = 3,
+        creditSubAccount = accountTwoSubAccountOne,
+        creditEntrySequence = 4,
+        transactionEntrySequence = 2,
+      )
+
+      val initialPosting = batchTransactionPart1.postings.first()
+      assertThat(initialPosting.transactionEntity.entrySequence).isEqualTo(1)
+      assertThat(initialPosting.entrySequence).isEqualTo(1)
+
+      val nextPosting = postingsDataRepository.getTheNextSubAccountPostingOrNull(
+        postingId = initialPosting.id,
+        subAccountId = initialPosting.subAccountEntity.id,
+        transactionTimestamp = initialPosting.transactionEntity.timestamp,
+        transactionEntrySequence = initialPosting.transactionEntity.entrySequence,
+        postingEntrySequence = initialPosting.entrySequence,
+      )
+
+      assertThat(nextPosting?.transactionEntity?.id).isEqualTo(batchTransactionPart2.id)
+      assertThat(nextPosting?.entrySequence).isEqualTo(3)
+      assertThat(nextPosting?.transactionEntity?.entrySequence).isEqualTo(2)
+    }
+  }
+
+  @Nested
+  inner class GetFirstPostingForSubAccountIdAfterDateTime {
+
+    @Test
+    fun `Should return the next subAccount Posting when there is one`() {
+      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
+      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
+
+      accountTwo = repoTestHelpers.createAccount(ref = "LEI")
+      accountTwoSubAccountOne = repoTestHelpers.createSubAccount(ref = "1001:CANT", account = accountTwo)
+
+      val transactionOne = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        postingCreatedAt = Instant.now().minusSeconds(60),
+        transactionTimeStamp = Instant.now().minusSeconds(60),
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountTwoSubAccountOne,
+      )
+
+      val posting = transactionOne.postings.first()
+      val nextPosting = postingsDataRepository.getFirstPostingForSubAccountIdAfterDateTime(
+        dateTime = transactionOne.timestamp.minusSeconds(60),
+        subAccountId = posting.subAccountEntity.id,
+      )
+
+      assertThat(nextPosting).isEqualTo(transactionOne.postings.first())
+    }
+
+    @Test
+    fun `Should return the next posting and order by timestamp, transaction entrySequence,  posting EntrySequence`() {
+      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
+      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
+
+      accountTwo = repoTestHelpers.createAccount(ref = "LEI")
+      accountTwoSubAccountOne = repoTestHelpers.createSubAccount(ref = "1001:CANT", account = accountTwo)
+
+      val transactionOne = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        postingCreatedAt = Instant.now().minusSeconds(180),
+        transactionTimeStamp = Instant.now().minusSeconds(180),
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountTwoSubAccountOne,
+      )
+
+      val transactionTimestamp = Instant.now()
+
+      val transactionInTheFuture = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        postingCreatedAt = transactionTimestamp.plusSeconds(60),
+        transactionTimeStamp = transactionTimestamp.plusSeconds(60),
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountTwoSubAccountOne,
+      )
+
+      val transactionEntryTwo = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        postingCreatedAt = transactionTimestamp,
+        transactionTimeStamp = transactionTimestamp,
+        debitSubAccount = accountOneSubAccountOne,
+        debitEntrySequence = 3,
+        creditSubAccount = accountTwoSubAccountOne,
+        creditEntrySequence = 4,
+        transactionEntrySequence = 2,
+      )
+
+      val transactionEntryOne = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        postingCreatedAt = transactionTimestamp,
+        transactionTimeStamp = transactionTimestamp,
+        debitSubAccount = accountOneSubAccountOne,
+        debitEntrySequence = 1,
+        creditSubAccount = accountTwoSubAccountOne,
+        creditEntrySequence = 2,
+        transactionEntrySequence = 1,
+      )
+
+      val posting = transactionEntryOne.postings.first()
+      val nextPosting = postingsDataRepository.getFirstPostingForSubAccountIdAfterDateTime(
+        dateTime = transactionEntryOne.timestamp.minusSeconds(60),
+        subAccountId = posting.subAccountEntity.id,
+      )
+
+      assertThat(nextPosting).isEqualTo(transactionEntryOne.postings.first())
+      assertThat(nextPosting?.entrySequence).isEqualTo(1)
+      assertThat(nextPosting?.transactionEntity?.entrySequence).isEqualTo(1)
+    }
+
+    @Test
+    fun `Should default to null when there is not a next posting`() {
+      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
+      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
+
+      accountTwo = repoTestHelpers.createAccount(ref = "LEI")
+      accountTwoSubAccountOne = repoTestHelpers.createSubAccount(ref = "1001:CANT", account = accountTwo)
+
+      val transactionOne = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        postingCreatedAt = Instant.now().minusSeconds(60),
+        transactionTimeStamp = Instant.now().minusSeconds(60),
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountTwoSubAccountOne,
+      )
+
+      val nextPosting = postingsDataRepository.getFirstPostingForSubAccountIdAfterDateTime(
+        dateTime = transactionOne.timestamp.plusSeconds(10),
+        subAccountId = transactionOne.postings.first().subAccountEntity.id,
+      )
+
+      assertThat(nextPosting).isNull()
     }
   }
 }

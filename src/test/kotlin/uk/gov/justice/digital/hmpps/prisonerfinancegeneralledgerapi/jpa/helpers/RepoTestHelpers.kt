@@ -5,6 +5,7 @@ import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Import
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.ContainersConfig
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingBalanceEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.StatementBalanceEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
@@ -112,7 +113,7 @@ class RepoTestHelpers(
         transactionEntity = transaction,
         type = oneToManyPostingType.oppositePostingType(),
         amount = amountPerSubAccount,
-        entrySequence = i + 2L,
+        entrySequence = i + 2L, // 1 is the one to one posting, so the next posting sequence is 2
       )
       postings.add(posting)
     }
@@ -130,6 +131,69 @@ class RepoTestHelpers(
     val statementBalance = StatementBalanceEntity(amount = amount, balanceDateTime = balanceDateTime, subAccountEntity = subAccount)
     entityManager.persist(statementBalance)
     return statementBalance
+  }
+
+  fun createPostingBalancePrisoner(
+    subAccount1: SubAccountEntity,
+    subAccount2: SubAccountEntity,
+    transactionTimeStamp: Instant,
+    transactionAmount: Long,
+    subAccountBalance1: Long,
+    subAccountBalance2: Long,
+    transactionEntrySequence: Long = 1,
+    postingsEntrySequences: Pair<Long, Long> = Pair(1, 2),
+  ): Pair<PostingBalanceEntity, PostingBalanceEntity> {
+    val transactionEntity = TransactionEntity(
+      id = UUID.randomUUID(),
+      reference = "TEST_REF",
+      amount = transactionAmount,
+      timestamp = transactionTimeStamp,
+      postings = mutableListOf(),
+      entrySequence = transactionEntrySequence,
+    )
+
+    val postingEntity1 = PostingEntity(
+      id = UUID.randomUUID(),
+      createdAt = Instant.now(),
+      type = PostingType.DR,
+      amount = subAccountBalance1,
+      subAccountEntity = subAccount1,
+      transactionEntity = transactionEntity,
+      entrySequence = postingsEntrySequences.first,
+    )
+
+    val postingEntity2 = PostingEntity(
+      id = UUID.randomUUID(),
+      createdAt = Instant.now(),
+      type = PostingType.DR,
+      amount = subAccountBalance2,
+      subAccountEntity = subAccount2,
+      transactionEntity = transactionEntity,
+      entrySequence = postingsEntrySequences.second,
+    )
+
+    transactionEntity.postings.add(postingEntity1)
+    transactionEntity.postings.add(postingEntity2)
+
+    val postingBalance1 = PostingBalanceEntity(
+      id = UUID.randomUUID(),
+      postingEntity = postingEntity1,
+      totalSubAccountBalance = subAccountBalance1,
+    )
+
+    val postingBalance2 = PostingBalanceEntity(
+      id = UUID.randomUUID(),
+      postingEntity = postingEntity2,
+      totalSubAccountBalance = subAccountBalance2,
+    )
+
+    entityManager.persist(transactionEntity)
+    entityManager.persist(postingEntity1)
+    entityManager.persist(postingEntity2)
+    entityManager.persist(postingBalance1)
+    entityManager.persist(postingBalance2)
+
+    return Pair(postingBalance1, postingBalance2)
   }
 
   fun clearDb() {

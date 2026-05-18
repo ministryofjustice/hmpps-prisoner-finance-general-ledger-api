@@ -74,7 +74,7 @@ class OpenApiDocsTest : IntegrationTestBase() {
     // We therefore need to grab all the valid security requirements and check that each path only contains those items
     val securityRequirements = result.openAPI.security.flatMap { it.keys }
     result.openAPI.paths.forEach { pathItem ->
-
+      if (pathItem.key.startsWith("/queue-admin")) return@forEach
       val operations: List<Operation> = listOfNotNull(
         pathItem.value.get,
         pathItem.value.put,
@@ -123,6 +123,6 @@ class OpenApiDocsTest : IntegrationTestBase() {
       .exchange()
       .expectStatus().isOk
       .expectBody()
-      .jsonPath("$.paths[*][*][?(!@.security)]").doesNotExist()
+      .jsonPath("$.paths[*][*][?(!@.security && 'hmpps-queue-resource' nin @.tags)]").doesNotExist()
   }
 }

@@ -37,11 +37,41 @@ interface PostingsDataRepository :
     return this.findAll(spec, page)
   }
 
+  @Query(
+    """
+      SELECT p.id 
+      FROM PostingEntity p 
+      WHERE NOT EXISTS (
+          SELECT 1 
+          FROM PostingEntity p2 
+          WHERE p2.subAccountEntity.id = p.subAccountEntity.id
+            AND (
+                p2.transactionEntity.timestamp < p.transactionEntity.timestamp 
+                OR (p2.transactionEntity.timestamp = p.transactionEntity.timestamp AND p2.transactionEntity.entrySequence < p.transactionEntity.entrySequence)
+                OR (p2.transactionEntity.timestamp = p.transactionEntity.timestamp AND p2.transactionEntity.entrySequence = p.transactionEntity.entrySequence AND p2.entrySequence < p.entrySequence)
+            )
+      )
+  """,
+  )
+  fun getFirstPostingsForAllSubAccounts(): List<UUID>
+
   @Query("SELECT p FROM PostingEntity p WHERE p.subAccountEntity.id = :subAccountId")
   fun getPostingsForSubAccountId(@Param("subAccountId") subAccountId: UUID): List<PostingEntity>
 
   @Query("SELECT p FROM PostingEntity p WHERE p.subAccountEntity.id = :subAccountId AND p.transactionEntity.timestamp > :dateTime")
   fun getPostingsForSubAccountIdAfterDateTime(@Param("subAccountId") subAccountId: UUID, @Param("dateTime") dateTime: Instant): List<PostingEntity>
+
+  @Query(
+    """
+    SELECT p FROM PostingEntity p 
+    WHERE 
+        p.subAccountEntity.id = :subAccountId AND 
+        p.transactionEntity.timestamp > :dateTime
+    order by p.transactionEntity.timestamp, p.transactionEntity.entrySequence, p.entrySequence
+    limit 1
+    """,
+  )
+  fun getFirstPostingForSubAccountIdAfterDateTime(subAccountId: UUID, dateTime: Instant): PostingEntity?
 
   fun getBalanceForSubAccount(subAccountId: UUID, latestStatementBalanceDateTime: Instant? = null): Long {
     lateinit var postingsForSubAccount: List<PostingEntity>
@@ -86,4 +116,33 @@ WHERE sa.account_id = :prisonerId
     nativeQuery = true,
   )
   fun getBalanceForAPrisonerAtAPrison(@Param("prisonId") prisonId: UUID, @Param("prisonerId") prisonerId: UUID): Long
+
+  @Query(
+    """
+    SELECT p 
+    FROM PostingEntity p
+    WHERE p.subAccountEntity.id = :subAccountId
+      AND (
+          p.transactionEntity.timestamp > :transactionTimestamp
+          OR (
+              p.transactionEntity.timestamp = :transactionTimestamp 
+              AND p.transactionEntity.entrySequence > :transactionEntrySequence
+          )
+          OR (
+              p.transactionEntity.timestamp = :transactionTimestamp 
+              AND p.transactionEntity.entrySequence = :transactionEntrySequence 
+              AND p.entrySequence > :postingEntrySequence
+          )
+      )
+    ORDER BY p.transactionEntity.timestamp ASC, p.transactionEntity.entrySequence ASC, p.entrySequence ASC
+    LIMIT 1
+  """,
+  )
+  fun getTheNextSubAccountPostingOrNull(
+    postingId: UUID,
+    subAccountId: UUID,
+    transactionTimestamp: Instant,
+    transactionEntrySequence: Long,
+    postingEntrySequence: Long,
+  ): PostingEntity?
 }
