@@ -16,13 +16,16 @@ class MigrateService(
   fun migrateAllPostingBalances() {
     postingsDataRepository.getFirstPostingsForAllSubAccounts().forEach { postingId ->
       try {
+        log.debug("getting next posting from $postingId")
         val nextPosting = postingBalanceService.processBalance(postingId)
+        log.debug("next posting is $nextPosting")
 
         if (nextPosting != null) {
           messagePublisher.sendMessage(
             payloadDataClass = nextPosting,
             queueId = SqsQueues.CALCULATED_BALANCE_QUEUE_ID,
           )
+          log.debug("message sent to queue for posting: $nextPosting")
         }
       } catch (e: Exception) {
         log.error("Failed send posting: ${postingId}\n${e.message}\n${e.stackTrace} ", e)
