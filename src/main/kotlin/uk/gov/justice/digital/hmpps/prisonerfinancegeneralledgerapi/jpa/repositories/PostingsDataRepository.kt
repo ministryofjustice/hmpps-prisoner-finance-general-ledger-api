@@ -117,6 +117,7 @@ WHERE sa.account_id = :prisonerId
   )
   fun getBalanceForAPrisonerAtAPrison(@Param("prisonId") prisonId: UUID, @Param("prisonerId") prisonerId: UUID): Long
 
+  // the last OR is a workaround entrySequences that zero due to old data in dev
   @Query(
     """
     SELECT p 
@@ -133,8 +134,18 @@ WHERE sa.account_id = :prisonerId
               AND p.transactionEntity.entrySequence = :transactionEntrySequence 
               AND p.entrySequence > :postingEntrySequence
           )
+          OR (
+            p.transactionEntity.timestamp = :transactionTimestamp 
+            AND p.transactionEntity.entrySequence = :transactionEntrySequence 
+            AND p.entrySequence = :postingEntrySequence
+            AND p.id > :postingId
+        )
       )
-    ORDER BY p.transactionEntity.timestamp ASC, p.transactionEntity.entrySequence ASC, p.entrySequence ASC
+    ORDER BY 
+        p.transactionEntity.timestamp ASC, 
+        p.transactionEntity.entrySequence ASC, 
+        p.entrySequence ASC,
+        p.id ASC
     LIMIT 1
   """,
   )
