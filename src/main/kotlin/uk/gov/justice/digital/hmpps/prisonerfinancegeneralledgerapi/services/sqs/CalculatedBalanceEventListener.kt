@@ -25,6 +25,7 @@ class CalculatedBalanceEventListener(
         messagePublisher.sendMessage(
           payloadDataClass = nextPosting,
           queueId = SqsQueues.CALCULATED_BALANCE_QUEUE_ID,
+          messageGroupId = nextPosting.subAccountId.toString(),
         )
       }
     } catch (e: Exception) {

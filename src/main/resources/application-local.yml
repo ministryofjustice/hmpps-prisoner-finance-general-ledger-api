@@ -17,8 +17,8 @@ hmpps.sqs:
   provider: localstack
   queues:
     calculated_balance:
-      queueName: calculated_balance_queue
-      dlqName: calculated_balance_queue-dlq
+      queueName: calculated_balance_queue.fifo
+      dlqName: calculated_balance_queue-dlq.fifo
 
 hmpps-auth:
   url: "http://localhost:8090/auth"

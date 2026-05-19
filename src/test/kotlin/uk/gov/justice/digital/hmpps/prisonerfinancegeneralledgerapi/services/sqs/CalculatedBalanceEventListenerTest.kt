@@ -65,42 +65,59 @@ class CalculatedBalanceEventListenerTest {
   @Test
   fun `should process balance when a valid message is received`() {
     val postingId = UUID.randomUUID()
+    val subAccountId = UUID.randomUUID()
     val message = """
       {
-        "postingId" : "$postingId"
+        "postingId" : "$postingId",
+        "subAccountId" : "$subAccountId"
       }
     """.trimIndent()
 
     calculatedBalanceEventListener.handleEvents(message)
 
     verify(postingBalanceService).processBalance(postingId)
-    verify(messagePublisher, never()).sendMessage(any<PayloadDataClass>(), any())
+    verify(messagePublisher, never())
+      .sendMessage(
+        payloadDataClass = any<PayloadDataClass>(),
+        queueId = any(),
+        messageGroupId = any(),
+      )
   }
 
   @Test
   fun `should request a new balance calculation nextPosting is returned`() {
     val postingId = UUID.randomUUID()
+    val subAccountId = UUID.randomUUID()
     val message = """
       {
-        "postingId" : "$postingId"
+        "postingId" : "$postingId",
+        "subAccountId" : "$subAccountId"
       }
     """.trimIndent()
 
     val nextPosting = mock<ProcessBalanceRequest>()
+    whenever(nextPosting.subAccountId).thenReturn(subAccountId)
+
     whenever { postingBalanceService.processBalance(postingId) }.thenReturn(nextPosting)
 
     calculatedBalanceEventListener.handleEvents(message)
 
     verify(postingBalanceService).processBalance(postingId)
-    verify(messagePublisher).sendMessage(nextPosting, SqsQueues.CALCULATED_BALANCE_QUEUE_ID)
+    verify(messagePublisher).sendMessage(
+      payloadDataClass = nextPosting,
+      queueId = SqsQueues.CALCULATED_BALANCE_QUEUE_ID,
+      messageGroupId = subAccountId.toString(),
+    )
   }
 
   @Test
   fun `should log error when balance calculation fails`() {
     val postingId = UUID.randomUUID()
+    val subAccountId = UUID.randomUUID()
     val message = """
       {
-        "postingId" : "$postingId"
+        "postingId" : "$postingId",
+        "subAccountId" : "$subAccountId"
       }
     """.trimIndent()
 

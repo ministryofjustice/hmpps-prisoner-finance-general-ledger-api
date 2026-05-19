@@ -67,6 +67,12 @@ class CalculatedBalanceEventPublisherTest {
     description = "Test Transaction",
   )
 
+  val statementEntity = serviceTestHelpers.createStatementBalance(
+    subAccount = prisonerCashAccount,
+    amount = 1000,
+    balanceDateTime = Instant.now(),
+  )
+
   @Nested
   inner class RequestCalculatedBalanceForTransaction {
     @Test
@@ -74,16 +80,25 @@ class CalculatedBalanceEventPublisherTest {
       calculatedBalanceEventPublisher.requestCalculatedBalanceForTransaction(transaction)
 
       val messageRequestCaptor = argumentCaptor<ProcessBalanceRequest>()
+      val messageGroupIdCaptor = argumentCaptor<String>()
 
       verify(messagePublisher, times(transaction.postings.size))
-        .sendMessage(messageRequestCaptor.capture(), eq(SqsQueues.CALCULATED_BALANCE_QUEUE_ID))
+        .sendMessage(
+          payloadDataClass = messageRequestCaptor.capture(),
+          queueId = eq(SqsQueues.CALCULATED_BALANCE_QUEUE_ID),
+          messageGroupId = messageGroupIdCaptor.capture(),
+        )
 
+      val capturedGroupIds = messageGroupIdCaptor.allValues
       val capturedRequests = messageRequestCaptor.allValues
 
       val expectedPostingIds = transaction.postings.map { it.id }
       val actualPostingIds = capturedRequests.map { it.postingId }
-
       assertEquals(expectedPostingIds, actualPostingIds)
+
+      val expectedMessageGroupId = transaction.postings.map { it.subAccountEntity.id.toString() }
+      val actualMessageGroupId = capturedGroupIds.map { it }
+      assertEquals(expectedMessageGroupId, actualMessageGroupId)
     }
 
     @Test
@@ -93,6 +108,7 @@ class CalculatedBalanceEventPublisherTest {
         messagePublisher.sendMessage(
           payloadDataClass = any<ProcessBalanceRequest>(),
           queueId = eq(SqsQueues.CALCULATED_BALANCE_QUEUE_ID),
+          messageGroupId = any<String>(),
         ),
       )
         .thenThrow(expectedException)
@@ -116,15 +132,6 @@ class CalculatedBalanceEventPublisherTest {
 
   @Nested
   inner class RequestCalculatedBalanceForStatementBalance {
-
-    val prisonerAccount = serviceTestHelpers.createAccount("ABC123XZ", AccountType.PRISONER)
-    val prisonerCashAccount = serviceTestHelpers.createSubAccount("CASH", prisonerAccount)
-    val statementEntity = serviceTestHelpers.createStatementBalance(
-      subAccount = prisonerCashAccount,
-      amount = 1000,
-      balanceDateTime = Instant.now(),
-    )
-
     @Test
     fun `Should get the next posting if there is one and send a balance calculation request`() {
       whenever {
@@ -140,6 +147,7 @@ class CalculatedBalanceEventPublisherTest {
       verify(messagePublisher).sendMessage(
         payloadDataClass = messageRequestCaptor.capture(),
         queueId = eq(SqsQueues.CALCULATED_BALANCE_QUEUE_ID),
+        messageGroupId = eq(prisonerCashAccount.id.toString()),
       )
       assertThat(messageRequestCaptor.firstValue.postingId).isEqualTo(transaction.postings.first().id)
     }
@@ -157,7 +165,8 @@ class CalculatedBalanceEventPublisherTest {
 
       verify(messagePublisher, never()).sendMessage(
         payloadDataClass = any<ProcessBalanceRequest>(),
-        queueId = eq(SqsQueues.CALCULATED_BALANCE_QUEUE_ID),
+        queueId = any(),
+        messageGroupId = any(),
       )
     }
 
@@ -174,6 +183,7 @@ class CalculatedBalanceEventPublisherTest {
         messagePublisher.sendMessage(
           payloadDataClass = any<ProcessBalanceRequest>(),
           queueId = eq(SqsQueues.CALCULATED_BALANCE_QUEUE_ID),
+          messageGroupId = any<String>(),
         )
       }.thenThrow(expectedException)
 
