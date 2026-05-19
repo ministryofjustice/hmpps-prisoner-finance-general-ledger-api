@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import software.amazon.awssdk.services.sqs.model.SqsException
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
+import java.util.UUID
 
 // Add this interface to dataclasses that need to be published to SQS
 interface PayloadDataClass
@@ -16,7 +17,7 @@ class MessagePublisher(
   private val hmppsQueueService: HmppsQueueService,
   private val objectMapper: ObjectMapper,
 ) {
-  fun <PayloadDataClass> sendMessage(payloadDataClass: PayloadDataClass, queueId: String) {
+  fun <PayloadDataClass> sendMessage(payloadDataClass: PayloadDataClass, queueId: String, messageGroupId: String) {
     val queue = hmppsQueueService.findByQueueId(queueId)
       ?: throw NoSuchElementException("Queue with id $queueId not found")
 
@@ -26,6 +27,8 @@ class MessagePublisher(
       SendMessageRequest.builder()
         .queueUrl(queue.queueUrl)
         .messageBody(json)
+        .messageGroupId(messageGroupId)
+        .messageDeduplicationId(UUID.randomUUID().toString())
         .build(),
     ).whenComplete { response, throwable ->
       if (throwable != null) {

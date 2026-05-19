@@ -90,7 +90,14 @@ abstract class IntegrationTestBase {
     sqsClient.deleteQueue { it.queueUrl(calculatedBalanceQueue.queueUrl) }.get()
     sqsClient.deleteQueue { it.queueUrl(calculatedBalanceQueue.dlqUrl) }.get()
 
-    sqsClient.createQueue { it.queueName(calculatedBalanceQueue.dlqName) }.get()
+    sqsClient.createQueue { builder ->
+      builder.queueName(calculatedBalanceQueue.dlqName)
+        .attributes(
+          mapOf(
+            QueueAttributeName.FIFO_QUEUE to "true",
+          ),
+        )
+    }.get()
 
     val dlqAttributes = sqsClient.getQueueAttributes { builder ->
       builder.queueUrl(calculatedBalanceQueue.dlqUrl)
@@ -101,7 +108,12 @@ abstract class IntegrationTestBase {
     val redrivePolicyJson = """{"deadLetterTargetArn":"$dlqArn","maxReceiveCount":"3"}"""
     sqsClient.createQueue { builder ->
       builder.queueName(calculatedBalanceQueue.queueName)
-        .attributes(mapOf(QueueAttributeName.REDRIVE_POLICY to redrivePolicyJson))
+        .attributes(
+          mapOf(
+            QueueAttributeName.REDRIVE_POLICY to redrivePolicyJson,
+            QueueAttributeName.FIFO_QUEUE to "true",
+          ),
+        )
     }.get()
   }
 }
