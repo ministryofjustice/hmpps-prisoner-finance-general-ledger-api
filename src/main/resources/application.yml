@@ -88,3 +88,7 @@ hmpps.sqs:
     calculated_balance:
       queueName: ${CALC_BALANCE_QUEUE_NAME}
       dlqName: ${CALC_BALANCE_DLQ_NAME}
+
+logging:
+  level:
+    uk.gov.justice.hmpps.sqs: INFO
