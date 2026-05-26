@@ -24,4 +24,23 @@ interface StatementBalanceDataRepository : JpaRepository<StatementBalanceEntity,
     subAccountId: UUID,
     fromTimestamp: Instant = Instant.now(),
   ): StatementBalanceEntity?
+
+
+  @Query(
+    """
+      SELECT sb
+      FROM StatementBalanceEntity sb
+      WHERE sb.subAccountEntity.parentAccountEntity.id = :accountId
+        AND sb.balanceDateTime = (
+            SELECT MAX(sb2.balanceDateTime)
+            FROM StatementBalanceEntity sb2
+            WHERE sb2.subAccountEntity.id = sb.subAccountEntity.id
+              AND sb2.balanceDateTime <= :fromTimestamp
+        )
+    """,
+  )
+  fun getLatestStatementBalancesForAccountId(
+    accountId: UUID,
+    fromTimestamp: Instant = Instant.now(),
+  ): List<StatementBalanceEntity>
 }
