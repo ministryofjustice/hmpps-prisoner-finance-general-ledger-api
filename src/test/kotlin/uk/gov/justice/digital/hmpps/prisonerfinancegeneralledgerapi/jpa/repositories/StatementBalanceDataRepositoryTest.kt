@@ -141,7 +141,7 @@ class StatementBalanceDataRepositoryTest @Autowired constructor(
         amount = 10,
         balanceDateTime = LocalDateTime.now().minusDays(1).toInstant(java.time.ZoneOffset.UTC),
         subAccount =
-          testAccountOneSubAccountOne,
+        testAccountOneSubAccountOne,
       )
 
       val retrievedStatementBalancesAccountOne = statementBalanceDataRepository.getLatestStatementBalancesForAccountId(testAccountOneSubAccountOne.parentAccountEntity.id)
@@ -206,7 +206,7 @@ class StatementBalanceDataRepositoryTest @Autowired constructor(
       val statementBalance = statementBalanceDataRepository
         .getLatestStatementBalancesForAccountId(
           parentAccount.id,
-          Instant.now()
+          Instant.now(),
         )
 
       assertThat(statementBalance).hasSize(2)

@@ -122,46 +122,6 @@ WHERE sa.account_id = :prisonerId
     """
     SELECT p
     FROM PostingEntity p
-    WHERE p.subAccountEntity.id = :subAccountId
-      AND (
-          p.transactionEntity.timestamp > :transactionTimestamp
-          OR (
-              p.transactionEntity.timestamp = :transactionTimestamp
-              AND p.transactionEntity.entrySequence > :transactionEntrySequence
-          )
-          OR (
-              p.transactionEntity.timestamp = :transactionTimestamp
-              AND p.transactionEntity.entrySequence = :transactionEntrySequence
-              AND p.entrySequence > :postingEntrySequence
-          )
-          OR (
-              p.transactionEntity.timestamp = :transactionTimestamp
-              AND p.transactionEntity.entrySequence = :transactionEntrySequence
-              AND p.entrySequence = :postingEntrySequence
-              AND p.id > :postingId
-        )
-      )
-    ORDER BY
-        p.transactionEntity.timestamp ASC,
-        p.transactionEntity.entrySequence ASC,
-        p.entrySequence ASC,
-        p.id ASC
-    LIMIT 1
-  """,
-  )
-  fun getTheNextSubAccountPostingOrNull(
-    postingId: UUID,
-    subAccountId: UUID,
-    transactionTimestamp: Instant,
-    transactionEntrySequence: Long,
-    postingEntrySequence: Long,
-  ): PostingEntity?
-
-  // the last OR is a workaround entrySequences that zero due to old data in dev
-  @Query(
-    """
-    SELECT p
-    FROM PostingEntity p
     WHERE p.subAccountEntity.parentAccountEntity.id = :accountId
       AND (
           p.transactionEntity.timestamp > :transactionTimestamp

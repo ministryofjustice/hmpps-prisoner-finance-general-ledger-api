@@ -14,10 +14,10 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingBalanceEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.StatementBalanceEntity
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.TransactionEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingBalanceDataRepository
@@ -48,6 +48,10 @@ class PostingBalanceServiceTest {
   val parentAccount = serviceTestHelpers.createAccount(ref = "ABC123ZX", type = AccountType.PRISONER)
   val subAccount1 = serviceTestHelpers.createSubAccount(ref = "CASH", account = parentAccount)
   val subAccount2 = serviceTestHelpers.createSubAccount(ref = "SPENDS", account = parentAccount)
+  val subAccount3 = serviceTestHelpers.createSubAccount(ref = "SAVINGS", account = parentAccount)
+
+  val prisonAccount = serviceTestHelpers.createAccount(ref = "LEI", type = AccountType.PRISON)
+  val canteenSubAccount = serviceTestHelpers.createSubAccount(ref = "CANT:1001", account = prisonAccount)
 
   val postingBalances = serviceTestHelpers.createPostingBalance(
     subAccount1 = subAccount1,
@@ -76,15 +80,20 @@ class PostingBalanceServiceTest {
     }
   }
 
-  fun verifyService(transaction: TransactionEntity, posting: PostingEntity, subAccountAmount: Long, subAccount: SubAccountEntity) {
-    verify(postingBalanceDataRepository, times(1)).getPreviousPostingBalanceOrNull(
+  fun verifySubAccountBalanceService(
+    transaction: TransactionEntity,
+    posting: PostingEntity,
+    subAccountAmount: Long,
+    account: AccountEntity,
+  ) {
+    verify(postingBalanceDataRepository, times(1)).getPreviousPostingBalancesByAccount(
       postingId = posting.id,
-      subAccountId = subAccount.id,
+      accountId = account.id,
       transactionTimestamp = transaction.timestamp,
     )
 
     verify(statementBalanceDataRepository, times(1))
-      .getLatestStatementBalanceForSubAccountId(subAccount.id, transaction.timestamp)
+      .getLatestStatementBalancesForAccountId(account.id, transaction.timestamp)
 
     val postingBalanceEntity = argumentCaptor<PostingBalanceEntity>()
     verify(postingBalanceDataRepository, times(1))
@@ -96,25 +105,25 @@ class PostingBalanceServiceTest {
   fun setupMocks(
     transaction: TransactionEntity,
     posting: PostingEntity,
-    postingBalanceEntity: PostingBalanceEntity?,
-    statementBalanceEntity: StatementBalanceEntity?,
-    subAccount: SubAccountEntity,
+    postingBalanceEntities: List<PostingBalanceEntity>,
+    statementBalanceEntities: List<StatementBalanceEntity>,
+    account: AccountEntity,
   ) {
     whenever(
-      postingBalanceDataRepository.getPreviousPostingBalanceOrNull(
+      postingBalanceDataRepository.getPreviousPostingBalancesByAccount(
         postingId = posting.id,
-        subAccountId = subAccount.id,
+        accountId = account.id,
         transactionTimestamp = transaction.timestamp,
       ),
-    ).thenReturn(postingBalanceEntity)
+    ).thenReturn(postingBalanceEntities)
 
     whenever(
       statementBalanceDataRepository
-        .getLatestStatementBalanceForSubAccountId(
-          subAccount.id,
-          transaction.timestamp,
+        .getLatestStatementBalancesForAccountId(
+          accountId = account.id,
+          fromTimestamp = transaction.timestamp,
         ),
-    ).thenReturn(statementBalanceEntity)
+    ).thenReturn(statementBalanceEntities)
 
     whenever(postingBalanceDataRepository.save(any<PostingBalanceEntity>()))
       .thenAnswer { it.arguments[0] }
@@ -122,156 +131,374 @@ class PostingBalanceServiceTest {
 
   @Nested
   inner class CalculatePostingBalance {
-    @ParameterizedTest
-    @CsvSource(
-      "false, 1, 10",
-      "true, 0, -10",
-    )
-    fun `Should calculate posting balance after transaction when there is not previous posting balance or statement balance`(
-      isDebit: Boolean,
-      postingIndex: Int,
-      amount: Long,
-    ) {
-      val transaction = createTransaction(isDebit = isDebit, timestamp = Instant.now(), amount = abs(amount))
-      setupMocks(
-        transaction = transaction,
-        posting = transaction.postings[postingIndex],
-        postingBalanceEntity = null,
-        statementBalanceEntity = null,
-        subAccount = subAccount1,
-      )
 
-      postingBalanceService.calculatePostingBalance(posting = transaction.postings[postingIndex])
-
-      verifyService(
-        transaction = transaction,
-        posting = transaction.postings[postingIndex],
-        subAccountAmount = amount,
-        subAccount = subAccount1,
+    @Nested
+    inner class SubAccountBalance {
+      @ParameterizedTest
+      @CsvSource(
+        "false, 1, 10",
+        "true, 0, -10",
       )
+      fun `Should calculate subAccount posting balance after transaction when there is not previous posting balance or statement balance`(
+        isDebit: Boolean,
+        postingIndex: Int,
+        amount: Long,
+      ) {
+        val transaction = createTransaction(isDebit = isDebit, timestamp = Instant.now(), amount = abs(amount))
+        setupMocks(
+          transaction = transaction,
+          posting = transaction.postings[postingIndex],
+          postingBalanceEntities = emptyList(),
+          statementBalanceEntities = emptyList(),
+          account = parentAccount,
+        )
+
+        postingBalanceService.calculatePostingBalances(posting = transaction.postings[postingIndex])
+
+        verifySubAccountBalanceService(
+          transaction = transaction,
+          posting = transaction.postings[postingIndex],
+          subAccountAmount = amount,
+          account = parentAccount,
+        )
+      }
+
+      @Test
+      fun `Should update calculated subAccount posting balance when there is an existing posting balance associated with the posting`() {
+        val amount = 10L
+        val transaction = createTransaction(isDebit = false, timestamp = Instant.now(), amount = amount)
+
+        setupMocks(
+          transaction = transaction,
+          posting = transaction.postings[1],
+          postingBalanceEntities = emptyList(),
+          statementBalanceEntities = emptyList(),
+          account = parentAccount,
+        )
+
+        val existingPostingBalance = PostingBalanceEntity(
+          id = UUID.randomUUID(),
+          postingEntity = transaction.postings[1],
+          totalSubAccountBalance = 1000,
+        )
+
+        whenever(
+          postingBalanceDataRepository
+            .findByPostingEntity(transaction.postings[1]),
+        ).thenReturn(existingPostingBalance)
+
+        postingBalanceService.calculatePostingBalances(posting = transaction.postings[1])
+
+        assertThat(existingPostingBalance.totalSubAccountBalance).isEqualTo(amount)
+        assertThat(existingPostingBalance.updatedAt).isNotNull()
+        verify(postingBalanceDataRepository, times(1)).save(existingPostingBalance)
+      }
+
+      @Test
+      fun `Should calculate subAccount posting balance after transaction when there is a previous statement balance but no previous posting balance`() {
+        val amount = 10L
+        val transaction = createTransaction(isDebit = false, timestamp = Instant.now(), amount = amount)
+
+        val statementBalance = StatementBalanceEntity(
+          id = UUID.randomUUID(),
+          subAccountEntity = subAccount1,
+          balanceDateTime = transaction.timestamp.minusSeconds(123213),
+          amount = 333,
+        )
+
+        setupMocks(
+          transaction = transaction,
+          posting = transaction.postings[1],
+          postingBalanceEntities = emptyList(),
+          statementBalanceEntities = listOf(statementBalance),
+          account = parentAccount,
+        )
+
+        postingBalanceService.calculatePostingBalances(posting = transaction.postings[1])
+
+        verifySubAccountBalanceService(
+          transaction = transaction,
+          posting = transaction.postings[1],
+          subAccountAmount = statementBalance.amount + amount,
+          account = parentAccount,
+        )
+      }
+
+      @Test
+      fun `Should calculate subAccount posting balance after transaction when the previous posting balance is more recent than the previous statement balance`() {
+        val amount = 10L
+        val transaction = createTransaction(isDebit = false, timestamp = Instant.now(), amount = amount)
+
+        val statementBalance = StatementBalanceEntity(
+          id = UUID.randomUUID(),
+          subAccountEntity = subAccount1,
+          balanceDateTime = postingBalances.first.postingEntity.transactionEntity.timestamp.minusSeconds(60),
+          amount = 333,
+        )
+        setupMocks(
+          transaction = transaction,
+          posting = transaction.postings[1],
+          postingBalanceEntities = listOf(postingBalances.first),
+          statementBalanceEntities = listOf(statementBalance),
+          account = parentAccount,
+        )
+        postingBalanceService.calculatePostingBalances(
+          posting = transaction.postings[1],
+        )
+
+        verifySubAccountBalanceService(
+          transaction = transaction,
+          posting = transaction.postings[1],
+          subAccountAmount = postingBalances.first.totalSubAccountBalance + amount,
+          account = parentAccount,
+        )
+      }
+
+      @Test
+      fun `Should calculate subAccount posting balance after transaction when the previous statement balance is more recent than the previous posting balance`() {
+        val amount = 10L
+        val transaction = createTransaction(isDebit = false, timestamp = Instant.now(), amount = amount)
+
+        val statementBalance = StatementBalanceEntity(
+          id = UUID.randomUUID(),
+          subAccountEntity = subAccount1,
+          balanceDateTime = postingBalances.first.postingEntity.transactionEntity.timestamp.plusSeconds(60),
+          amount = 333,
+        )
+
+        setupMocks(
+          transaction = transaction,
+          posting = transaction.postings[1],
+          postingBalanceEntities = listOf(postingBalances.first),
+          statementBalanceEntities = listOf(statementBalance),
+          account = parentAccount,
+        )
+
+        postingBalanceService.calculatePostingBalances(
+          posting = transaction.postings[1],
+        )
+
+        verifySubAccountBalanceService(
+          transaction = transaction,
+          posting = transaction.postings[1],
+          subAccountAmount = statementBalance.amount + amount,
+          account = parentAccount,
+        )
+      }
     }
 
-    @Test
-    fun `Should update calculated posting balance when there is an existing posting balance associated with the posting`() {
-      val amount = 10L
-      val transaction = createTransaction(isDebit = false, timestamp = Instant.now(), amount = amount)
+    @Nested
+    inner class TotalAccountBalance {
+      @Test
+      fun `Should calculate total posting balance after transaction when there is not previous posting balance or statement balance`() {
+        val amount = 10L
+        val transaction = createTransaction(isDebit = false, timestamp = Instant.now(), amount = abs(amount))
+        val newPosting = transaction.postings[1]
+        setupMocks(
+          transaction = transaction,
+          posting = newPosting,
+          postingBalanceEntities = emptyList(),
+          statementBalanceEntities = emptyList(),
+          account = parentAccount,
+        )
 
-      setupMocks(
-        transaction = transaction,
-        posting = transaction.postings[1],
-        postingBalanceEntity = null,
-        statementBalanceEntity = null,
-        subAccount = subAccount1,
-      )
+        postingBalanceService.calculatePostingBalances(posting = newPosting)
 
-      val existingPostingBalance = PostingBalanceEntity(
-        id = UUID.randomUUID(),
-        postingEntity = transaction.postings[1],
-        totalSubAccountBalance = 1000,
-      )
+        verify(postingBalanceDataRepository, times(1)).getPreviousPostingBalancesByAccount(
+          postingId = newPosting.id,
+          accountId = parentAccount.id,
+          transactionTimestamp = transaction.timestamp,
+        )
 
-      whenever(
-        postingBalanceDataRepository
-          .findByPostingEntity(transaction.postings[1]),
-      ).thenReturn(existingPostingBalance)
+        verify(statementBalanceDataRepository, times(1))
+          .getLatestStatementBalancesForAccountId(parentAccount.id, transaction.timestamp)
 
-      postingBalanceService.calculatePostingBalance(posting = transaction.postings[1])
+        val postingBalanceEntity = argumentCaptor<PostingBalanceEntity>()
+        verify(postingBalanceDataRepository, times(1))
+          .save(postingBalanceEntity.capture())
+        assertThat(postingBalanceEntity.firstValue.totalSubAccountBalance).isEqualTo(amount)
+        assertThat(postingBalanceEntity.firstValue.totalAccountBalance).isEqualTo(amount)
+        assertThat(postingBalanceEntity.firstValue.postingEntity).isEqualTo(newPosting)
+      }
 
-      assertThat(existingPostingBalance.totalSubAccountBalance).isEqualTo(amount)
-      assertThat(existingPostingBalance.updatedAt).isNotNull()
-      verify(postingBalanceDataRepository, times(1)).save(existingPostingBalance)
-    }
+      @Test
+      fun `Should calculate total posting balance after posting when there are previous posting balances across multiple subAccounts and there isn't any statement balance`() {
+        val amount = 10L
 
-    @Test
-    fun `Should calculate posting balance after transaction when there is a previous statement balance but no previous posting balance`() {
-      val amount = 10L
-      val transaction = createTransaction(isDebit = false, timestamp = Instant.now(), amount = amount)
+        val postingBalanceSubOne = serviceTestHelpers.createPostingBalance(
+          subAccount1 = subAccount1,
+          subAccount2 = canteenSubAccount,
+          transactionTimeStamp = Instant.now(),
+          transactionAmount = 1000,
+          subAccountBalance1 = 1000,
+          subAccountBalance2 = 1000,
+        ).first
 
-      val statementBalance = StatementBalanceEntity(
-        id = UUID.randomUUID(),
-        subAccountEntity = subAccount1,
-        balanceDateTime = transaction.timestamp.minusSeconds(123213),
-        amount = 333,
-      )
+        val postingBalanceSubTwo = serviceTestHelpers.createPostingBalance(
+          subAccount1 = subAccount2,
+          subAccount2 = canteenSubAccount,
+          transactionTimeStamp = Instant.now(),
+          transactionAmount = 1000,
+          subAccountBalance1 = 9999,
+          subAccountBalance2 = 9999,
+        ).first
 
-      setupMocks(
-        transaction = transaction,
-        posting = transaction.postings[1],
-        postingBalanceEntity = null,
-        statementBalanceEntity = statementBalance,
-        subAccount = subAccount1,
-      )
+        val transaction = serviceTestHelpers.createOneToOneTransaction(
+          transactionAmount = amount,
+          transactionDateTime = Instant.now(),
+          creditSubAccount = subAccount1,
+          debitSubAccount = canteenSubAccount,
+        )
 
-      postingBalanceService.calculatePostingBalance(posting = transaction.postings[1])
+        val newPosting = transaction.postings[1]
+        setupMocks(
+          transaction = transaction,
+          posting = newPosting,
+          postingBalanceEntities = listOf(postingBalanceSubOne, postingBalanceSubTwo),
+          statementBalanceEntities = emptyList(),
+          account = parentAccount,
+        )
 
-      verifyService(
-        transaction = transaction,
-        posting = transaction.postings[1],
-        subAccountAmount = statementBalance.amount + amount,
-        subAccount = subAccount1,
-      )
-    }
+        postingBalanceService.calculatePostingBalances(posting = newPosting)
 
-    @Test
-    fun `Should calculate posting balance after transaction when the previous posting balance is more recent than the previous statement balance`() {
-      val amount = 10L
-      val transaction = createTransaction(isDebit = false, timestamp = Instant.now(), amount = amount)
+        verify(postingBalanceDataRepository, times(1)).getPreviousPostingBalancesByAccount(
+          postingId = newPosting.id,
+          accountId = parentAccount.id,
+          transactionTimestamp = transaction.timestamp,
+        )
 
-      val statementBalance = StatementBalanceEntity(
-        id = UUID.randomUUID(),
-        subAccountEntity = subAccount1,
-        balanceDateTime = postingBalances.first.postingEntity.transactionEntity.timestamp.minusSeconds(60),
-        amount = 333,
-      )
-      setupMocks(
-        transaction = transaction,
-        posting = transaction.postings[1],
-        postingBalanceEntity = postingBalances.first,
-        statementBalanceEntity = statementBalance,
-        subAccount = subAccount1,
-      )
-      postingBalanceService.calculatePostingBalance(
-        posting = transaction.postings[1],
-      )
+        verify(statementBalanceDataRepository, times(1))
+          .getLatestStatementBalancesForAccountId(parentAccount.id, transaction.timestamp)
 
-      verifyService(
-        transaction = transaction,
-        posting = transaction.postings[1],
-        subAccountAmount = postingBalances.first.totalSubAccountBalance + amount,
-        subAccount = subAccount1,
-      )
-    }
+        val postingBalanceEntity = argumentCaptor<PostingBalanceEntity>()
+        verify(postingBalanceDataRepository, times(1))
+          .save(postingBalanceEntity.capture())
 
-    @Test
-    fun `Should calculate posting balance after transaction when the previous statement balance is more recent than the previous posting balance`() {
-      val amount = 10L
-      val transaction = createTransaction(isDebit = false, timestamp = Instant.now(), amount = amount)
+        assertThat(postingBalanceEntity.firstValue.totalSubAccountBalance).isEqualTo(amount + postingBalanceSubOne.totalSubAccountBalance)
 
-      val statementBalance = StatementBalanceEntity(
-        id = UUID.randomUUID(),
-        subAccountEntity = subAccount1,
-        balanceDateTime = postingBalances.first.postingEntity.transactionEntity.timestamp.plusSeconds(60),
-        amount = 333,
-      )
+        val expectedTotalAccountBalance = postingBalanceSubOne.totalSubAccountBalance + postingBalanceSubTwo.totalSubAccountBalance + amount
+        assertThat(postingBalanceEntity.firstValue.totalAccountBalance).isEqualTo(expectedTotalAccountBalance)
 
-      setupMocks(
-        transaction = transaction,
-        posting = transaction.postings[1],
-        postingBalanceEntity = postingBalances.first,
-        statementBalanceEntity = statementBalance,
-        subAccount = subAccount1,
-      )
+        assertThat(postingBalanceEntity.firstValue.postingEntity).isEqualTo(newPosting)
+      }
 
-      postingBalanceService.calculatePostingBalance(
-        posting = transaction.postings[1],
-      )
+      @Test
+      fun `Should calculate total posting balance after posting when there are statement balances across multiple subAccounts and there isn't any posting balance`() {
+        val amount = 10L
 
-      verifyService(
-        transaction = transaction,
-        posting = transaction.postings[1],
-        subAccountAmount = statementBalance.amount + amount,
-        subAccount = subAccount1,
-      )
+        val statementBalanceSubAccountOne = serviceTestHelpers.createStatementBalance(
+          amount = 333,
+          balanceDateTime = Instant.now(),
+          subAccount = subAccount1,
+        )
+
+        val statementBalanceSubAccountTwo = serviceTestHelpers.createStatementBalance(
+          amount = 555,
+          balanceDateTime = Instant.now(),
+          subAccount = subAccount2,
+        )
+
+        val transaction = serviceTestHelpers.createOneToOneTransaction(
+          transactionAmount = amount,
+          transactionDateTime = Instant.now(),
+          creditSubAccount = subAccount1,
+          debitSubAccount = canteenSubAccount,
+        )
+
+        val newPosting = transaction.postings[1]
+        setupMocks(
+          transaction = transaction,
+          posting = newPosting,
+          postingBalanceEntities = emptyList(),
+          statementBalanceEntities = listOf(statementBalanceSubAccountOne, statementBalanceSubAccountTwo),
+          account = parentAccount,
+        )
+
+        postingBalanceService.calculatePostingBalances(posting = newPosting)
+
+        verify(postingBalanceDataRepository, times(1)).getPreviousPostingBalancesByAccount(
+          postingId = newPosting.id,
+          accountId = parentAccount.id,
+          transactionTimestamp = transaction.timestamp,
+        )
+
+        verify(statementBalanceDataRepository, times(1))
+          .getLatestStatementBalancesForAccountId(parentAccount.id, transaction.timestamp)
+
+        val postingBalanceEntity = argumentCaptor<PostingBalanceEntity>()
+        verify(postingBalanceDataRepository, times(1))
+          .save(postingBalanceEntity.capture())
+
+        assertThat(postingBalanceEntity.firstValue.totalSubAccountBalance).isEqualTo(amount + statementBalanceSubAccountOne.amount)
+
+        val expectedTotalAccountBalance = statementBalanceSubAccountOne.amount + statementBalanceSubAccountTwo.amount + amount
+        assertThat(postingBalanceEntity.firstValue.totalAccountBalance).isEqualTo(expectedTotalAccountBalance)
+
+        assertThat(postingBalanceEntity.firstValue.postingEntity).isEqualTo(newPosting)
+      }
+
+      @Test
+      fun `Should calculate total posting balance after posting when the most recent subAccount balances have varied origins`() {
+        /*
+         * sub1 -> postingBalance, null
+         * sub2 -> null, null -> posting to process
+         * sub3 -> null, statementBalance
+         */
+
+        val amount = 10L
+        val statementBalanceSubAccountThree = serviceTestHelpers.createStatementBalance(
+          amount = 333,
+          balanceDateTime = Instant.now(),
+          subAccount = subAccount3,
+        )
+
+        val postingBalanceSubOne = serviceTestHelpers.createPostingBalance(
+          subAccount1 = subAccount1,
+          subAccount2 = canteenSubAccount,
+          transactionTimeStamp = Instant.now(),
+          transactionAmount = 1000,
+          subAccountBalance1 = 1000,
+          subAccountBalance2 = 1000,
+        ).first
+
+        val transaction = serviceTestHelpers.createOneToOneTransaction(
+          transactionAmount = amount,
+          transactionDateTime = Instant.now(),
+          creditSubAccount = subAccount2,
+          debitSubAccount = canteenSubAccount,
+        )
+        val newPosting = transaction.postings[1]
+
+        setupMocks(
+          transaction = transaction,
+          posting = newPosting,
+          postingBalanceEntities = listOf(postingBalanceSubOne),
+          statementBalanceEntities = listOf(statementBalanceSubAccountThree),
+          account = parentAccount,
+        )
+
+        postingBalanceService.calculatePostingBalances(posting = newPosting)
+
+        verify(postingBalanceDataRepository, times(1)).getPreviousPostingBalancesByAccount(
+          postingId = newPosting.id,
+          accountId = parentAccount.id,
+          transactionTimestamp = transaction.timestamp,
+        )
+
+        verify(statementBalanceDataRepository, times(1))
+          .getLatestStatementBalancesForAccountId(parentAccount.id, transaction.timestamp)
+
+        val postingBalanceEntity = argumentCaptor<PostingBalanceEntity>()
+        verify(postingBalanceDataRepository, times(1))
+          .save(postingBalanceEntity.capture())
+
+        assertThat(postingBalanceEntity.firstValue.totalSubAccountBalance).isEqualTo(amount)
+
+        val expectedTotalAccountBalance = statementBalanceSubAccountThree.amount + postingBalanceSubOne.totalSubAccountBalance + amount
+        assertThat(postingBalanceEntity.firstValue.totalAccountBalance).isEqualTo(expectedTotalAccountBalance)
+
+        assertThat(postingBalanceEntity.firstValue.postingEntity).isEqualTo(newPosting)
+      }
     }
   }
 }

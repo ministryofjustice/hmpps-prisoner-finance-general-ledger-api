@@ -25,7 +25,6 @@ interface StatementBalanceDataRepository : JpaRepository<StatementBalanceEntity,
     fromTimestamp: Instant = Instant.now(),
   ): StatementBalanceEntity?
 
-
   @Query(
     """
       SELECT sb

@@ -10,28 +10,6 @@ import java.util.UUID
 
 @Repository
 interface PostingBalanceDataRepository : JpaRepository<PostingBalanceEntity, Long> {
-
-  @Query(
-    """
-      select
-        pb
-      from PostingBalanceEntity pb 
-      where pb.postingEntity.subAccountEntity.id = :subAccountId and 
-            pb.postingEntity.transactionEntity.timestamp <= :transactionTimestamp and
-            pb.postingEntity.id <> :postingId
-      order by 
-            pb.postingEntity.transactionEntity.timestamp desc,
-            pb.postingEntity.transactionEntity.entrySequence desc,
-            pb.postingEntity.entrySequence desc
-      limit 1
-    """,
-  )
-  fun getPreviousPostingBalanceOrNull(
-    postingId: UUID,
-    subAccountId: UUID,
-    transactionTimestamp: Instant,
-  ): PostingBalanceEntity?
-
   @Query(
     """
     SELECT * FROM (
@@ -53,9 +31,9 @@ interface PostingBalanceDataRepository : JpaRepository<PostingBalanceEntity, Lon
     ) as ranked_balances
     WHERE rn = 1
   """,
-  nativeQuery = true
+  nativeQuery = true,
   )
-  fun getPreviousPostingBalancesByAccountOrNull(
+  fun getPreviousPostingBalancesByAccount(
     postingId: UUID,
     accountId: UUID,
     transactionTimestamp: Instant,
