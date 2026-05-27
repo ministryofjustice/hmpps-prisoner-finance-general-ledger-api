@@ -44,16 +44,17 @@ interface PostingsDataRepository :
       WHERE NOT EXISTS (
           SELECT 1 
           FROM PostingEntity p2 
-          WHERE p2.subAccountEntity.id = p.subAccountEntity.id
+          WHERE p2.subAccountEntity.parentAccountEntity.id = p.subAccountEntity.parentAccountEntity.id
             AND (
                 p2.transactionEntity.timestamp < p.transactionEntity.timestamp 
                 OR (p2.transactionEntity.timestamp = p.transactionEntity.timestamp AND p2.transactionEntity.entrySequence < p.transactionEntity.entrySequence)
                 OR (p2.transactionEntity.timestamp = p.transactionEntity.timestamp AND p2.transactionEntity.entrySequence = p.transactionEntity.entrySequence AND p2.entrySequence < p.entrySequence)
+                OR (p2.transactionEntity.timestamp = p.transactionEntity.timestamp AND p2.transactionEntity.entrySequence = p.transactionEntity.entrySequence AND p2.entrySequence = p.entrySequence and p2.id < p.id)
             )
       )
   """,
   )
-  fun getFirstPostingsForAllSubAccounts(): List<UUID>
+  fun getFirstPostingsForAllAccounts(): List<UUID>
 
   @Query("SELECT p FROM PostingEntity p WHERE p.subAccountEntity.id = :subAccountId")
   fun getPostingsForSubAccountId(@Param("subAccountId") subAccountId: UUID): List<PostingEntity>

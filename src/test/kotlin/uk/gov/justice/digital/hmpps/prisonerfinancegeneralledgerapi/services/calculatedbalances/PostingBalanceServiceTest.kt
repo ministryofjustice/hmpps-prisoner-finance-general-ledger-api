@@ -90,6 +90,8 @@ class PostingBalanceServiceTest {
       postingId = posting.id,
       accountId = account.id,
       transactionTimestamp = transaction.timestamp,
+      transactionEntrySequence = transaction.entrySequence,
+      postingEntrySequence = posting.entrySequence,
     )
 
     verify(statementBalanceDataRepository, times(1))
@@ -114,6 +116,8 @@ class PostingBalanceServiceTest {
         postingId = posting.id,
         accountId = account.id,
         transactionTimestamp = transaction.timestamp,
+        transactionEntrySequence = transaction.entrySequence,
+        postingEntrySequence = posting.entrySequence,
       ),
     ).thenReturn(postingBalanceEntities)
 
@@ -308,6 +312,8 @@ class PostingBalanceServiceTest {
           postingId = newPosting.id,
           accountId = parentAccount.id,
           transactionTimestamp = transaction.timestamp,
+          transactionEntrySequence = transaction.entrySequence,
+          postingEntrySequence = newPosting.entrySequence,
         )
 
         verify(statementBalanceDataRepository, times(1))
@@ -365,6 +371,8 @@ class PostingBalanceServiceTest {
           postingId = newPosting.id,
           accountId = parentAccount.id,
           transactionTimestamp = transaction.timestamp,
+          transactionEntrySequence = transaction.entrySequence,
+          postingEntrySequence = newPosting.entrySequence,
         )
 
         verify(statementBalanceDataRepository, times(1))
@@ -420,6 +428,8 @@ class PostingBalanceServiceTest {
           postingId = newPosting.id,
           accountId = parentAccount.id,
           transactionTimestamp = transaction.timestamp,
+          transactionEntrySequence = transaction.entrySequence,
+          postingEntrySequence = newPosting.entrySequence,
         )
 
         verify(statementBalanceDataRepository, times(1))
@@ -483,6 +493,8 @@ class PostingBalanceServiceTest {
           postingId = newPosting.id,
           accountId = parentAccount.id,
           transactionTimestamp = transaction.timestamp,
+          transactionEntrySequence = transaction.entrySequence,
+          postingEntrySequence = newPosting.entrySequence,
         )
 
         verify(statementBalanceDataRepository, times(1))

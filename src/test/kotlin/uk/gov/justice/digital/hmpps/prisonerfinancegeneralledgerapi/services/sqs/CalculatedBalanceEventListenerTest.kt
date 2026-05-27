@@ -30,7 +30,7 @@ import java.util.UUID
 @ExtendWith(MockitoExtension::class)
 class CalculatedBalanceEventListenerTest {
 
-//  This is unused in the test but required for the service
+  // This is unused in the test but required for the service
   @Spy
   var objectMapper: ObjectMapper = jacksonObjectMapper()
     .registerModule(JavaTimeModule())
@@ -65,11 +65,11 @@ class CalculatedBalanceEventListenerTest {
   @Test
   fun `should process balance when a valid message is received`() {
     val postingId = UUID.randomUUID()
-    val subAccountId = UUID.randomUUID()
+    val accountId = UUID.randomUUID()
     val message = """
       {
         "postingId" : "$postingId",
-        "subAccountId" : "$subAccountId"
+        "accountId" : "$accountId"
       }
     """.trimIndent()
 
@@ -87,16 +87,16 @@ class CalculatedBalanceEventListenerTest {
   @Test
   fun `should request a new balance calculation nextPosting is returned`() {
     val postingId = UUID.randomUUID()
-    val subAccountId = UUID.randomUUID()
+    val accountId = UUID.randomUUID()
     val message = """
       {
         "postingId" : "$postingId",
-        "subAccountId" : "$subAccountId"
+        "accountId" : "$accountId"
       }
     """.trimIndent()
 
     val nextPosting = mock<ProcessBalanceRequest>()
-    whenever(nextPosting.subAccountId).thenReturn(subAccountId)
+    whenever(nextPosting.accountId).thenReturn(accountId)
 
     whenever { postingBalanceService.processBalance(postingId) }.thenReturn(nextPosting)
 
@@ -106,18 +106,18 @@ class CalculatedBalanceEventListenerTest {
     verify(messagePublisher).sendMessage(
       payloadDataClass = nextPosting,
       queueId = SqsQueues.CALCULATED_BALANCE_QUEUE_ID,
-      messageGroupId = subAccountId.toString(),
+      messageGroupId = accountId.toString(),
     )
   }
 
   @Test
   fun `should log error when balance calculation fails`() {
     val postingId = UUID.randomUUID()
-    val subAccountId = UUID.randomUUID()
+    val accountId = UUID.randomUUID()
     val message = """
       {
         "postingId" : "$postingId",
-        "subAccountId" : "$subAccountId"
+        "accountId" : "$accountId"
       }
     """.trimIndent()
 

@@ -1308,4 +1308,102 @@ class PostingDataRepositoryTest @Autowired constructor(
       assertThat(nextPosting).isNull()
     }
   }
+
+  @Nested
+  inner class GetFirstPostingsForAllAccounts {
+
+    @Test
+    fun `Should return the first posting for accounts by timestamp, transaction entrySequence,  posting EntrySequence`() {
+      val accountPrisoner = repoTestHelpers.createAccount(ref = "ABC123XX")
+      val cashAccount = repoTestHelpers.createSubAccount(ref = "CASH", account = accountPrisoner)
+
+      val accountPrison = repoTestHelpers.createAccount(ref = "LEI")
+      val canteenAccount = repoTestHelpers.createSubAccount(ref = "CANT:1001", account = accountPrison)
+
+      // tx entry 1
+      val transactionBatchTimestamp = Instant.now()
+
+      val transactionEntryTwo = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = transactionBatchTimestamp,
+        transactionTimeStamp = transactionBatchTimestamp,
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        transactionEntrySequence = 2,
+        debitEntrySequence = 3,
+        creditEntrySequence = 4,
+      )
+
+      val transactionEntryOne = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        postingCreatedAt = transactionBatchTimestamp,
+        transactionTimeStamp = transactionBatchTimestamp,
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        transactionEntrySequence = 1,
+        debitEntrySequence = 1,
+        creditEntrySequence = 2,
+      )
+
+      val transactionNow = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        postingCreatedAt = Instant.now(),
+        transactionTimeStamp = Instant.now(),
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        debitEntrySequence = 1,
+        creditEntrySequence = 2,
+      )
+
+      val firstPostingPrisoner = transactionEntryOne.postings[0].id
+      val firstPostingPrison = transactionEntryOne.postings[1].id
+      val firstPostings = postingsDataRepository.getFirstPostingsForAllAccounts()
+
+      assertThat(firstPostings.size).isEqualTo(2)
+      assertThat(firstPostings).contains(firstPostingPrisoner)
+      assertThat(firstPostings).contains(firstPostingPrison)
+    }
+
+    @Test
+    fun `Should return the first posting id for accounts when entry sequences are zero`() {
+      val accountPrisoner = repoTestHelpers.createAccount(ref = "ABC123XX")
+      val cashAccount = repoTestHelpers.createSubAccount(ref = "CASH", account = accountPrisoner)
+
+      val accountPrison = repoTestHelpers.createAccount(ref = "LEI")
+      val canteenAccount = repoTestHelpers.createSubAccount(ref = "CANT:1001", account = accountPrison)
+
+      // tx entry 1
+      val transactionBatchTimestamp = Instant.now()
+
+      val transactionFirst = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = transactionBatchTimestamp,
+        transactionTimeStamp = transactionBatchTimestamp,
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        transactionEntrySequence = 0,
+        debitEntrySequence = 0,
+        creditEntrySequence = 0,
+      )
+
+      val transactionSecond = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        postingCreatedAt = transactionBatchTimestamp,
+        transactionTimeStamp = transactionBatchTimestamp,
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        transactionEntrySequence = 0,
+        debitEntrySequence = 0,
+        creditEntrySequence = 0,
+      )
+
+      val firstPostingPrisoner = listOf(transactionFirst.postings[0].id, transactionSecond.postings[0].id).minOf { it.toString() }
+      val firstPostingPrison = listOf(transactionFirst.postings[1].id, transactionSecond.postings[1].id).minOf { it.toString() }
+      val firstPostings = postingsDataRepository.getFirstPostingsForAllAccounts()
+
+      assertThat(firstPostings.size).isEqualTo(2)
+      assertThat(firstPostings).contains(UUID.fromString(firstPostingPrisoner))
+      assertThat(firstPostings).contains(UUID.fromString(firstPostingPrison))
+    }
+  }
 }

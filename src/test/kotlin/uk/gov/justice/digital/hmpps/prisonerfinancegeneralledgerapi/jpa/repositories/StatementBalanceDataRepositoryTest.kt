@@ -132,7 +132,7 @@ class StatementBalanceDataRepositoryTest @Autowired constructor(
       assertThat(retrievedStatementBalance).hasSize(1)
       assertThat(retrievedStatementBalance.first().amount).isEqualTo(createdStatementBalance.amount)
       assertThat(retrievedStatementBalance.first().balanceDateTime).isEqualTo(createdStatementBalance.balanceDateTime)
-      assertThat(retrievedStatementBalance.first().subAccountEntity?.id).isEqualTo(testAccountOneSubAccountOne.id)
+      assertThat(retrievedStatementBalance.first().subAccountEntity.id).isEqualTo(testAccountOneSubAccountOne.id)
     }
 
     @Test
@@ -149,7 +149,7 @@ class StatementBalanceDataRepositoryTest @Autowired constructor(
       assertThat(retrievedStatementBalancesAccountOne).hasSize(1)
       assertThat(retrievedStatementBalancesAccountOne.first().amount).isEqualTo(olderStatementBalance.amount)
       assertThat(retrievedStatementBalancesAccountOne.first().balanceDateTime).isEqualTo(olderStatementBalance.balanceDateTime)
-      assertThat(retrievedStatementBalancesAccountOne.first().subAccountEntity?.id).isEqualTo(testAccountOneSubAccountOne.id)
+      assertThat(retrievedStatementBalancesAccountOne.first().subAccountEntity.id).isEqualTo(testAccountOneSubAccountOne.id)
 
       val latestCreatedStatementBalance = repoTestHelpers.createStatementBalance(amount = 20, balanceDateTime = Instant.now(), subAccount = testAccountOneSubAccountOne)
 
@@ -158,7 +158,7 @@ class StatementBalanceDataRepositoryTest @Autowired constructor(
       assertThat(retrievedStatementBalanceSecondTime).hasSize(1)
       assertThat(retrievedStatementBalanceSecondTime.first().amount).isEqualTo(latestCreatedStatementBalance.amount)
       assertThat(retrievedStatementBalanceSecondTime.first().balanceDateTime).isEqualTo(latestCreatedStatementBalance.balanceDateTime)
-      assertThat(retrievedStatementBalanceSecondTime.first().subAccountEntity?.id).isEqualTo(testAccountOneSubAccountOne.id)
+      assertThat(retrievedStatementBalanceSecondTime.first().subAccountEntity.id).isEqualTo(testAccountOneSubAccountOne.id)
     }
 
     @Test
@@ -171,7 +171,7 @@ class StatementBalanceDataRepositoryTest @Autowired constructor(
       assertThat(latestCreatedStatementBalance).hasSize(1)
       assertThat(latestCreatedStatementBalance.first().amount).isEqualTo(statementBalanceForTestAccountOne.amount)
       assertThat(latestCreatedStatementBalance.first().balanceDateTime).isEqualTo(statementBalanceForTestAccountOne.balanceDateTime)
-      assertThat(latestCreatedStatementBalance.first().subAccountEntity?.id).isEqualTo(testAccountOneSubAccountOne.id)
+      assertThat(latestCreatedStatementBalance.first().subAccountEntity.id).isEqualTo(testAccountOneSubAccountOne.id)
     }
 
     @Test
@@ -188,7 +188,7 @@ class StatementBalanceDataRepositoryTest @Autowired constructor(
       assertThat(statementBalance).hasSize(1)
       assertThat(statementBalance.first().amount).isEqualTo(statementBalanceFirst.amount)
       assertThat(statementBalance.first().balanceDateTime).isEqualTo(statementBalanceFirst.balanceDateTime)
-      assertThat(statementBalance.first().subAccountEntity?.id).isEqualTo(testAccountOneSubAccountOne.id)
+      assertThat(statementBalance.first().subAccountEntity.id).isEqualTo(testAccountOneSubAccountOne.id)
     }
 
     @Test

@@ -96,7 +96,7 @@ class CalculatedBalanceEventPublisherTest {
       val actualPostingIds = capturedRequests.map { it.postingId }
       assertEquals(expectedPostingIds, actualPostingIds)
 
-      val expectedMessageGroupId = transaction.postings.map { it.subAccountEntity.id.toString() }
+      val expectedMessageGroupId = transaction.postings.map { it.subAccountEntity.parentAccountEntity.id.toString() }
       val actualMessageGroupId = capturedGroupIds.map { it }
       assertEquals(expectedMessageGroupId, actualMessageGroupId)
     }
@@ -147,7 +147,7 @@ class CalculatedBalanceEventPublisherTest {
       verify(messagePublisher).sendMessage(
         payloadDataClass = messageRequestCaptor.capture(),
         queueId = eq(SqsQueues.CALCULATED_BALANCE_QUEUE_ID),
-        messageGroupId = eq(prisonerCashAccount.id.toString()),
+        messageGroupId = eq(prisonerAccount.id.toString()),
       )
       assertThat(messageRequestCaptor.firstValue.postingId).isEqualTo(transaction.postings.first().id)
     }

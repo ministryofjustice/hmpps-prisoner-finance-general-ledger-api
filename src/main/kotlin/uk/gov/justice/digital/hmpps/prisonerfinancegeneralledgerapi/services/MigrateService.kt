@@ -14,7 +14,7 @@ class MigrateService(
   val messagePublisher: MessagePublisher,
 ) {
   fun migrateAllPostingBalances() {
-    postingsDataRepository.getFirstPostingsForAllSubAccounts().forEach { postingId ->
+    postingsDataRepository.getFirstPostingsForAllAccounts().forEach { postingId ->
       try {
         log.debug("getting next posting from $postingId")
         val nextPostingBalanceReq = postingBalanceService.processBalance(postingId)
@@ -24,7 +24,7 @@ class MigrateService(
           messagePublisher.sendMessage(
             payloadDataClass = nextPostingBalanceReq,
             queueId = SqsQueues.CALCULATED_BALANCE_QUEUE_ID,
-            messageGroupId = nextPostingBalanceReq.subAccountId.toString(),
+            messageGroupId = nextPostingBalanceReq.accountId.toString(),
           )
           log.debug("message sent to queue for posting: $nextPostingBalanceReq")
         }

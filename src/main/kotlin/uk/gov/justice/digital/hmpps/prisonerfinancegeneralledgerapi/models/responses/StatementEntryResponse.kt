@@ -27,7 +27,9 @@ data class StatementEntryResponse(
   @field:Schema(description = "The sub account of the statement entry")
   val subAccount: SubAccountWithParentResponse,
   @field:Schema(description = "The sub account balance at the time the posting was made")
-  val runningBalance: Long? = null,
+  val subAccountBalance: Long? = null,
+  @field:Schema(description = "The overall account balance at the time the posting was made")
+  val accountBalance: Long? = null,
 ) {
   companion object {
     fun fromEntity(sourcePostingEntity: PostingEntity) = StatementEntryResponse(
@@ -41,7 +43,8 @@ data class StatementEntryResponse(
       postingType = sourcePostingEntity.type,
       transactionTimestamp = sourcePostingEntity.transactionEntity.timestamp,
       subAccount = SubAccountWithParentResponse.fromEntity(sourcePostingEntity.subAccountEntity),
-      runningBalance = sourcePostingEntity.postingBalanceEntity?.totalSubAccountBalance,
+      subAccountBalance = sourcePostingEntity.postingBalanceEntity?.totalSubAccountBalance,
+      accountBalance = sourcePostingEntity.postingBalanceEntity?.totalAccountBalance,
     )
   }
 }

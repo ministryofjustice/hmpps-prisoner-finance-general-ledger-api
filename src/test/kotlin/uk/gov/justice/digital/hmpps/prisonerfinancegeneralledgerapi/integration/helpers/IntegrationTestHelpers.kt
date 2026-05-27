@@ -194,6 +194,7 @@ class IntegrationTestHelpers(
     val queueUrlDlq = hmppsQueue.dlqUrl
 
     await()
+      .with().pollInterval(Duration.ofMillis(100))
       .alias("Wait for SQS queue '$queueId' to become empty")
       .atMost(Duration.ofSeconds(waitSeconds)).until {
         val response = sqsClient.getQueueAttributes { builder ->
@@ -208,10 +209,11 @@ class IntegrationTestHelpers(
         val inFlight = response.attributes()[QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES_NOT_VISIBLE]?.toInt() ?: 0
         println("[$queueId] Checking if empty -> Visible: $visible, In-Flight: $inFlight")
 
-        (visible + inFlight) == 0
+        return@until (visible + inFlight) == 0
       }
 
     await()
+      .with().pollInterval(Duration.ofMillis(100))
       .alias("Wait for SQS dlq '$queueId' to become empty")
       .atMost(Duration.ofSeconds(waitSeconds)).until {
         val response = sqsClient.getQueueAttributes { builder ->
@@ -226,7 +228,7 @@ class IntegrationTestHelpers(
         val inFlight = response.attributes()[QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES_NOT_VISIBLE]?.toInt() ?: 0
         println("[$queueId] Checking DLQ if empty -> Visible: $visible, In-Flight: $inFlight")
 
-        (visible + inFlight) == 0
+        return@until (visible + inFlight) == 0
       }
   }
 

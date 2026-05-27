@@ -12,31 +12,50 @@ import java.util.UUID
 interface PostingBalanceDataRepository : JpaRepository<PostingBalanceEntity, Long> {
   @Query(
     """
-    SELECT * FROM (
-        SELECT pb.*,
-               ROW_NUMBER() OVER (
-                   PARTITION BY p.sub_account_id
-                   ORDER BY t.timestamp DESC,
-                            t.entry_sequence DESC,
-                            p.entry_sequence DESC,
-                            p.posting_id DESC
-               ) as rn
-        FROM posting_balance pb
-        INNER JOIN postings p ON pb.posting_id = p.posting_id
-        INNER JOIN sub_accounts sa ON p.sub_account_id = sa.sub_account_id
-        INNER JOIN transactions t ON p.transaction_id = t.transaction_id
-        WHERE sa.account_id = :accountId
-          AND t.timestamp <= :transactionTimestamp
-          AND p.posting_id <> :postingId
-    ) as ranked_balances
-    WHERE rn = 1
+    SELECT pb
+    FROM PostingBalanceEntity pb
+    JOIN (
+        SELECT 
+            inner_pb.id as id,
+            ROW_NUMBER() OVER (
+                PARTITION BY inner_pb.postingEntity.subAccountEntity.id 
+                ORDER BY 
+                    inner_pb.postingEntity.transactionEntity.timestamp DESC,
+                    inner_pb.postingEntity.transactionEntity.entrySequence DESC,
+                    inner_pb.postingEntity.entrySequence DESC,
+                    inner_pb.postingEntity.id DESC
+            ) as rn
+        FROM PostingBalanceEntity inner_pb 
+        WHERE inner_pb.postingEntity.subAccountEntity.parentAccountEntity.id = :accountId  
+          AND inner_pb.postingEntity.id <> :postingId
+          AND (
+              inner_pb.postingEntity.transactionEntity.timestamp < :transactionTimestamp
+              OR (
+                  inner_pb.postingEntity.transactionEntity.timestamp = :transactionTimestamp
+                  AND inner_pb.postingEntity.transactionEntity.entrySequence < :transactionEntrySequence
+              )
+              OR (
+                  inner_pb.postingEntity.transactionEntity.timestamp = :transactionTimestamp
+                  AND inner_pb.postingEntity.transactionEntity.entrySequence = :transactionEntrySequence
+                  AND inner_pb.postingEntity.entrySequence < :postingEntrySequence
+              )
+              OR (
+                  inner_pb.postingEntity.transactionEntity.timestamp = :transactionTimestamp
+                  AND inner_pb.postingEntity.transactionEntity.entrySequence = :transactionEntrySequence
+                  AND inner_pb.postingEntity.entrySequence = :postingEntrySequence
+                  AND inner_pb.postingEntity.id < :postingId
+              )
+          )
+    ) AS ranked ON pb.id = ranked.id
+    WHERE ranked.rn = 1
   """,
-  nativeQuery = true,
   )
   fun getPreviousPostingBalancesByAccount(
     postingId: UUID,
     accountId: UUID,
     transactionTimestamp: Instant,
+    transactionEntrySequence: Long,
+    postingEntrySequence: Long,
   ): List<PostingBalanceEntity>
 
   fun findByPostingEntity(posting: PostingEntity): PostingBalanceEntity?

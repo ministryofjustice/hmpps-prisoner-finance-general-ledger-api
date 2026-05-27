@@ -112,6 +112,8 @@ class PostingBalanceService(
       postingId = posting.id,
       accountId = parentAccountId,
       transactionTimestamp = posting.transactionEntity.timestamp,
+      transactionEntrySequence = posting.transactionEntity.entrySequence,
+      postingEntrySequence = posting.entrySequence,
     )
     val previousStatementBalances = statementBalanceDataRepository.getLatestStatementBalancesForAccountId(
       accountId = parentAccountId,
@@ -145,7 +147,7 @@ class PostingBalanceService(
     calculatePostingBalances(posting = posting)
     return postingsDataRepository.getTheNextAccountPostingOrNull(
       postingId = posting.id,
-      accountId = posting.subAccountEntity.id,
+      accountId = posting.subAccountEntity.parentAccountEntity.id,
       transactionTimestamp = posting.transactionEntity.timestamp,
       transactionEntrySequence = posting.transactionEntity.entrySequence,
       postingEntrySequence = posting.entrySequence,

@@ -27,6 +27,8 @@ class PostingBalanceDataRepositoryTest @Autowired constructor(
         postingId = UUID.randomUUID(),
         accountId = parentAccount.id,
         transactionTimestamp = Instant.now(),
+        transactionEntrySequence = 1,
+        postingEntrySequence = 1,
       )
       assertThat(previousBalance).hasSize(0)
     }
@@ -72,6 +74,8 @@ class PostingBalanceDataRepositoryTest @Autowired constructor(
         postingId = UUID.randomUUID(),
         accountId = parentAccount.id,
         transactionTimestamp = transactionTimestamp.plusSeconds(1),
+        transactionEntrySequence = 1,
+        postingEntrySequence = 1,
       )
       assertThat(previousBalance).hasSize(1)
       assertThat(previousBalance.first().id).isEqualTo(postingBalances.first.id)
@@ -128,6 +132,8 @@ class PostingBalanceDataRepositoryTest @Autowired constructor(
         postingId = UUID.randomUUID(),
         accountId = parentAccount.id,
         transactionTimestamp = Instant.now(),
+        transactionEntrySequence = 2,
+        postingEntrySequence = 4,
       )
       assertThat(previousBalance).hasSize(1)
       assertThat(previousBalance.first().id).isEqualTo(mostRecentPostingBalance.first.id)
@@ -166,6 +172,8 @@ class PostingBalanceDataRepositoryTest @Autowired constructor(
         postingId = UUID.randomUUID(),
         accountId = parentAccount.id,
         transactionTimestamp = transactionTimestamp.plusSeconds(1),
+        transactionEntrySequence = 1,
+        postingEntrySequence = 1,
       )
       assertThat(previousBalances).hasSize(2)
 
