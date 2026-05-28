@@ -135,6 +135,50 @@ class TransactionController(
     }
   }
 
+  @Operation(summary = "Find a list of GL transactions by a list of UUIDs. If a transaction is not found, it is omitted from the results.")
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Retrieve transactions",
+        content = [Content(mediaType = "application/json", array = ArraySchema(schema = Schema(implementation = TransactionResponse::class)))],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Bad Request - request contains invalid uuids",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized - requires a valid OAuth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden - requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "500",
+        description = "Internal Server Error - An unexpected error occurred.",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW])
+  @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
+  @PostMapping(value = ["/transactions/search"], consumes = [MediaType.APPLICATION_JSON_VALUE])
+  fun searchTransactions(
+    @Valid @RequestBody body: List<UUID>,
+  ): ResponseEntity<List<TransactionResponse>> {
+    val transactionEntities = transactionService.readTransactions(body)
+    val transactionResponses = transactionEntities.map { TransactionResponse.fromEntity(it) }
+
+    return ResponseEntity<List<TransactionResponse>>.status(HttpStatus.OK).body(
+      transactionResponses,
+    )
+  }
+
   @Operation(summary = "Get an transaction by UUID")
   @ApiResponses(
     value = [

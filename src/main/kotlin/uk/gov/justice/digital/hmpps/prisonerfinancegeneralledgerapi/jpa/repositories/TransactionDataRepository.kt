@@ -15,6 +15,15 @@ interface TransactionDataRepository : JpaRepository<TransactionEntity, UUID> {
     """
     SELECT t
     FROM TransactionEntity t
+    WHERE t.id IN(:transactionIds)
+  """,
+  )
+  fun findTransactionsByIds(transactionIds: List<UUID>): List<TransactionEntity>
+
+  @Query(
+    """
+    SELECT t
+    FROM TransactionEntity t
     WHERE EXISTS (
       SELECT 1
       FROM PostingEntity p

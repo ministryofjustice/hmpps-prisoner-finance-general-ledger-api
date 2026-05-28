@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Import
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.helpers.RepoTestHelpers
 import java.time.Instant
+import java.util.UUID
 
 @DataJpaTest
 @Import(RepoTestHelpers::class)
@@ -33,6 +34,31 @@ class TransactionDataRepositoryTest @Autowired constructor(
   @BeforeEach
   fun setup() {
     testAccount = repoTestHelpers.createAccount("TEST_ACCOUNT_REF")
+  }
+
+  @Nested
+  inner class FindTransactionsByIds {
+    @Test
+    fun `should return an empty list when there are no matching transaction Ids`() {
+      val transactions = transactionDataRepository.findTransactionsByIds(listOf(UUID.randomUUID()))
+      assertThat(transactions).isEmpty()
+    }
+
+    @Test
+    fun `should return a list of transactions for matching Ids`() {
+      val cash = repoTestHelpers.createSubAccount("CASH", testAccount)
+      val spends = repoTestHelpers.createSubAccount("SPENDS", testAccount)
+
+      val transactionIds = mutableListOf<UUID>()
+
+      repeat(3) {
+        val transaction = repoTestHelpers.createOneToOneTransaction(1, Instant.now(), cash, spends, transactionTimeStamp = Instant.now())
+        transactionIds.add(transaction.id)
+      }
+
+      val retrievedTransactions = transactionDataRepository.findTransactionsByIds(transactionIds)
+      assertThat(retrievedTransactions).hasSize(3)
+    }
   }
 
   @Nested

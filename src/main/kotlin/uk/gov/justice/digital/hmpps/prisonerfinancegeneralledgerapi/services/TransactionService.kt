@@ -60,6 +60,11 @@ class TransactionService(
     return transactionEntity
   }
 
+  fun readTransactions(transactionIds: List<UUID>): List<TransactionEntity> {
+    val transactionEntities = transactionDataRepository.findTransactionsByIds(transactionIds)
+    return transactionEntities
+  }
+
   fun listTransactionsForPrisoner(accountId: UUID): List<PrisonerTransactionListResponse> {
     val transactionEntityList = transactionDataRepository.findTransactionsByAccountId(accountId)
 
