@@ -397,6 +397,126 @@ class CalculatedBalanceIntegrationTest(
     }
 
     @Test
+    fun `Should re-calculate all sub-account balances when a statement balance is created in the past for another sub-account`() {
+      //  Cash first total is the posting amount
+      //  Spends second total is the posting amount plus cash subAccount
+      //
+      //  Then I insert a migration for Spends before Cash
+      //  I want to see Cash total balance update to include the new Spend balance
+
+      // TXN CASH
+
+      val transactionTimestamp = Instant.now()
+      val amountCashTx = 10L
+      val createPostingRequestsCashTransaction: List<CreatePostingRequest> = listOf(
+        CreatePostingRequest(subAccountId = subAccountPrisonerCash.id, type = PostingType.CR, amount = amountCashTx, entrySequence = 1),
+        CreatePostingRequest(subAccountId = subAccountPrisonCanteen.id, type = PostingType.DR, amount = amountCashTx, entrySequence = 2),
+      )
+      webTestClient.post()
+        .uri("/transactions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .headers(setIdempotencyKey(UUID.randomUUID()))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(
+          CreateTransactionRequest(
+            reference = "TX",
+            description = "DESCRIPTION",
+            amount = amountCashTx,
+            timestamp = transactionTimestamp,
+            postings = createPostingRequestsCashTransaction,
+            entrySequence = 1,
+          ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+
+      // TXN SPENDS
+      val amountSpendsTx = 22L
+
+      val createPostingRequestsSpendsTransaction: List<CreatePostingRequest> = listOf(
+        CreatePostingRequest(subAccountId = subAccountPrisonerSpends.id, type = PostingType.CR, amount = amountSpendsTx, entrySequence = 1),
+        CreatePostingRequest(subAccountId = subAccountPrisonCanteen.id, type = PostingType.DR, amount = amountSpendsTx, entrySequence = 2),
+      )
+      webTestClient.post()
+        .uri("/transactions")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .headers(setIdempotencyKey(UUID.randomUUID()))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(
+          CreateTransactionRequest(
+            reference = "TX",
+            description = "DESCRIPTION",
+            amount = amountSpendsTx,
+            timestamp = transactionTimestamp.plusSeconds(20),
+            postings = createPostingRequestsSpendsTransaction,
+            entrySequence = 1,
+          ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+
+      integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE_QUEUE_ID, hmppsQueueService)
+
+      var statementEntryResponse = webTestClient.get()
+        .uri("/accounts/${accountPrisoner.id}/statement")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk()
+        .expectBody<PagedResponse<StatementEntryResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      var content = statementEntryResponse.content
+
+      assertThat(content).hasSize(2)
+      assertThat(content[0].subAccount.id).isEqualTo(subAccountPrisonerSpends.id)
+      assertThat(content[0].amount).isEqualTo(amountSpendsTx)
+      assertThat(content[0].subAccountBalance).isEqualTo(amountSpendsTx)
+      assertThat(content[0].accountBalance).isEqualTo(amountSpendsTx + amountCashTx)
+
+      assertThat(content[1].subAccount.id).isEqualTo(subAccountPrisonerCash.id)
+      assertThat(content[1].amount).isEqualTo(amountCashTx)
+      assertThat(content[1].subAccountBalance).isEqualTo(amountCashTx)
+      assertThat(content[1].accountBalance).isEqualTo(amountCashTx)
+
+      // Insert statement balance
+      val amountStatementBalance = 27L
+      val statementBalanceResponse = webTestClient.post()
+        .uri("/sub-accounts/${subAccountPrisonerSpends.id}/balance")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateStatementBalanceRequest(amount = amountStatementBalance, balanceDateTime = Instant.now().minusSeconds(120)))
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody<StatementBalanceResponse>()
+        .returnResult().responseBody!!
+
+      integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE_QUEUE_ID, hmppsQueueService)
+
+      statementEntryResponse = webTestClient.get()
+        .uri("/accounts/${accountPrisoner.id}/statement")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk()
+        .expectBody<PagedResponse<StatementEntryResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      content = statementEntryResponse.content
+
+      assertThat(content).hasSize(2)
+      assertThat(content[0].subAccount.id).isEqualTo(subAccountPrisonerSpends.id)
+      assertThat(content[0].amount).isEqualTo(amountSpendsTx)
+      assertThat(content[0].subAccountBalance).isEqualTo(amountSpendsTx + amountStatementBalance)
+      assertThat(content[0].accountBalance).isEqualTo(amountSpendsTx + amountCashTx + amountStatementBalance)
+
+      assertThat(content[1].subAccount.id).isEqualTo(subAccountPrisonerCash.id)
+      assertThat(content[1].amount).isEqualTo(amountCashTx)
+      assertThat(content[1].subAccountBalance).isEqualTo(amountCashTx)
+      assertThat(content[1].accountBalance).isEqualTo(amountCashTx + amountStatementBalance)
+    }
+
+    @Test
     fun `Should not change total account balance when a subAccount transfer is posted`() {
       val amountCanteenTransaction = 77L
       var createPostingRequests: List<CreatePostingRequest> = listOf(

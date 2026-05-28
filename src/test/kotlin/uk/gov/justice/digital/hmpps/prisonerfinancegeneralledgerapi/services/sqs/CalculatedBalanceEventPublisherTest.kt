@@ -135,8 +135,8 @@ class CalculatedBalanceEventPublisherTest {
     @Test
     fun `Should get the next posting if there is one and send a balance calculation request`() {
       whenever {
-        postingsDataRepository.getFirstPostingForSubAccountIdAfterDateTime(
-          subAccountId = prisonerCashAccount.id,
+        postingsDataRepository.getFirstPostingForAccountIdAfterDateTime(
+          accountId = prisonerCashAccount.parentAccountEntity.id,
           dateTime = statementEntity.balanceDateTime,
         )
       }.thenReturn(transaction.postings.first())
@@ -155,8 +155,8 @@ class CalculatedBalanceEventPublisherTest {
     @Test
     fun `Should not send a balance calculation request if there is no next posting`() {
       whenever {
-        postingsDataRepository.getFirstPostingForSubAccountIdAfterDateTime(
-          subAccountId = prisonerCashAccount.id,
+        postingsDataRepository.getFirstPostingForAccountIdAfterDateTime(
+          accountId = prisonerCashAccount.parentAccountEntity.id,
           dateTime = statementEntity.balanceDateTime,
         )
       }.thenReturn(null)
@@ -173,8 +173,8 @@ class CalculatedBalanceEventPublisherTest {
     @Test
     fun `Should log error when sending message fails`() {
       whenever {
-        postingsDataRepository.getFirstPostingForSubAccountIdAfterDateTime(
-          subAccountId = prisonerCashAccount.id,
+        postingsDataRepository.getFirstPostingForAccountIdAfterDateTime(
+          accountId = prisonerCashAccount.parentAccountEntity.id,
           dateTime = statementEntity.balanceDateTime,
         )
       }.thenReturn(transaction.postings.first())

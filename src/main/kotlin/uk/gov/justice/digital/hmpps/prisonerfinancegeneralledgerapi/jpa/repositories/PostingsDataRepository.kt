@@ -66,13 +66,13 @@ interface PostingsDataRepository :
     """
     SELECT p FROM PostingEntity p 
     WHERE 
-        p.subAccountEntity.id = :subAccountId AND 
+        p.subAccountEntity.parentAccountEntity.id = :accountId AND
         p.transactionEntity.timestamp > :dateTime
-    order by p.transactionEntity.timestamp, p.transactionEntity.entrySequence, p.entrySequence
+    order by p.transactionEntity.timestamp, p.transactionEntity.entrySequence, p.entrySequence, p.id
     limit 1
     """,
   )
-  fun getFirstPostingForSubAccountIdAfterDateTime(subAccountId: UUID, dateTime: Instant): PostingEntity?
+  fun getFirstPostingForAccountIdAfterDateTime(accountId: UUID, dateTime: Instant): PostingEntity?
 
   fun getBalanceForSubAccount(subAccountId: UUID, latestStatementBalanceDateTime: Instant? = null): Long {
     lateinit var postingsForSubAccount: List<PostingEntity>

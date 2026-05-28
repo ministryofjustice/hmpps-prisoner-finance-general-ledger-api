@@ -132,7 +132,6 @@ class PostingBalanceService(
     val newSubAccountBalance =
       applyPostingType(posting.amount, posting.type) + postingSubAccountResource.calculate()
 
-
     val newTotalBalance =
       applyPostingType(posting.amount, posting.type) + subAccountBalanceCalculators.values.sumOf { it.calculate() }
 
