@@ -135,6 +135,19 @@ class TransactionController(
     }
   }
 
+  @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW])
+  @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
+  @PostMapping(value = ["/transactions/search"], consumes = [MediaType.APPLICATION_JSON_VALUE])
+  fun searchTransactions(
+    @Valid @RequestBody body: List<UUID>,
+  ): ResponseEntity<List<TransactionResponse>> {
+    val transaction = transactionService.readTransaction(body.first())
+
+    return ResponseEntity<List<TransactionResponse>>.status(HttpStatus.OK).body(
+      listOf<TransactionResponse>(TransactionResponse.fromEntity(transaction!!)),
+    )
+  }
+
   @Operation(summary = "Get an transaction by UUID")
   @ApiResponses(
     value = [

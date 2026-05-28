@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.respo
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.TransactionResponse
 import java.time.Instant
 import java.util.UUID
+import kotlin.collections.emptyList
 
 class TransactionIntegrationTest : IntegrationTestBase() {
 
@@ -755,5 +756,63 @@ class TransactionIntegrationTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isNotFound
     }
+  }
+
+  @Nested
+  inner class SearchTransactions {
+    @Test
+    fun `Should return 200 an empty list when sent no transaction UUIDs`() {
+      val responseBody = webTestClient.post()
+        .uri("/transactions/search")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .bodyValue(
+          emptyList<UUID>(),
+        )
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<List<TransactionResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(responseBody).hasSize(0)
+    }
+  }
+
+  @Test
+  fun `Should return 200 and list of transactions for each transaction ID`() {
+    val account = integrationTestHelpers.createAccount(reference = "ACCOUNT_1", accountType = AccountType.PRISONER)
+    val subAccount1 = integrationTestHelpers.createSubAccount(accountId = account.id, subAccountReference = "SUB_ACCOUNT_1")
+    val subAccount2 = integrationTestHelpers.createSubAccount(accountId = account.id, subAccountReference = "SUB_ACCOUNT_2")
+
+    val transactionIds = mutableListOf<UUID>()
+
+    repeat(3) {
+      val transactionId = integrationTestHelpers.createOneToOneTransaction(
+        amount = 1,
+        debitSubAccountId = subAccount1.id,
+        creditSubAccountId = subAccount2.id,
+        transactionReference = "TXN_REF",
+        description = "DESC",
+        timestamp = Instant.now(),
+        transactionEntrySequence = 1,
+        postingEntrySequence = Pair(1, 2),
+      ).id
+
+      transactionIds.add(transactionId)
+    }
+
+    val responseBody = webTestClient.post()
+      .uri("/transactions/search")
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+      .bodyValue(
+        transactionIds,
+      )
+      .exchange()
+      .expectStatus().isOk
+      .expectBody<List<TransactionResponse>>()
+      .returnResult()
+      .responseBody!!
+
+    assertThat(responseBody).hasSize(3)
   }
 }
