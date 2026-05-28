@@ -1389,7 +1389,6 @@ class PostingDataRepositoryTest @Autowired constructor(
         creditEntrySequence = 2,
       )
 
-
       val posting = transactionOne.postings.first()
       val nextPosting = postingsDataRepository.getFirstPostingForAccountIdAfterDateTime(
         dateTime = transactionOne.timestamp.minusSeconds(60),
@@ -1418,8 +1417,7 @@ class PostingDataRepositoryTest @Autowired constructor(
         creditEntrySequence = 0,
       )
 
-
-      val posting = transactionOne.postings.minBy{ it.id.toString() }
+      val posting = transactionOne.postings.minBy { it.id.toString() }
       val nextPosting = postingsDataRepository.getFirstPostingForAccountIdAfterDateTime(
         dateTime = transactionOne.timestamp.minusSeconds(60),
         accountId = posting.subAccountEntity.parentAccountEntity.id,
