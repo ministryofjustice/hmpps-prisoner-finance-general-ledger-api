@@ -56,14 +56,14 @@ class PostingBalanceDataRepositoryTest @Autowired constructor(
         subAccountBalance2 = 1000,
       )
 
-      repoTestHelpers.createOneToOneTransactionPostingBalances(
+      val transactionInTheFuture = repoTestHelpers.createOneToOneTransactionPostingBalances(
         subAccount1 = subAccountCash,
         subAccount2 = prisonCanteenSubAccount,
         transactionTimeStamp = transactionTimestamp.plusSeconds(1000),
         transactionAmount = 1000,
         subAccountBalance1 = subAccount1Balance,
         subAccountBalance2 = 1000,
-      )
+      ).first.postingEntity.transactionEntity
 
       repoTestHelpers.createOneToOneTransactionPostingBalances(
         subAccount1 = subAccountCash,
@@ -75,9 +75,9 @@ class PostingBalanceDataRepositoryTest @Autowired constructor(
       )
 
       val previousBalance = postingBalanceDataRepository.getPreviousPostingBalancesByAccount(
-        postingId = UUID.randomUUID(),
+        postingId = transactionInTheFuture.postings.first().id,
         accountId = parentAccount.id,
-        transactionTimestamp = transactionTimestamp.plusSeconds(1),
+        transactionTimestamp = transactionInTheFuture.timestamp,
         transactionEntrySequence = 1,
         postingEntrySequence = 1,
       )
