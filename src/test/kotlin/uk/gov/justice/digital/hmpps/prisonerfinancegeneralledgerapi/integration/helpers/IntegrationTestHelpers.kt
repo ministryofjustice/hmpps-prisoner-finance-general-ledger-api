@@ -23,9 +23,13 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.reposito
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.TransactionDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateAccountRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreatePostingRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateStatementBalanceRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateSubAccountRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateTransactionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountResponse
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.PagedResponse
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.StatementBalanceResponse
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.StatementEntryResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.TransactionResponse
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
@@ -90,6 +94,27 @@ class IntegrationTestHelpers(
     return subAccount
   }
 
+  fun createStatementBalance(
+    subAccountId: UUID,
+    amount: Long,
+    timestamp: Instant,
+  ) {
+    webTestClient.post()
+      .uri("/sub-accounts/$subAccountId/balance")
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+      .contentType(MediaType.APPLICATION_JSON)
+      .bodyValue(
+        CreateStatementBalanceRequest(
+          amount = amount,
+          balanceDateTime = timestamp,
+        ),
+      )
+      .exchange()
+      .expectStatus().isCreated
+      .expectBody<StatementBalanceResponse>()
+      .returnResult().responseBody!!
+  }
+
   fun createOneToManyTransaction(
     amountPerAccount: Long,
     oneToManySubAccountId: UUID,
@@ -138,6 +163,22 @@ class IntegrationTestHelpers(
 
     return transactionResponse
   }
+
+  fun getStatementEntry(
+    accountId: UUID,
+    subAccountId: UUID? = null,
+  ): PagedResponse<StatementEntryResponse> = webTestClient.get()
+    .uri { uriBuilder ->
+      uriBuilder.path("/accounts/{accountId}/statement")
+      subAccountId?.let { uriBuilder.queryParam("subAccountId", it) }
+      uriBuilder.build(accountId)
+    }
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+    .exchange()
+    .expectStatus().isOk()
+    .expectBody<PagedResponse<StatementEntryResponse>>()
+    .returnResult()
+    .responseBody!!
 
   fun createOneToOneTransaction(
     amount: Long,

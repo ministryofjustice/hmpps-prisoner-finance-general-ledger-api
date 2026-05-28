@@ -19,7 +19,7 @@ class PostingBalanceService(
   private val postingsDataRepository: PostingsDataRepository,
   private val statementBalanceDataRepository: StatementBalanceDataRepository,
 ) {
-  enum class BalanceCalculationType {
+  enum class BalanceCalculationStrategy {
     FirstPosting,
     FromPreviousStatementBalance,
     FromPreviousPostingBalance,
@@ -27,26 +27,26 @@ class PostingBalanceService(
 
   private fun applyPostingType(amount: Long, type: PostingType) = if (type == PostingType.CR) amount else -amount
 
-  private fun compareTimestamps(previousPostingTimeStamp: Instant?, statementBalanceTimestamp: Instant?): BalanceCalculationType {
+  private fun compareTimestamps(previousPostingTimeStamp: Instant?, statementBalanceTimestamp: Instant?): BalanceCalculationStrategy {
     if (previousPostingTimeStamp == null || statementBalanceTimestamp == null) {
       throw Exception("Unexpected pathway in balance calculation when comparing timestamps")
     }
     if (previousPostingTimeStamp > statementBalanceTimestamp) {
-      return BalanceCalculationType.FromPreviousPostingBalance
+      return BalanceCalculationStrategy.FromPreviousPostingBalance
     } else {
-      return BalanceCalculationType.FromPreviousStatementBalance
+      return BalanceCalculationStrategy.FromPreviousStatementBalance
     }
   }
 
   private fun balanceCalculationStrategy(
     previousPostingBalance: PostingBalanceEntity? = null,
     previousStatementBalance: StatementBalanceEntity? = null,
-  ): BalanceCalculationType = when {
-    previousPostingBalance == null && previousStatementBalance == null -> BalanceCalculationType.FirstPosting
+  ): BalanceCalculationStrategy = when {
+    previousPostingBalance == null && previousStatementBalance == null -> BalanceCalculationStrategy.FirstPosting
 
-    previousPostingBalance != null && previousStatementBalance == null -> BalanceCalculationType.FromPreviousPostingBalance
+    previousPostingBalance != null && previousStatementBalance == null -> BalanceCalculationStrategy.FromPreviousPostingBalance
 
-    previousPostingBalance == null && previousStatementBalance != null -> BalanceCalculationType.FromPreviousStatementBalance
+    previousPostingBalance == null && previousStatementBalance != null -> BalanceCalculationStrategy.FromPreviousStatementBalance
 
     else -> compareTimestamps(
       previousPostingBalance?.postingEntity?.transactionEntity?.timestamp,
@@ -64,13 +64,13 @@ class PostingBalanceService(
         previousStatementBalance = this.latestStatementBalance,
       )
       return when {
-        strategy == BalanceCalculationType.FirstPosting -> 0
+        strategy == BalanceCalculationStrategy.FirstPosting -> 0
 
-        strategy == BalanceCalculationType.FromPreviousStatementBalance && this.latestStatementBalance != null -> {
+        strategy == BalanceCalculationStrategy.FromPreviousStatementBalance && this.latestStatementBalance != null -> {
           latestStatementBalance.amount
         }
 
-        strategy == BalanceCalculationType.FromPreviousPostingBalance && latestPostingBalance != null -> {
+        strategy == BalanceCalculationStrategy.FromPreviousPostingBalance && latestPostingBalance != null -> {
           latestPostingBalance.totalSubAccountBalance
         }
         else -> throw Exception("Unexpected pathway in calculateNewBalance")

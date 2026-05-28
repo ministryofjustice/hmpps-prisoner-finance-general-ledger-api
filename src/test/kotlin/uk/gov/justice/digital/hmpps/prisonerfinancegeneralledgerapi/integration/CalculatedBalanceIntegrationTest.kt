@@ -6,23 +6,14 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.http.MediaType
-import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingBalanceDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreatePostingRequest
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateStatementBalanceRequest
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateTransactionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountResponse
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.PagedResponse
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.StatementBalanceResponse
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.StatementEntryResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.sqs.SqsQueues
 import java.time.Instant
-import java.util.UUID
 
 class CalculatedBalanceIntegrationTest(
   @Autowired
@@ -56,61 +47,33 @@ class CalculatedBalanceIntegrationTest(
       val amountSecond = 27L
 
       // txn 1
-      val createPostingRequestsFirst: List<CreatePostingRequest> = listOf(
-        CreatePostingRequest(subAccountId = subAccountPrisonerCash.id, type = PostingType.CR, amount = amountFirst, entrySequence = 1),
-        CreatePostingRequest(subAccountId = subAccountPrisonCanteen.id, type = PostingType.DR, amount = amountFirst, entrySequence = 2),
+      integrationTestHelpers.createOneToOneTransaction(
+        amount = amountFirst,
+        creditSubAccountId = subAccountPrisonerCash.id,
+        debitSubAccountId = subAccountPrisonCanteen.id,
+        transactionReference = "test",
+        timestamp = Instant.now(),
+        transactionEntrySequence = 1,
+        postingEntrySequence = Pair(1L, 2L),
       )
-      webTestClient.post()
-        .uri("/transactions")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .headers(setIdempotencyKey(UUID.randomUUID()))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(
-          CreateTransactionRequest(
-            reference = "TX",
-            description = "DESCRIPTION",
-            amount = amountFirst,
-            timestamp = Instant.now(),
-            postings = createPostingRequestsFirst,
-            entrySequence = 1,
-          ),
-        )
-        .exchange()
-        .expectStatus().isCreated
 
       // txn 2
-      val createPostingRequestsSecond: List<CreatePostingRequest> = listOf(
-        CreatePostingRequest(subAccountId = subAccountPrisonerCash.id, type = PostingType.DR, amount = amountSecond, entrySequence = 1),
-        CreatePostingRequest(subAccountId = subAccountPrisonCanteen.id, type = PostingType.CR, amount = amountSecond, entrySequence = 2),
+      integrationTestHelpers.createOneToOneTransaction(
+        amount = amountSecond,
+        debitSubAccountId = subAccountPrisonerCash.id,
+        creditSubAccountId = subAccountPrisonCanteen.id,
+        transactionReference = "test",
+        timestamp = Instant.now(),
+        transactionEntrySequence = 1,
+        postingEntrySequence = Pair(2L, 1L),
       )
-      webTestClient.post()
-        .uri("/transactions")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .headers(setIdempotencyKey(UUID.randomUUID()))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(
-          CreateTransactionRequest(
-            reference = "TX",
-            description = "DESCRIPTION",
-            amount = amountSecond,
-            timestamp = Instant.now(),
-            postings = createPostingRequestsSecond,
-            entrySequence = 1,
-          ),
-        )
-        .exchange()
-        .expectStatus().isCreated
 
       integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE_QUEUE_ID, hmppsQueueService)
 
-      val statementEntryResponse = webTestClient.get()
-        .uri("/accounts/${accountPrisoner.id}/statement?subAccountId=${subAccountPrisonerCash.id}")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .exchange()
-        .expectStatus().isOk()
-        .expectBody<PagedResponse<StatementEntryResponse>>()
-        .returnResult()
-        .responseBody!!
+      val statementEntryResponse = integrationTestHelpers.getStatementEntry(
+        accountId = accountPrisoner.id,
+        subAccountId = subAccountPrisonerCash.id,
+      )
 
       val content = statementEntryResponse.content
 
@@ -130,39 +93,23 @@ class CalculatedBalanceIntegrationTest(
     @Test
     fun `Should calculate balances after a transaction is posted`() {
       val amount = 77L
-      val createPostingRequests: List<CreatePostingRequest> = listOf(
-        CreatePostingRequest(subAccountId = subAccountPrisonerCash.id, type = PostingType.CR, amount = amount, entrySequence = 1),
-        CreatePostingRequest(subAccountId = subAccountPrisonCanteen.id, type = PostingType.DR, amount = amount, entrySequence = 2),
-      )
 
-      webTestClient.post()
-        .uri("/transactions")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .headers(setIdempotencyKey(UUID.randomUUID()))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(
-          CreateTransactionRequest(
-            reference = "TX",
-            description = "DESCRIPTION",
-            amount = amount,
-            timestamp = Instant.now(),
-            postings = createPostingRequests,
-            entrySequence = 1,
-          ),
-        )
-        .exchange()
-        .expectStatus().isCreated
+      integrationTestHelpers.createOneToOneTransaction(
+        amount = amount,
+        creditSubAccountId = subAccountPrisonerCash.id,
+        debitSubAccountId = subAccountPrisonCanteen.id,
+        transactionReference = "test",
+        timestamp = Instant.now(),
+        transactionEntrySequence = 1,
+        postingEntrySequence = Pair(1L, 2L),
+      )
 
       integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE_QUEUE_ID, hmppsQueueService)
 
-      val statementEntryResponse = webTestClient.get()
-        .uri("/accounts/${accountPrisoner.id}/statement?subAccountId=${subAccountPrisonerCash.id}")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .exchange()
-        .expectStatus().isOk()
-        .expectBody<PagedResponse<StatementEntryResponse>>()
-        .returnResult()
-        .responseBody!!
+      val statementEntryResponse = integrationTestHelpers.getStatementEntry(
+        accountId = accountPrisoner.id,
+        subAccountId = subAccountPrisonerCash.id,
+      )
 
       val content = statementEntryResponse.content
 
@@ -177,49 +124,29 @@ class CalculatedBalanceIntegrationTest(
       val amount = 77L
       val statementBalanceAmount = 100L
 
-      webTestClient.post()
-        .uri("/sub-accounts/${subAccountPrisonerCash.id}/balance")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(CreateStatementBalanceRequest(amount = statementBalanceAmount, balanceDateTime = Instant.now().minusSeconds(99)))
-        .exchange()
-        .expectStatus().isCreated
-        .expectBody<StatementBalanceResponse>()
-        .returnResult().responseBody!!
-
-      val createPostingRequests: List<CreatePostingRequest> = listOf(
-        CreatePostingRequest(subAccountId = subAccountPrisonerCash.id, type = PostingType.CR, amount = amount, entrySequence = 1),
-        CreatePostingRequest(subAccountId = subAccountPrisonCanteen.id, type = PostingType.DR, amount = amount, entrySequence = 2),
+      val statementBalanceTimestamp = Instant.now().minusSeconds(120)
+      integrationTestHelpers.createStatementBalance(
+        subAccountId = subAccountPrisonerCash.id,
+        amount = statementBalanceAmount,
+        timestamp = statementBalanceTimestamp,
       )
 
-      webTestClient.post()
-        .uri("/transactions")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .headers(setIdempotencyKey(UUID.randomUUID()))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(
-          CreateTransactionRequest(
-            reference = "TX",
-            description = "DESCRIPTION",
-            amount = amount,
-            timestamp = Instant.now(),
-            postings = createPostingRequests,
-            entrySequence = 1,
-          ),
-        )
-        .exchange()
-        .expectStatus().isCreated
+      integrationTestHelpers.createOneToOneTransaction(
+        amount = amount,
+        creditSubAccountId = subAccountPrisonerCash.id,
+        debitSubAccountId = subAccountPrisonCanteen.id,
+        transactionReference = "test",
+        timestamp = Instant.now(),
+        transactionEntrySequence = 1,
+        postingEntrySequence = Pair(1L, 2L),
+      )
 
       integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE_QUEUE_ID, hmppsQueueService)
 
-      val statementEntryResponse = webTestClient.get()
-        .uri("/accounts/${accountPrisoner.id}/statement?subAccountId=${subAccountPrisonerCash.id}")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .exchange()
-        .expectStatus().isOk()
-        .expectBody<PagedResponse<StatementEntryResponse>>()
-        .returnResult()
-        .responseBody!!
+      val statementEntryResponse = integrationTestHelpers.getStatementEntry(
+        accountId = accountPrisoner.id,
+        subAccountId = subAccountPrisonerCash.id,
+      )
 
       val content = statementEntryResponse.content
 
@@ -231,42 +158,25 @@ class CalculatedBalanceIntegrationTest(
 
     @Test
     fun `Should re-calculate balances when a posting is created in the past`() {
-      val amountFirst = 77L
-      val amountSecond = 27L
-
       // txn 1
-      val createPostingRequestsFirst: List<CreatePostingRequest> = listOf(
-        CreatePostingRequest(subAccountId = subAccountPrisonerCash.id, type = PostingType.CR, amount = amountFirst, entrySequence = 1),
-        CreatePostingRequest(subAccountId = subAccountPrisonCanteen.id, type = PostingType.DR, amount = amountFirst, entrySequence = 2),
+      val timestampFirst = Instant.now()
+      val amountFirst = 77L
+      integrationTestHelpers.createOneToOneTransaction(
+        amount = amountFirst,
+        creditSubAccountId = subAccountPrisonerCash.id,
+        debitSubAccountId = subAccountPrisonCanteen.id,
+        transactionReference = "test",
+        timestamp = timestampFirst,
+        transactionEntrySequence = 1,
+        postingEntrySequence = Pair(1L, 2L),
       )
-      webTestClient.post()
-        .uri("/transactions")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .headers(setIdempotencyKey(UUID.randomUUID()))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(
-          CreateTransactionRequest(
-            reference = "TX",
-            description = "DESCRIPTION",
-            amount = amountFirst,
-            timestamp = Instant.now(),
-            postings = createPostingRequestsFirst,
-            entrySequence = 1,
-          ),
-        )
-        .exchange()
-        .expectStatus().isCreated
 
       integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE_QUEUE_ID, hmppsQueueService)
 
-      var statementEntryResponse = webTestClient.get()
-        .uri("/accounts/${accountPrisoner.id}/statement?subAccountId=${subAccountPrisonerCash.id}")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .exchange()
-        .expectStatus().isOk()
-        .expectBody<PagedResponse<StatementEntryResponse>>()
-        .returnResult()
-        .responseBody!!
+      var statementEntryResponse = integrationTestHelpers.getStatementEntry(
+        accountId = accountPrisoner.id,
+        subAccountId = subAccountPrisonerCash.id,
+      )
 
       var content = statementEntryResponse.content
 
@@ -275,38 +185,24 @@ class CalculatedBalanceIntegrationTest(
       assertThat(content[0].subAccountBalance).isEqualTo(amountFirst)
 
       // txn 2 in the past
-      val createPostingRequestsSecond: List<CreatePostingRequest> = listOf(
-        CreatePostingRequest(subAccountId = subAccountPrisonerCash.id, type = PostingType.CR, amount = amountSecond, entrySequence = 1),
-        CreatePostingRequest(subAccountId = subAccountPrisonCanteen.id, type = PostingType.DR, amount = amountSecond, entrySequence = 2),
+      val timestampSecond = timestampFirst.minusSeconds(120)
+      val amountSecond = 27L
+      integrationTestHelpers.createOneToOneTransaction(
+        amount = amountSecond,
+        creditSubAccountId = subAccountPrisonerCash.id,
+        debitSubAccountId = subAccountPrisonCanteen.id,
+        transactionReference = "test",
+        timestamp = timestampSecond,
+        transactionEntrySequence = 1,
+        postingEntrySequence = Pair(1L, 2L),
       )
-      webTestClient.post()
-        .uri("/transactions")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .headers(setIdempotencyKey(UUID.randomUUID()))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(
-          CreateTransactionRequest(
-            reference = "TX",
-            description = "DESCRIPTION",
-            amount = amountSecond,
-            timestamp = Instant.now().minusSeconds(120),
-            postings = createPostingRequestsSecond,
-            entrySequence = 1,
-          ),
-        )
-        .exchange()
-        .expectStatus().isCreated
 
       integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE_QUEUE_ID, hmppsQueueService)
 
-      statementEntryResponse = webTestClient.get()
-        .uri("/accounts/${accountPrisoner.id}/statement?subAccountId=${subAccountPrisonerCash.id}")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .exchange()
-        .expectStatus().isOk()
-        .expectBody<PagedResponse<StatementEntryResponse>>()
-        .returnResult()
-        .responseBody!!
+      statementEntryResponse = integrationTestHelpers.getStatementEntry(
+        accountId = accountPrisoner.id,
+        subAccountId = subAccountPrisonerCash.id,
+      )
 
       content = statementEntryResponse.content
 
@@ -326,38 +222,22 @@ class CalculatedBalanceIntegrationTest(
       val amountStatementBalance = 27L
 
       // TXN
-      val createPostingRequestsFirst: List<CreatePostingRequest> = listOf(
-        CreatePostingRequest(subAccountId = subAccountPrisonerCash.id, type = PostingType.CR, amount = amountFirst, entrySequence = 1),
-        CreatePostingRequest(subAccountId = subAccountPrisonCanteen.id, type = PostingType.DR, amount = amountFirst, entrySequence = 2),
+      integrationTestHelpers.createOneToOneTransaction(
+        amount = amountFirst,
+        creditSubAccountId = subAccountPrisonerCash.id,
+        debitSubAccountId = subAccountPrisonCanteen.id,
+        transactionReference = "test",
+        timestamp = Instant.now(),
+        transactionEntrySequence = 1,
+        postingEntrySequence = Pair(1L, 2L),
       )
-      webTestClient.post()
-        .uri("/transactions")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .headers(setIdempotencyKey(UUID.randomUUID()))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(
-          CreateTransactionRequest(
-            reference = "TX",
-            description = "DESCRIPTION",
-            amount = amountFirst,
-            timestamp = Instant.now(),
-            postings = createPostingRequestsFirst,
-            entrySequence = 1,
-          ),
-        )
-        .exchange()
-        .expectStatus().isCreated
 
       integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE_QUEUE_ID, hmppsQueueService)
 
-      var statementEntryResponse = webTestClient.get()
-        .uri("/accounts/${accountPrisoner.id}/statement?subAccountId=${subAccountPrisonerCash.id}")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .exchange()
-        .expectStatus().isOk()
-        .expectBody<PagedResponse<StatementEntryResponse>>()
-        .returnResult()
-        .responseBody!!
+      var statementEntryResponse = integrationTestHelpers.getStatementEntry(
+        accountId = accountPrisoner.id,
+        subAccountId = subAccountPrisonerCash.id,
+      )
 
       var content = statementEntryResponse.content
 
@@ -367,26 +247,19 @@ class CalculatedBalanceIntegrationTest(
       assertThat(content[0].accountBalance).isEqualTo(amountFirst)
 
       // Insert statement balance
-      val statementBalanceResponse = webTestClient.post()
-        .uri("/sub-accounts/${subAccountPrisonerCash.id}/balance")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(CreateStatementBalanceRequest(amount = amountStatementBalance, balanceDateTime = Instant.now().minusSeconds(120)))
-        .exchange()
-        .expectStatus().isCreated
-        .expectBody<StatementBalanceResponse>()
-        .returnResult().responseBody!!
+      val statementBalanceTimestamp = Instant.now().minusSeconds(120)
+      integrationTestHelpers.createStatementBalance(
+        subAccountId = subAccountPrisonerCash.id,
+        amount = amountStatementBalance,
+        timestamp = statementBalanceTimestamp,
+      )
 
       integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE_QUEUE_ID, hmppsQueueService)
 
-      statementEntryResponse = webTestClient.get()
-        .uri("/accounts/${accountPrisoner.id}/statement?subAccountId=${subAccountPrisonerCash.id}")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .exchange()
-        .expectStatus().isOk()
-        .expectBody<PagedResponse<StatementEntryResponse>>()
-        .returnResult()
-        .responseBody!!
+      statementEntryResponse = integrationTestHelpers.getStatementEntry(
+        accountId = accountPrisoner.id,
+        subAccountId = subAccountPrisonerCash.id,
+      )
 
       content = statementEntryResponse.content
 
@@ -406,65 +279,36 @@ class CalculatedBalanceIntegrationTest(
 
       // TXN CASH
 
-      val transactionTimestamp = Instant.now()
+      val transactionCashTimestamp = Instant.now()
       val amountCashTx = 10L
-      val createPostingRequestsCashTransaction: List<CreatePostingRequest> = listOf(
-        CreatePostingRequest(subAccountId = subAccountPrisonerCash.id, type = PostingType.CR, amount = amountCashTx, entrySequence = 1),
-        CreatePostingRequest(subAccountId = subAccountPrisonCanteen.id, type = PostingType.DR, amount = amountCashTx, entrySequence = 2),
+      integrationTestHelpers.createOneToOneTransaction(
+        amount = amountCashTx,
+        creditSubAccountId = subAccountPrisonerCash.id,
+        debitSubAccountId = subAccountPrisonCanteen.id,
+        transactionReference = "test",
+        timestamp = transactionCashTimestamp,
+        transactionEntrySequence = 1,
+        postingEntrySequence = Pair(1L, 2L),
       )
-      webTestClient.post()
-        .uri("/transactions")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .headers(setIdempotencyKey(UUID.randomUUID()))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(
-          CreateTransactionRequest(
-            reference = "TX",
-            description = "DESCRIPTION",
-            amount = amountCashTx,
-            timestamp = transactionTimestamp,
-            postings = createPostingRequestsCashTransaction,
-            entrySequence = 1,
-          ),
-        )
-        .exchange()
-        .expectStatus().isCreated
 
       // TXN SPENDS
       val amountSpendsTx = 22L
-
-      val createPostingRequestsSpendsTransaction: List<CreatePostingRequest> = listOf(
-        CreatePostingRequest(subAccountId = subAccountPrisonerSpends.id, type = PostingType.CR, amount = amountSpendsTx, entrySequence = 1),
-        CreatePostingRequest(subAccountId = subAccountPrisonCanteen.id, type = PostingType.DR, amount = amountSpendsTx, entrySequence = 2),
+      val transactionSpendsTimestamp = transactionCashTimestamp.plusSeconds(10)
+      integrationTestHelpers.createOneToOneTransaction(
+        amount = amountSpendsTx,
+        creditSubAccountId = subAccountPrisonerSpends.id,
+        debitSubAccountId = subAccountPrisonCanteen.id,
+        transactionReference = "test",
+        timestamp = transactionSpendsTimestamp,
+        transactionEntrySequence = 1,
+        postingEntrySequence = Pair(1L, 2L),
       )
-      webTestClient.post()
-        .uri("/transactions")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .headers(setIdempotencyKey(UUID.randomUUID()))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(
-          CreateTransactionRequest(
-            reference = "TX",
-            description = "DESCRIPTION",
-            amount = amountSpendsTx,
-            timestamp = transactionTimestamp.plusSeconds(20),
-            postings = createPostingRequestsSpendsTransaction,
-            entrySequence = 1,
-          ),
-        )
-        .exchange()
-        .expectStatus().isCreated
 
       integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE_QUEUE_ID, hmppsQueueService)
 
-      var statementEntryResponse = webTestClient.get()
-        .uri("/accounts/${accountPrisoner.id}/statement")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .exchange()
-        .expectStatus().isOk()
-        .expectBody<PagedResponse<StatementEntryResponse>>()
-        .returnResult()
-        .responseBody!!
+      var statementEntryResponse = integrationTestHelpers.getStatementEntry(
+        accountId = accountPrisoner.id,
+      )
 
       var content = statementEntryResponse.content
 
@@ -481,26 +325,18 @@ class CalculatedBalanceIntegrationTest(
 
       // Insert statement balance
       val amountStatementBalance = 27L
-      val statementBalanceResponse = webTestClient.post()
-        .uri("/sub-accounts/${subAccountPrisonerSpends.id}/balance")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(CreateStatementBalanceRequest(amount = amountStatementBalance, balanceDateTime = Instant.now().minusSeconds(120)))
-        .exchange()
-        .expectStatus().isCreated
-        .expectBody<StatementBalanceResponse>()
-        .returnResult().responseBody!!
+      val statementBalanceTimestamp = transactionCashTimestamp.minusSeconds(60)
+      integrationTestHelpers.createStatementBalance(
+        subAccountId = subAccountPrisonerSpends.id,
+        amount = amountStatementBalance,
+        timestamp = statementBalanceTimestamp,
+      )
 
       integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE_QUEUE_ID, hmppsQueueService)
 
-      statementEntryResponse = webTestClient.get()
-        .uri("/accounts/${accountPrisoner.id}/statement")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .exchange()
-        .expectStatus().isOk()
-        .expectBody<PagedResponse<StatementEntryResponse>>()
-        .returnResult()
-        .responseBody!!
+      statementEntryResponse = integrationTestHelpers.getStatementEntry(
+        accountId = accountPrisoner.id,
+      )
 
       content = statementEntryResponse.content
 
@@ -519,39 +355,23 @@ class CalculatedBalanceIntegrationTest(
     @Test
     fun `Should not change total account balance when a subAccount transfer is posted`() {
       val amountCanteenTransaction = 77L
-      var createPostingRequests: List<CreatePostingRequest> = listOf(
-        CreatePostingRequest(subAccountId = subAccountPrisonCanteen.id, type = PostingType.DR, amount = amountCanteenTransaction, entrySequence = 1),
-        CreatePostingRequest(subAccountId = subAccountPrisonerCash.id, type = PostingType.CR, amount = amountCanteenTransaction, entrySequence = 2),
-      )
 
-      webTestClient.post()
-        .uri("/transactions")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .headers(setIdempotencyKey(UUID.randomUUID()))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(
-          CreateTransactionRequest(
-            reference = "TX",
-            description = "DESCRIPTION",
-            amount = amountCanteenTransaction,
-            timestamp = Instant.now(),
-            postings = createPostingRequests,
-            entrySequence = 1,
-          ),
-        )
-        .exchange()
-        .expectStatus().isCreated
+      integrationTestHelpers.createOneToOneTransaction(
+        amount = amountCanteenTransaction,
+        creditSubAccountId = subAccountPrisonerCash.id,
+        debitSubAccountId = subAccountPrisonCanteen.id,
+        transactionReference = "test",
+        timestamp = Instant.now(),
+        transactionEntrySequence = 1,
+        postingEntrySequence = Pair(1L, 2L),
+      )
 
       integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE_QUEUE_ID, hmppsQueueService)
 
-      var statementEntryResponse = webTestClient.get()
-        .uri("/accounts/${accountPrisoner.id}/statement?subAccountId=${subAccountPrisonerCash.id}")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .exchange()
-        .expectStatus().isOk()
-        .expectBody<PagedResponse<StatementEntryResponse>>()
-        .returnResult()
-        .responseBody!!
+      var statementEntryResponse = integrationTestHelpers.getStatementEntry(
+        accountId = accountPrisoner.id,
+        subAccountId = subAccountPrisonerCash.id,
+      )
 
       var content = statementEntryResponse.content
 
@@ -561,40 +381,25 @@ class CalculatedBalanceIntegrationTest(
       assertThat(content[0].accountBalance).isEqualTo(amountCanteenTransaction)
 
       // sub acc transfer
-      val amountSpendsToCash = 22L
-      createPostingRequests = listOf(
-        CreatePostingRequest(subAccountId = subAccountPrisonerSpends.id, type = PostingType.DR, amount = amountSpendsToCash, entrySequence = 1),
-        CreatePostingRequest(subAccountId = subAccountPrisonerCash.id, type = PostingType.CR, amount = amountSpendsToCash, entrySequence = 2),
-      )
 
-      webTestClient.post()
-        .uri("/transactions")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .headers(setIdempotencyKey(UUID.randomUUID()))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(
-          CreateTransactionRequest(
-            reference = "TX",
-            description = "DESCRIPTION",
-            amount = amountSpendsToCash,
-            timestamp = Instant.now(),
-            postings = createPostingRequests,
-            entrySequence = 1,
-          ),
-        )
-        .exchange()
-        .expectStatus().isCreated
+      val amountSpendsToCash = 22L
+
+      integrationTestHelpers.createOneToOneTransaction(
+        amount = amountSpendsToCash,
+        creditSubAccountId = subAccountPrisonerCash.id,
+        debitSubAccountId = subAccountPrisonerSpends.id,
+        transactionReference = "test",
+        timestamp = Instant.now(),
+        transactionEntrySequence = 1,
+        postingEntrySequence = Pair(2L, 1L),
+      )
 
       integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE_QUEUE_ID, hmppsQueueService)
 
-      statementEntryResponse = webTestClient.get()
-        .uri("/accounts/${accountPrisoner.id}/statement?subAccountId=${subAccountPrisonerCash.id}")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .exchange()
-        .expectStatus().isOk()
-        .expectBody<PagedResponse<StatementEntryResponse>>()
-        .returnResult()
-        .responseBody!!
+      statementEntryResponse = integrationTestHelpers.getStatementEntry(
+        accountId = accountPrisoner.id,
+        subAccountId = subAccountPrisonerCash.id,
+      )
 
       content = statementEntryResponse.content
 
@@ -620,63 +425,35 @@ class CalculatedBalanceIntegrationTest(
       val amountSecond = 27L
 
       // txn 1
-      val createPostingRequestsFirst: List<CreatePostingRequest> = listOf(
-        CreatePostingRequest(subAccountId = subAccountPrisonerCash.id, type = PostingType.CR, amount = amountFirst, entrySequence = 1),
-        CreatePostingRequest(subAccountId = subAccountPrisonCanteen.id, type = PostingType.DR, amount = amountFirst, entrySequence = 2),
+      integrationTestHelpers.createOneToOneTransaction(
+        amount = amountFirst,
+        creditSubAccountId = subAccountPrisonerCash.id,
+        debitSubAccountId = subAccountPrisonCanteen.id,
+        transactionReference = "test",
+        timestamp = Instant.now(),
+        transactionEntrySequence = 1,
+        postingEntrySequence = Pair(1L, 2L),
       )
-      webTestClient.post()
-        .uri("/transactions")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .headers(setIdempotencyKey(UUID.randomUUID()))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(
-          CreateTransactionRequest(
-            reference = "TX",
-            description = "DESCRIPTION",
-            amount = amountFirst,
-            timestamp = Instant.now(),
-            postings = createPostingRequestsFirst,
-            entrySequence = 1,
-          ),
-        )
-        .exchange()
-        .expectStatus().isCreated
 
       // txn 2
-      val createPostingRequestsSecond: List<CreatePostingRequest> = listOf(
-        CreatePostingRequest(subAccountId = subAccountPrisonerCash.id, type = PostingType.CR, amount = amountSecond, entrySequence = 1),
-        CreatePostingRequest(subAccountId = subAccountPrisonCanteen.id, type = PostingType.DR, amount = amountSecond, entrySequence = 2),
+      integrationTestHelpers.createOneToOneTransaction(
+        amount = amountSecond,
+        creditSubAccountId = subAccountPrisonerCash.id,
+        debitSubAccountId = subAccountPrisonCanteen.id,
+        transactionReference = "test",
+        timestamp = Instant.now(),
+        transactionEntrySequence = 1,
+        postingEntrySequence = Pair(1L, 2L),
       )
-      webTestClient.post()
-        .uri("/transactions")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .headers(setIdempotencyKey(UUID.randomUUID()))
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(
-          CreateTransactionRequest(
-            reference = "TX",
-            description = "DESCRIPTION",
-            amount = amountSecond,
-            timestamp = Instant.now(),
-            postings = createPostingRequestsSecond,
-            entrySequence = 1,
-          ),
-        )
-        .exchange()
-        .expectStatus().isCreated
 
       // waiting for sqs to empty and then clearing balances
       integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE_QUEUE_ID, hmppsQueueService)
       postingBalanceDataRepository.deleteAllInBatch()
 
-      var statementEntryResponse = webTestClient.get()
-        .uri("/accounts/${accountPrisoner.id}/statement?subAccountId=${subAccountPrisonerCash.id}")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .exchange()
-        .expectStatus().isOk()
-        .expectBody<PagedResponse<StatementEntryResponse>>()
-        .returnResult()
-        .responseBody!!
+      var statementEntryResponse = integrationTestHelpers.getStatementEntry(
+        accountId = accountPrisoner.id,
+        subAccountId = subAccountPrisonerCash.id,
+      )
 
       var content = statementEntryResponse.content
 
@@ -696,14 +473,10 @@ class CalculatedBalanceIntegrationTest(
 
       integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE_QUEUE_ID, hmppsQueueService)
 
-      statementEntryResponse = webTestClient.get()
-        .uri("/accounts/${accountPrisoner.id}/statement?subAccountId=${subAccountPrisonerCash.id}")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .exchange()
-        .expectStatus().isOk()
-        .expectBody<PagedResponse<StatementEntryResponse>>()
-        .returnResult()
-        .responseBody!!
+      statementEntryResponse = integrationTestHelpers.getStatementEntry(
+        accountId = accountPrisoner.id,
+        subAccountId = subAccountPrisonerCash.id,
+      )
 
       content = statementEntryResponse.content
 
