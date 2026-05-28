@@ -133,7 +133,7 @@ class RepoTestHelpers(
     return statementBalance
   }
 
-  fun createPostingBalancePrisoner(
+  fun createOneToOneTransactionPostingBalances(
     subAccount1: SubAccountEntity,
     subAccount2: SubAccountEntity,
     transactionTimeStamp: Instant,
@@ -194,6 +194,10 @@ class RepoTestHelpers(
     entityManager.persist(postingBalance2)
 
     return Pair(postingBalance1, postingBalance2)
+  }
+
+  fun persist(entity: Any) {
+    entityManager.persist(entity)
   }
 
   fun clearDb() {

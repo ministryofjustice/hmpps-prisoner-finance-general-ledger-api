@@ -44,16 +44,17 @@ interface PostingsDataRepository :
       WHERE NOT EXISTS (
           SELECT 1 
           FROM PostingEntity p2 
-          WHERE p2.subAccountEntity.id = p.subAccountEntity.id
+          WHERE p2.subAccountEntity.parentAccountEntity.id = p.subAccountEntity.parentAccountEntity.id
             AND (
                 p2.transactionEntity.timestamp < p.transactionEntity.timestamp 
                 OR (p2.transactionEntity.timestamp = p.transactionEntity.timestamp AND p2.transactionEntity.entrySequence < p.transactionEntity.entrySequence)
                 OR (p2.transactionEntity.timestamp = p.transactionEntity.timestamp AND p2.transactionEntity.entrySequence = p.transactionEntity.entrySequence AND p2.entrySequence < p.entrySequence)
+                OR (p2.transactionEntity.timestamp = p.transactionEntity.timestamp AND p2.transactionEntity.entrySequence = p.transactionEntity.entrySequence AND p2.entrySequence = p.entrySequence and p2.id < p.id)
             )
       )
   """,
   )
-  fun getFirstPostingsForAllSubAccounts(): List<UUID>
+  fun getFirstPostingsForAllAccounts(): List<UUID>
 
   @Query("SELECT p FROM PostingEntity p WHERE p.subAccountEntity.id = :subAccountId")
   fun getPostingsForSubAccountId(@Param("subAccountId") subAccountId: UUID): List<PostingEntity>
@@ -65,13 +66,13 @@ interface PostingsDataRepository :
     """
     SELECT p FROM PostingEntity p 
     WHERE 
-        p.subAccountEntity.id = :subAccountId AND 
+        p.subAccountEntity.parentAccountEntity.id = :accountId AND
         p.transactionEntity.timestamp > :dateTime
-    order by p.transactionEntity.timestamp, p.transactionEntity.entrySequence, p.entrySequence
+    order by p.transactionEntity.timestamp, p.transactionEntity.entrySequence, p.entrySequence, p.id
     limit 1
     """,
   )
-  fun getFirstPostingForSubAccountIdAfterDateTime(subAccountId: UUID, dateTime: Instant): PostingEntity?
+  fun getFirstPostingForAccountIdAfterDateTime(accountId: UUID, dateTime: Instant): PostingEntity?
 
   fun getBalanceForSubAccount(subAccountId: UUID, latestStatementBalanceDateTime: Instant? = null): Long {
     lateinit var postingsForSubAccount: List<PostingEntity>
@@ -120,38 +121,38 @@ WHERE sa.account_id = :prisonerId
   // the last OR is a workaround entrySequences that zero due to old data in dev
   @Query(
     """
-    SELECT p 
+    SELECT p
     FROM PostingEntity p
-    WHERE p.subAccountEntity.id = :subAccountId
+    WHERE p.subAccountEntity.parentAccountEntity.id = :accountId
       AND (
           p.transactionEntity.timestamp > :transactionTimestamp
           OR (
-              p.transactionEntity.timestamp = :transactionTimestamp 
+              p.transactionEntity.timestamp = :transactionTimestamp
               AND p.transactionEntity.entrySequence > :transactionEntrySequence
           )
           OR (
-              p.transactionEntity.timestamp = :transactionTimestamp 
-              AND p.transactionEntity.entrySequence = :transactionEntrySequence 
+              p.transactionEntity.timestamp = :transactionTimestamp
+              AND p.transactionEntity.entrySequence = :transactionEntrySequence
               AND p.entrySequence > :postingEntrySequence
           )
           OR (
-            p.transactionEntity.timestamp = :transactionTimestamp 
-            AND p.transactionEntity.entrySequence = :transactionEntrySequence 
-            AND p.entrySequence = :postingEntrySequence
-            AND p.id > :postingId
+              p.transactionEntity.timestamp = :transactionTimestamp
+              AND p.transactionEntity.entrySequence = :transactionEntrySequence
+              AND p.entrySequence = :postingEntrySequence
+              AND p.id > :postingId
         )
       )
-    ORDER BY 
-        p.transactionEntity.timestamp ASC, 
-        p.transactionEntity.entrySequence ASC, 
+    ORDER BY
+        p.transactionEntity.timestamp ASC,
+        p.transactionEntity.entrySequence ASC,
         p.entrySequence ASC,
         p.id ASC
     LIMIT 1
   """,
   )
-  fun getTheNextSubAccountPostingOrNull(
+  fun getTheNextAccountPostingOrNull(
     postingId: UUID,
-    subAccountId: UUID,
+    accountId: UUID,
     transactionTimestamp: Instant,
     transactionEntrySequence: Long,
     postingEntrySequence: Long,

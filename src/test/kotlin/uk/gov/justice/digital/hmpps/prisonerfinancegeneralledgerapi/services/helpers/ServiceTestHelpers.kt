@@ -25,6 +25,7 @@ class ServiceTestHelpers {
       reference = ref,
       parentAccountEntity = account,
     )
+    account.subAccounts.add(subAccountEntity)
     return subAccountEntity
   }
 

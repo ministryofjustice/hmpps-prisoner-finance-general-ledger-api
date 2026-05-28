@@ -23,6 +23,9 @@ class PostingBalanceEntity(
   @Column(name = "total_sub_account_balance", nullable = false)
   var totalSubAccountBalance: Long = 0,
 
+  @Column(name = "total_account_balance", nullable = false)
+  var totalAccountBalance: Long = 0,
+
   @Column(name = "created_at", nullable = false)
   val createdAt: Instant = Instant.now(),
 

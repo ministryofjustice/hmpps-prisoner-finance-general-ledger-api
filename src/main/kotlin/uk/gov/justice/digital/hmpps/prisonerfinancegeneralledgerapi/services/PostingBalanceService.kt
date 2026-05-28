@@ -19,7 +19,7 @@ class PostingBalanceService(
   private val postingsDataRepository: PostingsDataRepository,
   private val statementBalanceDataRepository: StatementBalanceDataRepository,
 ) {
-  enum class BalanceCalculationType {
+  enum class BalanceCalculationStrategy {
     FirstPosting,
     FromPreviousStatementBalance,
     FromPreviousPostingBalance,
@@ -27,47 +27,26 @@ class PostingBalanceService(
 
   private fun applyPostingType(amount: Long, type: PostingType) = if (type == PostingType.CR) amount else -amount
 
-  private fun compareTimestamps(previousPostingTimeStamp: Instant?, statementBalanceTimestamp: Instant?): BalanceCalculationType {
+  private fun compareTimestamps(previousPostingTimeStamp: Instant?, statementBalanceTimestamp: Instant?): BalanceCalculationStrategy {
     if (previousPostingTimeStamp == null || statementBalanceTimestamp == null) {
       throw Exception("Unexpected pathway in balance calculation when comparing timestamps")
     }
     if (previousPostingTimeStamp > statementBalanceTimestamp) {
-      return BalanceCalculationType.FromPreviousPostingBalance
+      return BalanceCalculationStrategy.FromPreviousPostingBalance
     } else {
-      return BalanceCalculationType.FromPreviousStatementBalance
+      return BalanceCalculationStrategy.FromPreviousStatementBalance
     }
   }
 
-  private fun calculateNewBalance(
-    type: BalanceCalculationType,
-    posting: PostingEntity,
+  private fun balanceCalculationStrategy(
     previousPostingBalance: PostingBalanceEntity? = null,
     previousStatementBalance: StatementBalanceEntity? = null,
-  ): Long = when {
-    type == BalanceCalculationType.FirstPosting -> {
-      applyPostingType(posting.amount, posting.type)
-    }
+  ): BalanceCalculationStrategy = when {
+    previousPostingBalance == null && previousStatementBalance == null -> BalanceCalculationStrategy.FirstPosting
 
-    type == BalanceCalculationType.FromPreviousStatementBalance && previousStatementBalance != null -> {
-      previousStatementBalance.amount + applyPostingType(posting.amount, posting.type)
-    }
+    previousPostingBalance != null && previousStatementBalance == null -> BalanceCalculationStrategy.FromPreviousPostingBalance
 
-    type == BalanceCalculationType.FromPreviousPostingBalance && previousPostingBalance != null -> {
-      previousPostingBalance.totalSubAccountBalance + applyPostingType(posting.amount, posting.type)
-    }
-
-    else -> throw Exception("Unexpected pathway in calculateNewBalance")
-  }
-
-  private fun calculateStrategy(
-    previousPostingBalance: PostingBalanceEntity? = null,
-    previousStatementBalance: StatementBalanceEntity? = null,
-  ): BalanceCalculationType = when {
-    previousPostingBalance == null && previousStatementBalance == null -> BalanceCalculationType.FirstPosting
-
-    previousPostingBalance != null && previousStatementBalance == null -> BalanceCalculationType.FromPreviousPostingBalance
-
-    previousPostingBalance == null && previousStatementBalance != null -> BalanceCalculationType.FromPreviousStatementBalance
+    previousPostingBalance == null && previousStatementBalance != null -> BalanceCalculationStrategy.FromPreviousStatementBalance
 
     else -> compareTimestamps(
       previousPostingBalance?.postingEntity?.transactionEntity?.timestamp,
@@ -75,52 +54,101 @@ class PostingBalanceService(
     )
   }
 
-  fun calculatePostingBalance(
-    posting: PostingEntity,
+  inner class SubAccountBalanceCalculator(
+    val latestPostingBalance: PostingBalanceEntity?,
+    val latestStatementBalance: StatementBalanceEntity?,
   ) {
-    val previousPostingBalance = postingBalanceDataRepository.getPreviousPostingBalanceOrNull(
-      posting.id,
-      posting.subAccountEntity.id,
-      posting.transactionEntity.timestamp,
-    )
-    val previousStatementBalance = statementBalanceDataRepository.getLatestStatementBalanceForSubAccountId(
-      posting.subAccountEntity.id,
-      posting.transactionEntity.timestamp,
-    )
+    fun calculate(): Long {
+      val strategy = balanceCalculationStrategy(
+        previousPostingBalance = this.latestPostingBalance,
+        previousStatementBalance = this.latestStatementBalance,
+      )
+      return when {
+        strategy == BalanceCalculationStrategy.FirstPosting -> 0
 
-    val balanceCalculationType = calculateStrategy(previousPostingBalance, previousStatementBalance)
+        strategy == BalanceCalculationStrategy.FromPreviousStatementBalance && this.latestStatementBalance != null -> {
+          latestStatementBalance.amount
+        }
 
-    val newBalance = calculateNewBalance(
-      type = balanceCalculationType,
-      posting = posting,
-      previousPostingBalance = previousPostingBalance,
-      previousStatementBalance = previousStatementBalance,
-    )
+        strategy == BalanceCalculationStrategy.FromPreviousPostingBalance && latestPostingBalance != null -> {
+          latestPostingBalance.totalSubAccountBalance
+        }
+        else -> throw Exception("Unexpected pathway in calculateNewBalance")
+      }
+    }
+  }
 
+  private fun updateOrCreatePostingBalance(
+    posting: PostingEntity,
+    newSubAccountBalance: Long,
+    newTotalBalance: Long,
+  ) {
     val existingPostingBalance = postingBalanceDataRepository.findByPostingEntity(posting)
-    val postingBalanceToSave: PostingBalanceEntity?
 
+    var postingBalanceToSave: PostingBalanceEntity
     if (existingPostingBalance != null) {
-      existingPostingBalance.totalSubAccountBalance = newBalance
+      existingPostingBalance.totalSubAccountBalance = newSubAccountBalance
+      existingPostingBalance.totalAccountBalance = newTotalBalance
       existingPostingBalance.updatedAt = Instant.now()
       postingBalanceToSave = existingPostingBalance
     } else {
       postingBalanceToSave = PostingBalanceEntity(
         postingEntity = posting,
-        totalSubAccountBalance = newBalance,
+        totalSubAccountBalance = newSubAccountBalance,
+        totalAccountBalance = newTotalBalance,
       )
     }
 
     postingBalanceDataRepository.save(postingBalanceToSave)
   }
 
+  fun calculatePostingBalances(
+    posting: PostingEntity,
+  ) {
+    val parentAccountId = posting.subAccountEntity.parentAccountEntity.id
+
+    val postingSubAccount = posting.subAccountEntity
+    val previousPostingBalances = postingBalanceDataRepository.getPreviousPostingBalancesByAccount(
+      postingId = posting.id,
+      accountId = parentAccountId,
+      transactionTimestamp = posting.transactionEntity.timestamp,
+      transactionEntrySequence = posting.transactionEntity.entrySequence,
+      postingEntrySequence = posting.entrySequence,
+    )
+    val previousStatementBalances = statementBalanceDataRepository.getLatestStatementBalancesForAccountId(
+      accountId = parentAccountId,
+      fromTimestamp = posting.transactionEntity.timestamp,
+    )
+
+    val subAccountBalanceCalculators = postingSubAccount.parentAccountEntity.subAccounts.associateWith {
+      SubAccountBalanceCalculator(
+        latestPostingBalance = previousPostingBalances.firstOrNull { pb -> pb.postingEntity.subAccountEntity.id == it.id },
+        latestStatementBalance = previousStatementBalances.firstOrNull { sb -> sb.subAccountEntity.id == it.id },
+      )
+    }
+
+    val postingSubAccountResource = subAccountBalanceCalculators.getValue(postingSubAccount)
+
+    val newSubAccountBalance =
+      applyPostingType(posting.amount, posting.type) + postingSubAccountResource.calculate()
+
+    val newTotalBalance =
+      applyPostingType(posting.amount, posting.type) + subAccountBalanceCalculators.values.sumOf { it.calculate() }
+
+    updateOrCreatePostingBalance(
+      posting = posting,
+      newSubAccountBalance = newSubAccountBalance,
+      newTotalBalance = newTotalBalance,
+    )
+  }
+
   @Transactional
   fun processBalance(postingId: UUID): ProcessBalanceRequest? {
     val posting = postingsDataRepository.findById(postingId).orElseThrow { Exception("Posting not found") }
-    calculatePostingBalance(posting = posting)
-    return postingsDataRepository.getTheNextSubAccountPostingOrNull(
+    calculatePostingBalances(posting = posting)
+    return postingsDataRepository.getTheNextAccountPostingOrNull(
       postingId = posting.id,
-      subAccountId = posting.subAccountEntity.id,
+      accountId = posting.subAccountEntity.parentAccountEntity.id,
       transactionTimestamp = posting.transactionEntity.timestamp,
       transactionEntrySequence = posting.transactionEntity.entrySequence,
       postingEntrySequence = posting.entrySequence,
