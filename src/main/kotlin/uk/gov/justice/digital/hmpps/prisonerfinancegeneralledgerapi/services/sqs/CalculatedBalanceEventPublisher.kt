@@ -29,6 +29,8 @@ class CalculatedBalanceEventPublisher(
 
   fun requestCalculatedBalanceForStatementBalance(statementBalanceEntity: StatementBalanceEntity) {
     try {
+      // todo change it to account
+      // Add test for account balance when we insert statement balance on a different subAccount
       val posting = postingsDataRepository.getFirstPostingForSubAccountIdAfterDateTime(
         subAccountId = statementBalanceEntity.subAccountEntity.id,
         dateTime = statementBalanceEntity.balanceDateTime,

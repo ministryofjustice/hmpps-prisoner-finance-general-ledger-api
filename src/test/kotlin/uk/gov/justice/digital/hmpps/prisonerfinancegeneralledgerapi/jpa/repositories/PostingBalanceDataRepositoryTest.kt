@@ -17,9 +17,9 @@ class PostingBalanceDataRepositoryTest @Autowired constructor(
   val repoTestHelpers: RepoTestHelpers,
 ) {
   @Nested
-  inner class GetPreviousPostingBalancesByAccountOrNull {
+  inner class GetPreviousPostingBalancesByAccount {
     @Test
-    fun `Should return null if there are no previous postings`() {
+    fun `Should return an empty list if there are no previous postings`() {
       val parentAccount = repoTestHelpers.createAccount(ref = "ABC123ZX")
       val subAccount = repoTestHelpers.createSubAccount(ref = "CASH", account = parentAccount)
 

@@ -38,7 +38,7 @@ class PostingBalanceService(
     }
   }
 
-  private fun calculateStrategy(
+  private fun balanceCalculationStrategy(
     previousPostingBalance: PostingBalanceEntity? = null,
     previousStatementBalance: StatementBalanceEntity? = null,
   ): BalanceCalculationType = when {
@@ -54,23 +54,23 @@ class PostingBalanceService(
     )
   }
 
-  inner class SubAccountBalanceResources(
+  inner class SubAccountBalanceCalculator(
     val latestPostingBalance: PostingBalanceEntity?,
     val latestStatementBalance: StatementBalanceEntity?,
   ) {
-    fun calculateSubAccountBalance(): Long {
-      val type = calculateStrategy(
+    fun calculate(): Long {
+      val strategy = balanceCalculationStrategy(
         previousPostingBalance = this.latestPostingBalance,
         previousStatementBalance = this.latestStatementBalance,
       )
       return when {
-        type == BalanceCalculationType.FirstPosting -> 0
+        strategy == BalanceCalculationType.FirstPosting -> 0
 
-        type == BalanceCalculationType.FromPreviousStatementBalance && this.latestStatementBalance != null -> {
+        strategy == BalanceCalculationType.FromPreviousStatementBalance && this.latestStatementBalance != null -> {
           latestStatementBalance.amount
         }
 
-        type == BalanceCalculationType.FromPreviousPostingBalance && latestPostingBalance != null -> {
+        strategy == BalanceCalculationType.FromPreviousPostingBalance && latestPostingBalance != null -> {
           latestPostingBalance.totalSubAccountBalance
         }
         else -> throw Exception("Unexpected pathway in calculateNewBalance")
@@ -120,19 +120,21 @@ class PostingBalanceService(
       fromTimestamp = posting.transactionEntity.timestamp,
     )
 
-    val subAccountBalances = postingSubAccount.parentAccountEntity.subAccounts.associateWith {
-      SubAccountBalanceResources(
+    val subAccountBalanceCalculators = postingSubAccount.parentAccountEntity.subAccounts.associateWith {
+      SubAccountBalanceCalculator(
         latestPostingBalance = previousPostingBalances.firstOrNull { pb -> pb.postingEntity.subAccountEntity.id == it.id },
         latestStatementBalance = previousStatementBalances.firstOrNull { sb -> sb.subAccountEntity.id == it.id },
       )
     }
 
-    val postingSubAccountResource = subAccountBalances.getValue(postingSubAccount)
+    val postingSubAccountResource = subAccountBalanceCalculators.getValue(postingSubAccount)
 
     val newSubAccountBalance =
-      applyPostingType(posting.amount, posting.type) + postingSubAccountResource.calculateSubAccountBalance()
+      applyPostingType(posting.amount, posting.type) + postingSubAccountResource.calculate()
+
+
     val newTotalBalance =
-      applyPostingType(posting.amount, posting.type) + subAccountBalances.mapValues { (_, v) -> v.calculateSubAccountBalance() }.values.sum()
+      applyPostingType(posting.amount, posting.type) + subAccountBalanceCalculators.values.sumOf { it.calculate() }
 
     updateOrCreatePostingBalance(
       posting = posting,
