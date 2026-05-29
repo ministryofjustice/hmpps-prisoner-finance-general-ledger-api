@@ -11,4 +11,5 @@ interface AccountDataRepository : JpaRepository<AccountEntity, UUID> {
   fun findAccountByReference(
     reference: String,
   ): AccountEntity?
+  fun findAccountEntitiesByReferenceIn(references: List<String>): List<AccountEntity>
 }

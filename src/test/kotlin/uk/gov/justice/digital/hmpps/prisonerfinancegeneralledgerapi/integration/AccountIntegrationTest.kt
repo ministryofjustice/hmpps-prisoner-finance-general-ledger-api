@@ -291,6 +291,78 @@ class AccountIntegrationTest : IntegrationTestBase() {
   }
 
   @Nested
+  inner class SearchAccounts {
+    @Test
+    fun `should return 200 OK and an empty list if no account reference matches`() {
+      val responseBody = webTestClient.post()
+        .uri("/accounts/search")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(listOf("NOT_A_MATCH"))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<List<AccountResponse>>()
+        .returnResult()
+        .responseBody!!
+      assertThat(responseBody).isEmpty()
+    }
+
+    @Test
+    fun `should return 200 OK and an list of matched accounts`() {
+      val accountOne = integrationTestHelpers.createAccount("ABC123XZ", AccountType.PRISONER)
+      val accountTwo = integrationTestHelpers.createAccount("AXZ123XZ", AccountType.PRISONER)
+
+      val responseBody = webTestClient.post()
+        .uri("/accounts/search")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(listOf(accountOne.reference, accountTwo.reference, "NOT_A_MATCH"))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<List<AccountResponse>>()
+        .returnResult()
+        .responseBody!!
+      assertThat(responseBody).hasSize(2)
+
+      val accountReferences = responseBody.map { it.reference }
+      assertThat(accountReferences).containsExactlyElementsOf(listOf(accountOne.reference, accountTwo.reference))
+    }
+
+    @Test
+    fun `should return 400 if body is malformed`() {
+      webTestClient.post()
+        .uri("/accounts/search")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(listOf(listOf("abc")))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody<ErrorResponse>()
+
+      data class WeirdObject(val abc: String)
+      webTestClient.post()
+        .uri("/accounts/search")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(WeirdObject("abc"))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody<ErrorResponse>()
+    }
+
+    @Test
+    fun `should return 403 when requesting account with incorrect role`() {
+      webTestClient.post()
+        .uri("/accounts/search")
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(listOf("ABC123XZ"))
+        .headers(setAuthorisation(roles = listOf("ROLE__WRONG_ROLE")))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+  }
+
+  @Nested
   inner class FindAccounts {
 
     @ParameterizedTest
