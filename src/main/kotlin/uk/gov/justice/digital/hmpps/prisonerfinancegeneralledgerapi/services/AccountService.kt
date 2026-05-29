@@ -33,6 +33,8 @@ class AccountService(
     return listOfAccounts
   }
 
+  fun searchAccounts(references: List<String>): List<AccountEntity> = accountDataRepository.findAccountEntitiesByReferenceIn(references)
+
   fun calculateAccountBalance(accountId: UUID): AccountBalanceResponse? {
     val account = accountDataRepository.findAccountById(accountId)
     if (account == null) return null
