@@ -29,6 +29,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateTransactionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.PrisonerTransactionListResponse
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SearchTransactionResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.TransactionResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.AccountService
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.IdempotencyService
@@ -141,7 +142,7 @@ class TransactionController(
       ApiResponse(
         responseCode = "200",
         description = "Retrieve transactions",
-        content = [Content(mediaType = "application/json", array = ArraySchema(schema = Schema(implementation = TransactionResponse::class)))],
+        content = [Content(mediaType = "application/json", array = ArraySchema(schema = Schema(implementation = SearchTransactionResponse::class)))],
       ),
       ApiResponse(
         responseCode = "400",
@@ -170,11 +171,11 @@ class TransactionController(
   @PostMapping(value = ["/transactions/search"], consumes = [MediaType.APPLICATION_JSON_VALUE])
   fun searchTransactions(
     @Valid @RequestBody body: List<UUID>,
-  ): ResponseEntity<List<TransactionResponse>> {
+  ): ResponseEntity<List<SearchTransactionResponse>> {
     val transactionEntities = transactionService.readTransactions(body)
-    val transactionResponses = transactionEntities.map { TransactionResponse.fromEntity(it) }
+    val transactionResponses = transactionEntities.map { SearchTransactionResponse.fromEntity(it) }
 
-    return ResponseEntity<List<TransactionResponse>>.status(HttpStatus.OK).body(
+    return ResponseEntity<List<SearchTransactionResponse>>.status(HttpStatus.OK).body(
       transactionResponses,
     )
   }
