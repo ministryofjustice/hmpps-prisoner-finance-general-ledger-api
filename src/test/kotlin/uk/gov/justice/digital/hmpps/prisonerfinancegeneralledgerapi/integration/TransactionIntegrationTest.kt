@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.reque
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateTransactionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.PrisonerTransactionListResponse
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SearchTransactionResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.TransactionResponse
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
@@ -771,7 +772,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
         )
         .exchange()
         .expectStatus().isOk
-        .expectBody<List<TransactionResponse>>()
+        .expectBody<List<SearchTransactionResponse>>()
         .returnResult()
         .responseBody!!
 
@@ -811,11 +812,14 @@ class TransactionIntegrationTest : IntegrationTestBase() {
         )
         .exchange()
         .expectStatus().isOk
-        .expectBody<List<TransactionResponse>>()
+        .expectBody<List<SearchTransactionResponse>>()
         .returnResult()
         .responseBody!!
 
       assertThat(responseBody).hasSize(3)
+
+      assertThat(responseBody[0].postings[0].accountReference).isEqualTo("ACCOUNT_1")
+      assertThat(responseBody[0].postings[0].subAccountReference).isEqualTo("SUB_ACCOUNT_1")
     }
 
     @Test
