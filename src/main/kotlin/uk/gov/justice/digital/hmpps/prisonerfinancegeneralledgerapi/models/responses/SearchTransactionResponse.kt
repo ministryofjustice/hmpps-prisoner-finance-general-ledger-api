@@ -20,6 +20,8 @@ class SearchTransactionResponse(
   val timestamp: Instant,
   @field:Schema(description = "The total transaction monetary amount in pence")
   val amount: Long,
+  @field:Schema(description = "The entrySequence of the transaction")
+  val entrySequence: Long,
   @field:Schema(description = "A collection of postings for the transaction")
   val postings: List<SearchPostingResponse> = emptyList(),
 ) {
@@ -32,6 +34,7 @@ class SearchTransactionResponse(
       description = transactionEntity.description,
       timestamp = transactionEntity.timestamp,
       amount = transactionEntity.amount,
+      entrySequence = transactionEntity.entrySequence,
       postings = transactionEntity.postings.map { SearchPostingResponse.fromEntity(it) },
     )
   }

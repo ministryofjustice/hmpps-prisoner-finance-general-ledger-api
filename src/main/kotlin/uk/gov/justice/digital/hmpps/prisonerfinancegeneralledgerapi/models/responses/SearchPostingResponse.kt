@@ -25,6 +25,8 @@ data class SearchPostingResponse(
   val accountID: UUID,
   @field:Schema(description = "The reference of the account associated with the posting")
   val accountReference: String,
+  @field:Schema(description = "The entry sequence of the posting")
+  val entrySequence: Long,
 ) {
   companion object {
     fun fromEntity(postingEntity: PostingEntity): SearchPostingResponse = SearchPostingResponse(
@@ -37,6 +39,7 @@ data class SearchPostingResponse(
       subAccountReference = postingEntity.subAccountEntity.reference,
       accountID = postingEntity.subAccountEntity.parentAccountEntity.id,
       accountReference = postingEntity.subAccountEntity.parentAccountEntity.reference,
+      entrySequence = postingEntity.entrySequence,
     )
   }
 }
