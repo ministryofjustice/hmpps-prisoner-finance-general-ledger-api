@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest
 import org.springframework.context.annotation.Import
+import org.springframework.data.domain.PageRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.helpers.RepoTestHelpers
 import java.time.Instant
@@ -40,12 +41,18 @@ class TransactionDataRepositoryTest @Autowired constructor(
   inner class FindTransactionsByIds {
     @Test
     fun `should return an empty list when there are no matching transaction Ids`() {
-      val transactions = transactionDataRepository.findTransactionsByIds(listOf(UUID.randomUUID()))
-      assertThat(transactions).isEmpty()
+      val page = PageRequest.of(0, 5)
+      val transactions = transactionDataRepository.findTransactionsByIds(
+        listOf(UUID.randomUUID()),
+        page,
+      )
+      assertThat(transactions.content).isEmpty()
     }
 
     @Test
     fun `should return a list of transactions for matching Ids`() {
+      val page = PageRequest.of(0, 5)
+
       val cash = repoTestHelpers.createSubAccount("CASH", testAccount)
       val spends = repoTestHelpers.createSubAccount("SPENDS", testAccount)
 
@@ -56,8 +63,26 @@ class TransactionDataRepositoryTest @Autowired constructor(
         transactionIds.add(transaction.id)
       }
 
-      val retrievedTransactions = transactionDataRepository.findTransactionsByIds(transactionIds)
-      assertThat(retrievedTransactions).hasSize(3)
+      val retrievedTransactions = transactionDataRepository.findTransactionsByIds(transactionIds, page)
+      assertThat(retrievedTransactions.content).hasSize(3)
+    }
+
+    @Test
+    fun `should return a first 5 transaction for matching Ids`() {
+      val page = PageRequest.of(0, 5)
+
+      val cash = repoTestHelpers.createSubAccount("CASH", testAccount)
+      val spends = repoTestHelpers.createSubAccount("SPENDS", testAccount)
+
+      val transactionIds = mutableListOf<UUID>()
+
+      repeat(10) {
+        val transaction = repoTestHelpers.createOneToOneTransaction(1, Instant.now(), cash, spends, transactionTimeStamp = Instant.now())
+        transactionIds.add(transaction.id)
+      }
+
+      val retrievedTransactions = transactionDataRepository.findTransactionsByIds(transactionIds, page)
+      assertThat(retrievedTransactions.content).hasSize(5)
     }
   }
 

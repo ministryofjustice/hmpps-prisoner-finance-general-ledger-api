@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services
 
+import org.springframework.data.domain.PageRequest
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -12,7 +13,10 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.reposito
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.TransactionDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateTransactionRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.PagedResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.PrisonerTransactionListResponse
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SearchTransactionResponse
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.utils.toPageResponse
 import java.util.UUID
 
 @Service
@@ -60,9 +64,14 @@ class TransactionService(
     return transactionEntity
   }
 
-  fun readTransactions(transactionIds: List<UUID>): List<TransactionEntity> {
-    val transactionEntities = transactionDataRepository.findTransactionsByIds(transactionIds)
-    return transactionEntities
+  fun readTransactions(transactionIds: List<UUID>, page: Int, size: Int): PagedResponse<SearchTransactionResponse> {
+    val page = PageRequest.of(page - 1, size)
+
+    val transactionEntities = transactionDataRepository.findTransactionsByIds(transactionIds, page)
+
+    return transactionEntities.toPageResponse { content ->
+      content.map { SearchTransactionResponse.fromEntity(it) }
+    }
   }
 
   fun listTransactionsForPrisoner(accountId: UUID): List<PrisonerTransactionListResponse> {

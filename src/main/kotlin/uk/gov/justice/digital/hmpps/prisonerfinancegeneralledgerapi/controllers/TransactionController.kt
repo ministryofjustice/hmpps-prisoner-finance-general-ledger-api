@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
+import jakarta.validation.constraints.Min
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatus.BAD_REQUEST
@@ -23,11 +24,13 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.CustomException
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateTransactionRequest
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.PagedResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.PrisonerTransactionListResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SearchTransactionResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.TransactionResponse
@@ -171,12 +174,13 @@ class TransactionController(
   @PostMapping(value = ["/transactions/search"], consumes = [MediaType.APPLICATION_JSON_VALUE])
   fun searchTransactions(
     @Valid @RequestBody body: List<UUID>,
-  ): ResponseEntity<List<SearchTransactionResponse>> {
-    val transactionEntities = transactionService.readTransactions(body)
-    val transactionResponses = transactionEntities.map { SearchTransactionResponse.fromEntity(it) }
+    @RequestParam @Min(1) pageNumber: Int = 1,
+    @RequestParam @Min(1) pageSize: Int = 25,
+  ): ResponseEntity<PagedResponse<SearchTransactionResponse>> {
+    val transactionResponse = transactionService.readTransactions(body, pageNumber, pageSize)
 
     return ResponseEntity<List<SearchTransactionResponse>>.status(HttpStatus.OK).body(
-      transactionResponses,
+      transactionResponse,
     )
   }
 
