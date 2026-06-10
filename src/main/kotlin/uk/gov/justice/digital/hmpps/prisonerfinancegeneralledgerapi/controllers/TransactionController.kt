@@ -145,7 +145,6 @@ class TransactionController(
       ApiResponse(
         responseCode = "200",
         description = "Retrieve transactions",
-        content = [Content(mediaType = "application/json", array = ArraySchema(schema = Schema(implementation = SearchTransactionResponse::class)))],
       ),
       ApiResponse(
         responseCode = "400",
