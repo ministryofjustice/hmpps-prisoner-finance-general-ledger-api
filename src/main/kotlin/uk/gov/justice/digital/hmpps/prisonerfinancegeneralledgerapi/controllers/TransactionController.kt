@@ -178,7 +178,7 @@ class TransactionController(
   ): ResponseEntity<PagedResponse<SearchTransactionResponse>> {
     val transactionResponse = transactionService.readTransactions(body, pageNumber, pageSize)
 
-    return ResponseEntity<List<SearchTransactionResponse>>.status(HttpStatus.OK).body(
+    return ResponseEntity.status(HttpStatus.OK).body(
       transactionResponse,
     )
   }
