@@ -767,34 +767,11 @@ class TransactionIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `Should return page out of bound error when asking for a page that doesn't exist`() {
-      val account = integrationTestHelpers.createAccount(reference = "ACCOUNT_1", accountType = AccountType.PRISONER)
-      val subAccount1 =
-        integrationTestHelpers.createSubAccount(accountId = account.id, subAccountReference = "SUB_ACCOUNT_1")
-      val subAccount2 =
-        integrationTestHelpers.createSubAccount(accountId = account.id, subAccountReference = "SUB_ACCOUNT_2")
-
-      val transactionIds = mutableListOf<UUID>()
-
-      repeat(8) {
-        val transactionId = integrationTestHelpers.createOneToOneTransaction(
-          amount = 1,
-          debitSubAccountId = subAccount1.id,
-          creditSubAccountId = subAccount2.id,
-          transactionReference = "TXN_REF",
-          description = "DESC",
-          timestamp = Instant.now(),
-          transactionEntrySequence = 1,
-          postingEntrySequence = Pair(1, 2),
-        ).id
-
-        transactionIds.add(transactionId)
-      }
-
       val errorMessage = webTestClient.post()
         .uri("/transactions/search?pageNumber=999&pageSize=5")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .bodyValue(
-          transactionIds,
+          listOf(UUID.randomUUID()),
         )
         .exchange()
         .expectStatus().isBadRequest

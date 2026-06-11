@@ -50,7 +50,7 @@ class TransactionDataRepositoryTest @Autowired constructor(
     }
 
     @Test
-    fun `should return a list of transactions ordered by timestamp, and entry sequence, and id`() {
+    fun `should return a list of transactions ordered by timestamp`() {
       val page = PageRequest.of(0, 9999)
 
       val cash = repoTestHelpers.createSubAccount("CASH", testAccount)
@@ -60,7 +60,7 @@ class TransactionDataRepositoryTest @Autowired constructor(
 
       val timestamp = Instant.now()
 
-      val transactionNowEntry1 = repoTestHelpers.createOneToOneTransaction(
+      val transactionNow = repoTestHelpers.createOneToOneTransaction(
         1,
         Instant.now(),
         cash,
@@ -68,7 +68,7 @@ class TransactionDataRepositoryTest @Autowired constructor(
         transactionTimeStamp = timestamp,
         transactionEntrySequence = 1,
       )
-      transactionIds.add(transactionNowEntry1.id)
+      transactionIds.add(transactionNow.id)
 
       val transactionInThePast = repoTestHelpers.createOneToOneTransaction(
         1,
@@ -88,6 +88,45 @@ class TransactionDataRepositoryTest @Autowired constructor(
       )
       transactionIds.add(transactionInTheFuture.id)
 
+      val retrievedTransactions = transactionDataRepository.findTransactionsByIds(transactionIds, page)
+      assertThat(retrievedTransactions.content).hasSize(3)
+
+      assertThat(retrievedTransactions.content[0].id).isEqualTo(transactionInTheFuture.id)
+      assertThat(retrievedTransactions.content[1].id).isEqualTo(transactionNow.id)
+      assertThat(retrievedTransactions.content[2].id).isEqualTo(transactionInThePast.id)
+    }
+
+    @Test
+    fun `should return a list of transactions ordered by entry sequence`() {
+      val page = PageRequest.of(0, 9999)
+
+      val cash = repoTestHelpers.createSubAccount("CASH", testAccount)
+      val spends = repoTestHelpers.createSubAccount("SPENDS", testAccount)
+
+      val transactionIds = mutableListOf<UUID>()
+
+      val timestamp = Instant.now()
+
+      val transactionNowEntry1 = repoTestHelpers.createOneToOneTransaction(
+        1,
+        Instant.now(),
+        cash,
+        spends,
+        transactionTimeStamp = timestamp,
+        transactionEntrySequence = 1,
+      )
+      transactionIds.add(transactionNowEntry1.id)
+
+      val transactionNowEntry3 = repoTestHelpers.createOneToOneTransaction(
+        1,
+        Instant.now(),
+        cash,
+        spends,
+        transactionTimeStamp = timestamp,
+        transactionEntrySequence = 3,
+      )
+      transactionIds.add(transactionNowEntry3.id)
+
       val transactionNowEntry2 = repoTestHelpers.createOneToOneTransaction(
         1,
         Instant.now(),
@@ -97,6 +136,25 @@ class TransactionDataRepositoryTest @Autowired constructor(
         transactionEntrySequence = 2,
       )
       transactionIds.add(transactionNowEntry2.id)
+
+      val retrievedTransactions = transactionDataRepository.findTransactionsByIds(transactionIds, page)
+      assertThat(retrievedTransactions.content).hasSize(3)
+
+      assertThat(retrievedTransactions.content[0].id).isEqualTo(transactionNowEntry3.id)
+      assertThat(retrievedTransactions.content[1].id).isEqualTo(transactionNowEntry2.id)
+      assertThat(retrievedTransactions.content[2].id).isEqualTo(transactionNowEntry1.id)
+    }
+
+    @Test
+    fun `should return a list of transactions ordered by id`() {
+      val page = PageRequest.of(0, 9999)
+
+      val cash = repoTestHelpers.createSubAccount("CASH", testAccount)
+      val spends = repoTestHelpers.createSubAccount("SPENDS", testAccount)
+
+      val transactionIds = mutableListOf<UUID>()
+
+      val timestamp = Instant.now()
 
       // testing for id fallback when entry sequences and timestamps are the same
       val transactionEntrySequenceZeroOne = repoTestHelpers.createOneToOneTransaction(
@@ -123,15 +181,10 @@ class TransactionDataRepositoryTest @Autowired constructor(
       val higherEntryZeroId = listOf(transactionEntrySequenceZeroOne, transactionEntrySequenceZeroTwo).map { it.id.toString() }.max()
 
       val retrievedTransactions = transactionDataRepository.findTransactionsByIds(transactionIds, page)
-      assertThat(retrievedTransactions.content).hasSize(6)
+      assertThat(retrievedTransactions.content).hasSize(2)
 
       assertThat(retrievedTransactions.content[0].id).isEqualTo(UUID.fromString(higherEntryZeroId))
       assertThat(retrievedTransactions.content[1].id).isEqualTo(UUID.fromString(lowestEntryZeroId))
-
-      assertThat(retrievedTransactions.content[2].id).isEqualTo(transactionInTheFuture.id)
-      assertThat(retrievedTransactions.content[3].id).isEqualTo(transactionNowEntry2.id)
-      assertThat(retrievedTransactions.content[4].id).isEqualTo(transactionNowEntry1.id)
-      assertThat(retrievedTransactions.content[5].id).isEqualTo(transactionInThePast.id)
     }
 
     @Test
@@ -153,7 +206,7 @@ class TransactionDataRepositoryTest @Autowired constructor(
     }
 
     @Test
-    fun `should return a first 5 transaction for matching Ids`() {
+    fun `should return the first 5 transaction for matching Ids`() {
       val page = PageRequest.of(0, 5)
 
       val cash = repoTestHelpers.createSubAccount("CASH", testAccount)
