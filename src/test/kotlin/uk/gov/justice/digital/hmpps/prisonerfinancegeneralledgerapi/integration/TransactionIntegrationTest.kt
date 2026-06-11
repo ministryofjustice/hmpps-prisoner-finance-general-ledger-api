@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.ValueSource
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.expectBody
@@ -16,6 +17,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreatePostingRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateTransactionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountResponse
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.PagedResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.PrisonerTransactionListResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SearchTransactionResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.SubAccountResponse
@@ -762,6 +764,104 @@ class TransactionIntegrationTest : IntegrationTestBase() {
 
   @Nested
   inner class SearchTransactions {
+
+    @Test
+    fun `Should return page out of bound error when asking for a page that doesn't exist`() {
+      val errorMessage = webTestClient.post()
+        .uri("/transactions/search?pageNumber=999&pageSize=5")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .bodyValue(
+          listOf(UUID.randomUUID()),
+        )
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody<ErrorResponse>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(errorMessage.userMessage).isEqualTo("Page requested is out of range")
+    }
+
+    @Test
+    fun `Should return second page of matching transactions uuid`() {
+      val account = integrationTestHelpers.createAccount(reference = "ACCOUNT_1", accountType = AccountType.PRISONER)
+      val subAccount1 =
+        integrationTestHelpers.createSubAccount(accountId = account.id, subAccountReference = "SUB_ACCOUNT_1")
+      val subAccount2 =
+        integrationTestHelpers.createSubAccount(accountId = account.id, subAccountReference = "SUB_ACCOUNT_2")
+
+      val transactionIds = mutableListOf<UUID>()
+
+      repeat(8) {
+        val transactionId = integrationTestHelpers.createOneToOneTransaction(
+          amount = 1,
+          debitSubAccountId = subAccount1.id,
+          creditSubAccountId = subAccount2.id,
+          transactionReference = "TXN_REF",
+          description = "DESC",
+          timestamp = Instant.now(),
+          transactionEntrySequence = 1,
+          postingEntrySequence = Pair(1, 2),
+        ).id
+
+        transactionIds.add(transactionId)
+      }
+
+      val responseBody = webTestClient.post()
+        .uri("/transactions/search?pageNumber=2&pageSize=5")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .bodyValue(
+          transactionIds,
+        )
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<PagedResponse<SearchTransactionResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(responseBody.content).hasSize(3)
+    }
+
+    @Test
+    fun `Should return first 5 matching transaction results, paged`() {
+      val account = integrationTestHelpers.createAccount(reference = "ACCOUNT_1", accountType = AccountType.PRISONER)
+      val subAccount1 =
+        integrationTestHelpers.createSubAccount(accountId = account.id, subAccountReference = "SUB_ACCOUNT_1")
+      val subAccount2 =
+        integrationTestHelpers.createSubAccount(accountId = account.id, subAccountReference = "SUB_ACCOUNT_2")
+
+      val transactionIds = mutableListOf<UUID>()
+
+      repeat(10) {
+        val transactionId = integrationTestHelpers.createOneToOneTransaction(
+          amount = 1,
+          debitSubAccountId = subAccount1.id,
+          creditSubAccountId = subAccount2.id,
+          transactionReference = "TXN_REF",
+          description = "DESC",
+          timestamp = Instant.now(),
+          transactionEntrySequence = 1,
+          postingEntrySequence = Pair(1, 2),
+        ).id
+
+        transactionIds.add(transactionId)
+      }
+
+      val responseBody = webTestClient.post()
+        .uri("/transactions/search?pageNumber=1&pageSize=5")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .bodyValue(
+          transactionIds,
+        )
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<PagedResponse<SearchTransactionResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(responseBody.content).hasSize(5)
+    }
+
     @Test
     fun `Should return 200 an empty list when sent no transaction UUIDs`() {
       val responseBody = webTestClient.post()
@@ -772,11 +872,11 @@ class TransactionIntegrationTest : IntegrationTestBase() {
         )
         .exchange()
         .expectStatus().isOk
-        .expectBody<List<SearchTransactionResponse>>()
+        .expectBody<PagedResponse<SearchTransactionResponse>>()
         .returnResult()
         .responseBody!!
 
-      assertThat(responseBody).hasSize(0)
+      assertThat(responseBody.content).hasSize(0)
     }
 
     @Test
@@ -812,14 +912,14 @@ class TransactionIntegrationTest : IntegrationTestBase() {
         )
         .exchange()
         .expectStatus().isOk
-        .expectBody<List<SearchTransactionResponse>>()
+        .expectBody<PagedResponse<SearchTransactionResponse>>()
         .returnResult()
         .responseBody!!
 
-      assertThat(responseBody).hasSize(3)
+      assertThat(responseBody.content).hasSize(3)
 
-      assertThat(responseBody[0].postings[0].accountReference).isEqualTo("ACCOUNT_1")
-      assertThat(responseBody[0].postings[0].subAccountReference).isEqualTo("SUB_ACCOUNT_1")
+      assertThat(responseBody.content[0].postings[0].accountReference).isEqualTo("ACCOUNT_1")
+      assertThat(responseBody.content[0].postings[0].subAccountReference).isEqualTo("SUB_ACCOUNT_1")
     }
 
     @Test
@@ -829,6 +929,38 @@ class TransactionIntegrationTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .bodyValue(
           listOf("1234", "test-id"),
+        )
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody<ErrorResponse>()
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+      "0, asd, -1",
+    )
+    fun `Should return 400 when pageNumber is invalid`(invalidInput: String) {
+      webTestClient.post()
+        .uri("/transactions/search?pageNumber=$invalidInput")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .bodyValue(
+          listOf("1234", "222"),
+        )
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody<ErrorResponse>()
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+      "0, asd, -1",
+    )
+    fun `Should return 400 when pageSize is invalid`(invalidInput: String) {
+      webTestClient.post()
+        .uri("/transactions/search?pageSize=$invalidInput")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .bodyValue(
+          listOf("1234", "1234"),
         )
         .exchange()
         .expectStatus().isBadRequest

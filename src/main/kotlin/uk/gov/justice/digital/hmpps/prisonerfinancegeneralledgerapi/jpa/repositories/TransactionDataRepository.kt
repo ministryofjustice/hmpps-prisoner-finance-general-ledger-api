@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories
 
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
@@ -16,9 +18,10 @@ interface TransactionDataRepository : JpaRepository<TransactionEntity, UUID> {
     SELECT t
     FROM TransactionEntity t
     WHERE t.id IN(:transactionIds)
+    ORDER BY t.timestamp DESC, t.entrySequence DESC, t.id DESC
   """,
   )
-  fun findTransactionsByIds(transactionIds: List<UUID>): List<TransactionEntity>
+  fun findTransactionsByIds(transactionIds: List<UUID>, page: Pageable): Page<TransactionEntity>
 
   @Query(
     """
