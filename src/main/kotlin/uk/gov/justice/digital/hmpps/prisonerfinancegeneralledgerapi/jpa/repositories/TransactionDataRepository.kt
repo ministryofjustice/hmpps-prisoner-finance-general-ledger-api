@@ -18,6 +18,7 @@ interface TransactionDataRepository : JpaRepository<TransactionEntity, UUID> {
     SELECT t
     FROM TransactionEntity t
     WHERE t.id IN(:transactionIds)
+    ORDER BY t.timestamp DESC, t.entrySequence DESC, t.id DESC
   """,
   )
   fun findTransactionsByIds(transactionIds: List<UUID>, page: Pageable): Page<TransactionEntity>
