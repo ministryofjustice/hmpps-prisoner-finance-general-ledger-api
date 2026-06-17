@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import java.time.Instant
 import java.util.UUID
@@ -23,6 +24,8 @@ data class SearchPostingResponse(
   val subAccountReference: String,
   @field:Schema(description = "The ID of the account associated with the posting")
   val accountID: UUID,
+  @field:Schema(description = "The account type, either Prison or Prisoner")
+  val accountType: AccountType,
   @field:Schema(description = "The reference of the account associated with the posting")
   val accountReference: String,
   @field:Schema(description = "The entry sequence of the posting")
@@ -40,6 +43,7 @@ data class SearchPostingResponse(
       accountID = postingEntity.subAccountEntity.parentAccountEntity.id,
       accountReference = postingEntity.subAccountEntity.parentAccountEntity.reference,
       entrySequence = postingEntity.entrySequence,
+      accountType = postingEntity.subAccountEntity.parentAccountEntity.type,
     )
   }
 }
