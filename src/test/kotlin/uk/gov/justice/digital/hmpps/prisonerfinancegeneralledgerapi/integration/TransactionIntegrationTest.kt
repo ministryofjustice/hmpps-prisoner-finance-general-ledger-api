@@ -919,6 +919,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
       assertThat(responseBody.content).hasSize(3)
 
       assertThat(responseBody.content[0].postings[0].accountReference).isEqualTo("ACCOUNT_1")
+      assertThat(responseBody.content[0].postings[0].accountType).isEqualTo(AccountType.PRISONER)
       assertThat(responseBody.content[0].postings[0].subAccountReference).isEqualTo("SUB_ACCOUNT_1")
     }
 
