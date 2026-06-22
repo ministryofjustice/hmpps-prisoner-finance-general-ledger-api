@@ -29,3 +29,7 @@ hmpps.sqs:
     calculated_balance:
       queueName: "calculated_balance_queue.fifo"
       dlqName: "calculated_balance_queue-dlq.fifo"
+
+feature:
+  balance-calculation:
+    enabled: false

@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.sq
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.StatementBalanceEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.TransactionEntity
@@ -12,8 +13,11 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.reque
 class CalculatedBalanceEventPublisher(
   private val messagePublisher: MessagePublisher,
   private val postingsDataRepository: PostingsDataRepository,
+  @Value("\${feature.balance-calculation.enabled:false}") private val isBalanceCalculationEnabled: Boolean,
 ) {
   fun requestCalculatedBalanceForTransaction(transactionEntity: TransactionEntity) {
+    if (!isBalanceCalculationEnabled) return
+
     transactionEntity.postings.forEach { posting ->
       try {
         messagePublisher.sendMessage(
@@ -28,6 +32,8 @@ class CalculatedBalanceEventPublisher(
   }
 
   fun requestCalculatedBalanceForStatementBalance(statementBalanceEntity: StatementBalanceEntity) {
+    if (!isBalanceCalculationEnabled) return
+
     try {
       val posting = postingsDataRepository.getFirstPostingForAccountIdAfterDateTime(
         accountId = statementBalanceEntity.subAccountEntity.parentAccountEntity.id,

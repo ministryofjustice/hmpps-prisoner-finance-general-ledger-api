@@ -23,10 +23,16 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.slf4j.LoggerFactory
+import org.springframework.test.context.TestPropertySource
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.ProcessBalanceRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.PostingBalanceService
 import java.util.UUID
 
+@TestPropertySource(
+  properties = [
+    "feature.balance-calculation.enabled=true",
+  ],
+)
 @ExtendWith(MockitoExtension::class)
 class CalculatedBalanceEventListenerTest {
 

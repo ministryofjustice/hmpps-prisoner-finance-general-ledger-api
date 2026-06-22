@@ -92,3 +92,7 @@ hmpps.sqs:
 logging:
   level:
     uk.gov.justice.hmpps.sqs: INFO
+
+feature:
+  balance-calculation:
+    enabled: false

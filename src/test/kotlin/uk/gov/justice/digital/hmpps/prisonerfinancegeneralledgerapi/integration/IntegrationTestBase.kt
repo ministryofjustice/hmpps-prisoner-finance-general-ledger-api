@@ -4,6 +4,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
 import org.springframework.boot.test.web.server.LocalServerPort
@@ -32,6 +33,9 @@ import java.util.UUID
 @ActiveProfiles("test")
 @Import(IntegrationTestHelpers::class, ContainersConfig::class)
 abstract class IntegrationTestBase {
+
+  @Value("\${feature.balance-calculation.enabled:false}")
+  private var isBalanceCalculationEnabled: Boolean = false
 
   @LocalServerPort
   private var port: Int = 0
@@ -85,6 +89,8 @@ abstract class IntegrationTestBase {
 
   @AfterEach
   fun tearDownAndRecreateCalculatedBalanceQueue() {
+    if (!isBalanceCalculationEnabled) return
+
     val sqsClient = calculatedBalanceQueue.sqsClient
 
     sqsClient.deleteQueue { it.queueUrl(calculatedBalanceQueue.queueUrl) }.get()

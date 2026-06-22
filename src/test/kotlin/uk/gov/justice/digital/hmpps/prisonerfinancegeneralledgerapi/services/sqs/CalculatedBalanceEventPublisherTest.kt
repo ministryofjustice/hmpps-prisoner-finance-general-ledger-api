@@ -10,7 +10,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
@@ -35,20 +34,26 @@ class CalculatedBalanceEventPublisherTest {
   @Mock
   lateinit var postingsDataRepository: PostingsDataRepository
 
-  @InjectMocks
   lateinit var calculatedBalanceEventPublisher: CalculatedBalanceEventPublisher
 
   private lateinit var listAppender: ListAppender<ILoggingEvent>
   private lateinit var eventLogger: Logger
 
   @BeforeEach
-  fun setupLogger() {
+  fun setup() {
     eventLogger = LoggerFactory.getLogger(CalculatedBalanceEventPublisher::class.java) as Logger
 
     listAppender = ListAppender<ILoggingEvent>()
     listAppender.start()
 
     eventLogger.addAppender(listAppender)
+
+    calculatedBalanceEventPublisher =
+      CalculatedBalanceEventPublisher(
+        messagePublisher = messagePublisher,
+        postingsDataRepository = postingsDataRepository,
+        isBalanceCalculationEnabled = true,
+      )
   }
 
   private val serviceTestHelpers = ServiceTestHelpers()
@@ -128,6 +133,23 @@ class CalculatedBalanceEventPublisherTest {
       assertEquals(RuntimeException::class.java.name, errorLog.throwableProxy.className)
       assertEquals("SQS Connection Failed", errorLog.throwableProxy.message)
     }
+
+    @Test
+    fun `Should not send any messages when publishing is disabled`() {
+      calculatedBalanceEventPublisher =
+        CalculatedBalanceEventPublisher(
+          messagePublisher = messagePublisher,
+          postingsDataRepository = postingsDataRepository,
+          isBalanceCalculationEnabled = false,
+        )
+
+      calculatedBalanceEventPublisher.requestCalculatedBalanceForTransaction(transaction)
+      verify(messagePublisher, never()).sendMessage(
+        any<PayloadDataClass>(),
+        any(),
+        any(),
+      )
+    }
   }
 
   @Nested
@@ -200,6 +222,26 @@ class CalculatedBalanceEventPublisherTest {
       assertThat(errorLog.formattedMessage).contains(expectedLogMessage)
       assertEquals(RuntimeException::class.java.name, errorLog.throwableProxy.className)
       assertEquals("SQS Connection Failed", errorLog.throwableProxy.message)
+    }
+
+    @Test
+    fun `Should not send any messages when publishing is disabled`() {
+      calculatedBalanceEventPublisher =
+        CalculatedBalanceEventPublisher(
+          messagePublisher = messagePublisher,
+          postingsDataRepository = postingsDataRepository,
+          isBalanceCalculationEnabled = false,
+        )
+
+      calculatedBalanceEventPublisher.requestCalculatedBalanceForStatementBalance(statementEntity)
+
+      verify(postingsDataRepository, never())
+        .getFirstPostingForAccountIdAfterDateTime(any(), any())
+      verify(messagePublisher, never()).sendMessage(
+        any<PayloadDataClass>(),
+        any(),
+        any(),
+      )
     }
   }
 }
