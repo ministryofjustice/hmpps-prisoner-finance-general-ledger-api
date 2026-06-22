@@ -9,6 +9,7 @@ generic-service:
     HMPPS_AUTH_URL: "https://sign-in.hmpps.service.justice.gov.uk/auth"
 
   postgresDatabaseRestore:
+    jobName: "hmpps-prisoner-finance-gl-api-postgres-restore"
     enabled: true
     timeout: 3590
     namespace_secrets:
