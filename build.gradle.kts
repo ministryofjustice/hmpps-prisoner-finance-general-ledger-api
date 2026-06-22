@@ -14,6 +14,7 @@ configurations {
 }
 
 dependencies {
+  compileOnly("org.jetbrains:annotations:26.1.0")
   implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:2.5.0")
   implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:7.4.0")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
