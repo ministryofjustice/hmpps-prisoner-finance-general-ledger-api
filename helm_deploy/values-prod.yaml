@@ -13,12 +13,12 @@ generic-service:
     enabled: true
     timeout: 3590
     namespace_secrets:
-      dps-rds-instance-output:
+      rds-postgresql-instance-output:
         DB_NAME: "database_name"
         DB_USER: "database_username"
         DB_PASS: "database_password"
         DB_HOST: "rds_instance_address"
-      dps-rds-instance-output-preprod:
+      rds-postgresql-instance-output-preprod:
         DB_NAME_PREPROD: "database_name"
         DB_USER_PREPROD: "database_username"
         DB_PASS_PREPROD: "database_password"
