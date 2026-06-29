@@ -27,6 +27,7 @@ class CalculatedBalanceEventListener(
       val nextPosting = postingBalanceService.processBalance(processBalanceRequest.postingId)
 
       if (nextPosting != null) {
+        // todo update to save in requestTime table
         messagePublisher.sendMessage(
           payloadDataClass = nextPosting,
           queueId = SqsQueues.CALCULATED_BALANCE_QUEUE_ID,

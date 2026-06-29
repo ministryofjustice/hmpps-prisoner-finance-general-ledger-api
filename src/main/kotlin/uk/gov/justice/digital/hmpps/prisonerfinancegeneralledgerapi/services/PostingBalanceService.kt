@@ -152,6 +152,6 @@ class PostingBalanceService(
       transactionTimestamp = posting.transactionEntity.timestamp,
       transactionEntrySequence = posting.transactionEntity.entrySequence,
       postingEntrySequence = posting.entrySequence,
-    )?.let { ProcessBalanceRequest.fromPostingEntity(it) }
+    )?.let { ProcessBalanceRequest.fromPostingEntity(posting = it, requestTime = Instant.now()) }
   }
 }
