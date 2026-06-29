@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.test.context.TestPropertySource
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
@@ -15,6 +16,11 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.respo
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.sqs.SqsQueues
 import java.time.Instant
 
+@TestPropertySource(
+  properties = [
+    "feature.balance-calculation.enabled=true",
+  ],
+)
 class CalculatedBalanceIntegrationTest(
   @Autowired
   val postingBalanceDataRepository: PostingBalanceDataRepository,

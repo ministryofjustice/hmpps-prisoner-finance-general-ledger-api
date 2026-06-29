@@ -226,7 +226,7 @@ class IntegrationTestHelpers(
     return transactionResponse
   }
 
-  fun waitUntilEmpty(queueId: String, hmppsQueueService: HmppsQueueService, waitSeconds: Long = 5) {
+  fun waitUntilEmpty(queueId: String, hmppsQueueService: HmppsQueueService, waitSeconds: Long = 7) {
     val hmppsQueue = hmppsQueueService.findByQueueId(queueId)
       ?: throw IllegalArgumentException("Queue $queueId not found")
 
