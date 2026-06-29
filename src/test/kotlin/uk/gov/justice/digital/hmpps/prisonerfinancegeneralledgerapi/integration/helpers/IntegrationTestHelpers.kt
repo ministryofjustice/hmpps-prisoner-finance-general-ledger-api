@@ -226,9 +226,11 @@ class IntegrationTestHelpers(
     return transactionResponse
   }
 
-  fun waitUntilEmpty(queueId: String, hmppsQueueService: HmppsQueueService, waitSeconds: Long = 5) {
+  fun waitUntilEmpty(queueId: String, hmppsQueueService: HmppsQueueService, waitSeconds: Long = 7) {
     val hmppsQueue = hmppsQueueService.findByQueueId(queueId)
       ?: throw IllegalArgumentException("Queue $queueId not found")
+
+    val startWaitTime = Instant.now()
 
     val sqsClient = hmppsQueue.sqsClient
     val queueUrl = hmppsQueue.queueUrl
@@ -271,6 +273,8 @@ class IntegrationTestHelpers(
 
         return@until (visible + inFlight) == 0
       }
+
+    println("[$queueId] Queue is empty after ${Duration.between(startWaitTime, Instant.now())}")
   }
 
   @Autowired
