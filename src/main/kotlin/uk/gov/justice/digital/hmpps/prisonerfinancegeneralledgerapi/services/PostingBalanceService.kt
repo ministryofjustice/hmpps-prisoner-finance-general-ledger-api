@@ -144,7 +144,7 @@ class PostingBalanceService(
 
   @Transactional
   fun processBalance(postingId: UUID): ProcessBalanceRequest? {
-    val posting = postingsDataRepository.findById(postingId).orElseThrow { Exception("Posting not found") }
+    val posting = postingsDataRepository.findWithDetailsById(postingId).orElseThrow { Exception("Posting not found") }
     calculatePostingBalances(posting = posting)
     return postingsDataRepository.getTheNextAccountPostingOrNull(
       postingId = posting.id,

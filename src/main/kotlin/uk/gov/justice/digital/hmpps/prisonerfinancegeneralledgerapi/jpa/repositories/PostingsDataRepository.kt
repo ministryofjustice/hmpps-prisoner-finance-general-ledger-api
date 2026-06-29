@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.reposit
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.domain.Specification
+import org.springframework.data.jpa.repository.EntityGraph
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor
 import org.springframework.data.jpa.repository.Query
@@ -12,12 +13,22 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.specifications.PostingsSpecification
 import java.time.Instant
+import java.util.Optional
 import java.util.UUID
 
 @Repository
 interface PostingsDataRepository :
   JpaRepository<PostingEntity, UUID>,
   JpaSpecificationExecutor<PostingEntity> {
+
+  @EntityGraph(
+    attributePaths = [
+      "transactionEntity",
+      "subAccountEntity",
+      "subAccountEntity.parentAccountEntity",
+    ],
+  )
+  fun findWithDetailsById(id: UUID): Optional<PostingEntity>
 
   fun getPostingsByAccountId(
     accountId: UUID,

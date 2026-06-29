@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories
 
+import org.springframework.data.jpa.repository.EntityGraph
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
@@ -25,6 +26,7 @@ interface StatementBalanceDataRepository : JpaRepository<StatementBalanceEntity,
     fromTimestamp: Instant = Instant.now(),
   ): StatementBalanceEntity?
 
+  @EntityGraph(attributePaths = ["subAccountEntity"])
   @Query(
     """
       SELECT sb
