@@ -4,6 +4,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.ProcessBalanceRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.sqs.MessagePublisher
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.sqs.SqsQueues
 
@@ -17,16 +18,18 @@ class MigrateService(
     postingsDataRepository.getFirstPostingsForAllAccounts().forEach { postingId ->
       try {
         log.debug("getting next posting from $postingId")
-        val nextPostingBalanceReq = postingBalanceService.processBalance(postingId)
-        log.debug("next posting is $nextPostingBalanceReq")
+        val nextPostingEntity = postingBalanceService.processBalance(postingId)
+        log.debug("next posting is $nextPostingEntity")
 
-        if (nextPostingBalanceReq != null) {
+        if (nextPostingEntity != null) {
+          val processBalanceRequest = ProcessBalanceRequest.fromPostingEntity(posting = nextPostingEntity, source = "migrateAllPostingBalances", chainPosition = 1)
+
           messagePublisher.sendMessage(
-            payloadDataClass = nextPostingBalanceReq,
+            payloadDataClass = processBalanceRequest,
             queueId = SqsQueues.CALCULATED_BALANCE_QUEUE_ID,
-            messageGroupId = nextPostingBalanceReq.accountId.toString(),
+            messageGroupId = nextPostingEntity.subAccountEntity.parentAccountEntity.id.toString(),
           )
-          log.debug("message sent to queue for posting: $nextPostingBalanceReq")
+          log.debug("message sent to queue for posting: $processBalanceRequest")
         }
       } catch (e: Exception) {
         log.error("Failed send posting: ${postingId}\n${e.message}\n${e.stackTrace} ", e)

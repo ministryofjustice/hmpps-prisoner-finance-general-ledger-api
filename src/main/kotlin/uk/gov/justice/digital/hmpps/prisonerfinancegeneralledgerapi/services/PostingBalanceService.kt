@@ -9,7 +9,6 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingBalanceDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.StatementBalanceDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.ProcessBalanceRequest
 import java.time.Instant
 import java.util.UUID
 
@@ -143,7 +142,7 @@ class PostingBalanceService(
   }
 
   @Transactional
-  fun processBalance(postingId: UUID): ProcessBalanceRequest? {
+  fun processBalance(postingId: UUID): PostingEntity? {
     val posting = postingsDataRepository.findById(postingId).orElseThrow { Exception("Posting not found") }
     calculatePostingBalances(posting = posting)
     return postingsDataRepository.getTheNextAccountPostingOrNull(
@@ -152,6 +151,6 @@ class PostingBalanceService(
       transactionTimestamp = posting.transactionEntity.timestamp,
       transactionEntrySequence = posting.transactionEntity.entrySequence,
       postingEntrySequence = posting.entrySequence,
-    )?.let { ProcessBalanceRequest.fromPostingEntity(it) }
+    )
   }
 }
