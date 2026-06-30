@@ -5,14 +5,18 @@ import io.awspring.cloud.sqs.annotation.SqsListener
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.LogSqsCalculatedBalances
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.LogSqsBalancesStatusType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.ProcessBalanceRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.PostingBalanceService
+import java.time.Instant
 
 @Service
 class CalculatedBalanceEventListener(
   private val objectMapper: ObjectMapper,
   private val postingBalanceService: PostingBalanceService,
   private val messagePublisher: MessagePublisher,
+  private val logSqsCalculatedBalanceService: LogSqsCalculatedBalanceService,
 ) {
 
   @SqsListener(
@@ -26,6 +30,15 @@ class CalculatedBalanceEventListener(
       val processBalanceRequest = objectMapper.readValue(requestJson, ProcessBalanceRequest::class.java)
       val nextPosting = postingBalanceService.processBalance(processBalanceRequest.postingId)
 
+      logSqsCalculatedBalanceService.save(
+        LogSqsCalculatedBalances(
+          accountId = processBalanceRequest.accountId,
+          postingId = processBalanceRequest.postingId,
+          status = LogSqsBalancesStatusType.PROCESSED,
+          timestamp = Instant.now(),
+        ),
+      )
+
       if (nextPosting != null) {
         messagePublisher.sendMessage(
           payloadDataClass = ProcessBalanceRequest.fromPostingEntity(
@@ -35,6 +48,15 @@ class CalculatedBalanceEventListener(
           ),
           queueId = SqsQueues.CALCULATED_BALANCE_QUEUE_ID,
           messageGroupId = nextPosting.subAccountEntity.parentAccountEntity.id.toString(),
+        )
+
+        logSqsCalculatedBalanceService.save(
+          LogSqsCalculatedBalances(
+            accountId = nextPosting.subAccountEntity.parentAccountEntity.id,
+            postingId = nextPosting.id,
+            status = LogSqsBalancesStatusType.ADDED,
+            timestamp = Instant.now(),
+          ),
         )
       }
     } catch (e: Exception) {

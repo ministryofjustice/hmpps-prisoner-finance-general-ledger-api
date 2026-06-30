@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.oppositePostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.IdempotencyKeyDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.LogSqsCalculatedBalancesRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingBalanceDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.StatementBalanceDataRepository
@@ -49,6 +50,7 @@ class IntegrationTestHelpers(
   private val transactionDataRepository: TransactionDataRepository,
   private val subAccountDataRepository: SubAccountDataRepository,
   private val accountDataRepository: AccountDataRepository,
+  private val logSqsCalculatedBalancesRepository: LogSqsCalculatedBalancesRepository,
 ) {
 
   lateinit var webTestClient: WebTestClient
@@ -292,5 +294,6 @@ class IntegrationTestHelpers(
     transactionDataRepository.deleteAllInBatch()
     subAccountDataRepository.deleteAllInBatch()
     accountDataRepository.deleteAllInBatch()
+    logSqsCalculatedBalancesRepository.deleteAllInBatch()
   }
 }

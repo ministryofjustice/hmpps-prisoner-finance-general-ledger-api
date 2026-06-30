@@ -35,6 +35,9 @@ class CalculatedBalanceEventPublisherTest {
   @Mock
   lateinit var postingsDataRepository: PostingsDataRepository
 
+  @Mock
+  lateinit var logSqsCalculatedBalanceService: LogSqsCalculatedBalanceService
+
   @InjectMocks
   lateinit var calculatedBalanceEventPublisher: CalculatedBalanceEventPublisher
 
