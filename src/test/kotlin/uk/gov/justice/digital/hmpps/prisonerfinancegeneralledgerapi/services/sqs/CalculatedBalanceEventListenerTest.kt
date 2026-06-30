@@ -23,6 +23,9 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.slf4j.LoggerFactory
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.ProcessBalanceRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.PostingBalanceService
 import java.util.UUID
@@ -69,7 +72,9 @@ class CalculatedBalanceEventListenerTest {
     val message = """
       {
         "postingId" : "$postingId",
-        "accountId" : "$accountId"
+        "accountId" : "$accountId",
+        "source" : "test",
+        "chainPosition" : 0
       }
     """.trimIndent()
 
@@ -91,12 +96,23 @@ class CalculatedBalanceEventListenerTest {
     val message = """
       {
         "postingId" : "$postingId",
-        "accountId" : "$accountId"
+        "accountId" : "$accountId",
+        "source" : "TEST",
+        "chainPosition": 0
       }
     """.trimIndent()
 
-    val nextPosting = mock<ProcessBalanceRequest>()
-    whenever(nextPosting.accountId).thenReturn(accountId)
+    val nextPostingId = UUID.randomUUID()
+    val nextPosting = mock<PostingEntity>()
+    val subAccount = mock<SubAccountEntity>()
+    val parentAccount = mock<AccountEntity>()
+
+    whenever(nextPosting.subAccountEntity).thenReturn(subAccount)
+    whenever(subAccount.parentAccountEntity).thenReturn(parentAccount)
+    whenever(parentAccount.id).thenReturn(accountId)
+    whenever(nextPosting.id).thenReturn(nextPostingId)
+
+    whenever(nextPosting.subAccountEntity.parentAccountEntity.id).thenReturn(accountId)
 
     whenever { postingBalanceService.processBalance(postingId) }.thenReturn(nextPosting)
 
@@ -104,7 +120,12 @@ class CalculatedBalanceEventListenerTest {
 
     verify(postingBalanceService).processBalance(postingId)
     verify(messagePublisher).sendMessage(
-      payloadDataClass = nextPosting,
+      payloadDataClass = ProcessBalanceRequest(
+        postingId = nextPostingId,
+        accountId = accountId,
+        source = "TEST",
+        chainPosition = 1,
+      ),
       queueId = SqsQueues.CALCULATED_BALANCE_QUEUE_ID,
       messageGroupId = accountId.toString(),
     )
@@ -117,7 +138,9 @@ class CalculatedBalanceEventListenerTest {
     val message = """
       {
         "postingId" : "$postingId",
-        "accountId" : "$accountId"
+        "accountId" : "$accountId",
+        "source" : "Test",
+        "chainPosition": 0
       }
     """.trimIndent()
 

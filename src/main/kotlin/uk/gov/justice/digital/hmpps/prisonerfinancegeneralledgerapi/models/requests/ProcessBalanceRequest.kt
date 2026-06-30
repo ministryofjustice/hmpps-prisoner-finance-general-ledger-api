@@ -7,11 +7,15 @@ import java.util.UUID
 data class ProcessBalanceRequest(
   val postingId: UUID,
   val accountId: UUID,
+  val source: String,
+  val chainPosition: Long,
 ) : PayloadDataClass {
   companion object {
-    fun fromPostingEntity(posting: PostingEntity): ProcessBalanceRequest = ProcessBalanceRequest(
+    fun fromPostingEntity(posting: PostingEntity, source: String, chainPosition: Long): ProcessBalanceRequest = ProcessBalanceRequest(
       postingId = posting.id,
       accountId = posting.subAccountEntity.parentAccountEntity.id,
+      source,
+      chainPosition,
     )
   }
 }

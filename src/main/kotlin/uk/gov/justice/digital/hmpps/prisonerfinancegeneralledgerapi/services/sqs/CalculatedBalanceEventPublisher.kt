@@ -17,7 +17,7 @@ class CalculatedBalanceEventPublisher(
     transactionEntity.postings.forEach { posting ->
       try {
         messagePublisher.sendMessage(
-          payloadDataClass = ProcessBalanceRequest.fromPostingEntity(posting),
+          payloadDataClass = ProcessBalanceRequest.fromPostingEntity(posting = posting, source = "requestCalculatedBalanceForTransaction", chainPosition = 0),
           queueId = SqsQueues.CALCULATED_BALANCE_QUEUE_ID,
           messageGroupId = posting.subAccountEntity.parentAccountEntity.id.toString(),
         )
@@ -36,7 +36,7 @@ class CalculatedBalanceEventPublisher(
 
       if (posting != null) {
         messagePublisher.sendMessage(
-          payloadDataClass = ProcessBalanceRequest.fromPostingEntity(posting),
+          payloadDataClass = ProcessBalanceRequest.fromPostingEntity(posting = posting, source = "requestCalculatedBalanceForStatementBalance", chainPosition = 0),
           queueId = SqsQueues.CALCULATED_BALANCE_QUEUE_ID,
           messageGroupId = posting.subAccountEntity.parentAccountEntity.id.toString(),
         )

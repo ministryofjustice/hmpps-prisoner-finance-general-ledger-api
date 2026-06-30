@@ -28,9 +28,13 @@ class CalculatedBalanceEventListener(
 
       if (nextPosting != null) {
         messagePublisher.sendMessage(
-          payloadDataClass = nextPosting,
+          payloadDataClass = ProcessBalanceRequest.fromPostingEntity(
+            posting = nextPosting,
+            source = processBalanceRequest.source,
+            chainPosition = processBalanceRequest.chainPosition + 1,
+          ),
           queueId = SqsQueues.CALCULATED_BALANCE_QUEUE_ID,
-          messageGroupId = nextPosting.accountId.toString(),
+          messageGroupId = nextPosting.subAccountEntity.parentAccountEntity.id.toString(),
         )
       }
     } catch (e: Exception) {
