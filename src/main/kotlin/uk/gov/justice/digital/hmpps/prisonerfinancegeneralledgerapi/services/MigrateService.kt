@@ -22,7 +22,6 @@ class MigrateService(
         log.debug("next posting is $nextPostingEntity")
 
         if (nextPostingEntity != null) {
-
           val processBalanceRequest = ProcessBalanceRequest.fromPostingEntity(posting = nextPostingEntity, source = "migrateAllPostingBalances", chainPosition = 1)
 
           messagePublisher.sendMessage(
