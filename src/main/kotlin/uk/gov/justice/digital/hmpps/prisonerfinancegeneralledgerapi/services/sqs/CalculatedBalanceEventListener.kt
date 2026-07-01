@@ -8,14 +8,13 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.LogSqsCalculatedBalances
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.LogSqsBalancesStatusType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.ProcessBalanceRequest
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.PostingBalanceService
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.ProcessPostingBalanceService
 import java.time.Instant
 
 @Service
 class CalculatedBalanceEventListener(
   private val objectMapper: ObjectMapper,
-  private val postingBalanceService: PostingBalanceService,
-  private val messagePublisher: MessagePublisher,
+  private val processPostingBalanceService: ProcessPostingBalanceService,
   private val logSqsCalculatedBalanceService: LogSqsCalculatedBalanceService,
 ) {
 
@@ -25,10 +24,10 @@ class CalculatedBalanceEventListener(
     maxConcurrentMessages = "10",
     maxMessagesPerPoll = "10",
   )
-  fun handleEvents(requestJson: String?) {
+  suspend fun handleEvents(requestJson: String?) {
     try {
       val processBalanceRequest = objectMapper.readValue(requestJson, ProcessBalanceRequest::class.java)
-      val nextPosting = postingBalanceService.processBalance(processBalanceRequest.postingId)
+      processPostingBalanceService.processBalance(processBalanceRequest.accountId)
 
       logSqsCalculatedBalanceService.save(
         LogSqsCalculatedBalances(
@@ -38,27 +37,6 @@ class CalculatedBalanceEventListener(
           timestamp = Instant.now(),
         ),
       )
-
-      if (nextPosting != null) {
-        messagePublisher.sendMessage(
-          payloadDataClass = ProcessBalanceRequest.fromPostingEntity(
-            posting = nextPosting,
-            source = processBalanceRequest.source,
-            chainPosition = processBalanceRequest.chainPosition + 1,
-          ),
-          queueId = SqsQueues.CALCULATED_BALANCE_QUEUE_ID,
-          messageGroupId = nextPosting.subAccountEntity.parentAccountEntity.id.toString(),
-        )
-
-        logSqsCalculatedBalanceService.save(
-          LogSqsCalculatedBalances(
-            accountId = nextPosting.subAccountEntity.parentAccountEntity.id,
-            postingId = nextPosting.id,
-            status = LogSqsBalancesStatusType.ADDED,
-            timestamp = Instant.now(),
-          ),
-        )
-      }
     } catch (e: Exception) {
       log.error("Failed to process balance calculation.\n${e.message}\nMessage will be retried. Payload: $requestJson", e)
       throw e

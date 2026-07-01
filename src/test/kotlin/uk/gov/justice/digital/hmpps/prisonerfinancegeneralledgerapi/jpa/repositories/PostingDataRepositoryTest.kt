@@ -1454,10 +1454,9 @@ class PostingDataRepositoryTest @Autowired constructor(
   }
 
   @Nested
-  inner class GetFirstPostingsForAllAccounts {
-
+  inner class GetFirstMissingPostingBalanceByAccountId {
     @Test
-    fun `Should return the first posting for accounts by timestamp`() {
+    fun `Should return the first posting without a balance for accounts by timestamp`() {
       val accountPrisoner = repoTestHelpers.createAccount(ref = "ABC123XX")
       val cashAccount = repoTestHelpers.createSubAccount(ref = "CASH", account = accountPrisoner)
 
@@ -1465,7 +1464,27 @@ class PostingDataRepositoryTest @Autowired constructor(
       val canteenAccount = repoTestHelpers.createSubAccount(ref = "CANT:1001", account = accountPrison)
 
       val transactionTimestamp = Instant.now()
-      // tx entry 1
+
+      // set up a previous transaction but with calculated balance
+      val transactionWithCalculatedBalance = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        postingCreatedAt = transactionTimestamp.minusSeconds(120),
+        transactionTimeStamp = transactionTimestamp.minusSeconds(120),
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        transactionEntrySequence = 1,
+        debitEntrySequence = 1,
+        creditEntrySequence = 2,
+      )
+
+      val postingBalance1 = PostingBalanceEntity(
+        id = UUID.randomUUID(),
+        postingEntity = transactionWithCalculatedBalance.postings[0],
+        totalSubAccountBalance = 1,
+      )
+
+      repoTestHelpers.persist(postingBalance1)
+
       val transactionOne = repoTestHelpers.createOneToOneTransaction(
         transactionAmount = 1,
         postingCreatedAt = transactionTimestamp.minusSeconds(60),
@@ -1477,7 +1496,6 @@ class PostingDataRepositoryTest @Autowired constructor(
         creditEntrySequence = 2,
       )
 
-      // tx entry 2
       val transactionTwo = repoTestHelpers.createOneToOneTransaction(
         transactionAmount = 1,
         postingCreatedAt = transactionTimestamp,
@@ -1488,13 +1506,12 @@ class PostingDataRepositoryTest @Autowired constructor(
         creditEntrySequence = 2,
       )
 
-      val firstPostingPrisoner = transactionOne.postings[0].id
-      val firstPostingPrison = transactionOne.postings[1].id
-      val firstPostings = postingsDataRepository.getFirstPostingsForAllAccounts()
+      val firstPostingPrisoner = transactionOne.postings[0]
+      val posting = postingsDataRepository.getFirstMissingPostingBalanceByAccountId(
+        firstPostingPrisoner.subAccountEntity.parentAccountEntity.id,
+      )
 
-      assertThat(firstPostings.size).isEqualTo(2)
-      assertThat(firstPostings).contains(firstPostingPrisoner)
-      assertThat(firstPostings).contains(firstPostingPrison)
+      assertThat(posting).isEqualTo(firstPostingPrisoner)
     }
 
     @Test
@@ -1540,13 +1557,10 @@ class PostingDataRepositoryTest @Autowired constructor(
         creditEntrySequence = 2,
       )
 
-      val firstPostingPrisoner = transactionEntryOne.postings[0].id
-      val firstPostingPrison = transactionEntryOne.postings[1].id
-      val firstPostings = postingsDataRepository.getFirstPostingsForAllAccounts()
+      val firstPostingPrisoner = transactionEntryOne.postings[0]
+      val firstPostings = postingsDataRepository.getFirstMissingPostingBalanceByAccountId(firstPostingPrisoner.subAccountEntity.parentAccountEntity.id)
 
-      assertThat(firstPostings.size).isEqualTo(2)
-      assertThat(firstPostings).contains(firstPostingPrisoner)
-      assertThat(firstPostings).contains(firstPostingPrison)
+      assertThat(firstPostings).isEqualTo(firstPostingPrisoner)
     }
 
     @Test
@@ -1576,11 +1590,6 @@ class PostingDataRepositoryTest @Autowired constructor(
         transactionEntity = transactionEntity,
         entrySequence = 1,
       )
-      val postingBalance1 = PostingBalanceEntity(
-        id = UUID.randomUUID(),
-        postingEntity = postingEntity1,
-        totalSubAccountBalance = 1,
-      )
 
       val postingEntity2 = PostingEntity(
         id = UUID.randomUUID(),
@@ -1590,11 +1599,6 @@ class PostingDataRepositoryTest @Autowired constructor(
         subAccountEntity = canteenAccount,
         transactionEntity = transactionEntity,
         entrySequence = 2,
-      )
-      val postingBalance2 = PostingBalanceEntity(
-        id = UUID.randomUUID(),
-        postingEntity = postingEntity2,
-        totalSubAccountBalance = 1,
       )
 
       val postingEntity3 = PostingEntity(
@@ -1606,11 +1610,6 @@ class PostingDataRepositoryTest @Autowired constructor(
         transactionEntity = transactionEntity,
         entrySequence = 3,
       )
-      val postingBalance3 = PostingBalanceEntity(
-        id = UUID.randomUUID(),
-        postingEntity = postingEntity3,
-        totalSubAccountBalance = 1,
-      )
 
       val postingEntity4 = PostingEntity(
         id = UUID.randomUUID(),
@@ -1620,11 +1619,6 @@ class PostingDataRepositoryTest @Autowired constructor(
         subAccountEntity = canteenAccount,
         transactionEntity = transactionEntity,
         entrySequence = 4,
-      )
-      val postingBalance4 = PostingBalanceEntity(
-        id = UUID.randomUUID(),
-        postingEntity = postingEntity4,
-        totalSubAccountBalance = 1,
       )
 
       transactionEntity.postings.add(postingEntity1)
@@ -1639,18 +1633,10 @@ class PostingDataRepositoryTest @Autowired constructor(
       repoTestHelpers.persist(postingEntity3)
       repoTestHelpers.persist(postingEntity4)
 
-      repoTestHelpers.persist(postingBalance1)
-      repoTestHelpers.persist(postingBalance2)
-      repoTestHelpers.persist(postingBalance3)
-      repoTestHelpers.persist(postingBalance4)
+      val firstPostingPrisoner = postingEntity2
+      val firstPosting = postingsDataRepository.getFirstMissingPostingBalanceByAccountId(firstPostingPrisoner.subAccountEntity.parentAccountEntity.id)
 
-      val firstPostingPrisoner = postingEntity1.id
-      val firstPostingPrison = postingEntity2.id
-      val firstPostings = postingsDataRepository.getFirstPostingsForAllAccounts()
-
-      assertThat(firstPostings.size).isEqualTo(2)
-      assertThat(firstPostings).contains(firstPostingPrisoner)
-      assertThat(firstPostings).contains(firstPostingPrison)
+      assertThat(firstPosting).isEqualTo(firstPostingPrisoner)
     }
 
     @Test
@@ -1686,13 +1672,12 @@ class PostingDataRepositoryTest @Autowired constructor(
         creditEntrySequence = 0,
       )
 
-      val firstPostingPrisoner = listOf(transactionFirst.postings[0].id, transactionSecond.postings[0].id).minOf { it.toString() }
-      val firstPostingPrison = listOf(transactionFirst.postings[1].id, transactionSecond.postings[1].id).minOf { it.toString() }
-      val firstPostings = postingsDataRepository.getFirstPostingsForAllAccounts()
+      val firstPostingPrisonerId = listOf(transactionFirst.postings[0], transactionSecond.postings[0]).minOf { it.id.toString() }
+      val firstPostingPrisoner = listOf(transactionFirst.postings[0], transactionSecond.postings[0]).first { it.id.toString() == firstPostingPrisonerId }
 
-      assertThat(firstPostings.size).isEqualTo(2)
-      assertThat(firstPostings).contains(UUID.fromString(firstPostingPrisoner))
-      assertThat(firstPostings).contains(UUID.fromString(firstPostingPrison))
+      val firstPosting = postingsDataRepository.getFirstMissingPostingBalanceByAccountId(firstPostingPrisoner.subAccountEntity.parentAccountEntity.id)
+
+      assertThat(firstPosting).isEqualTo(firstPostingPrisoner)
     }
   }
 }

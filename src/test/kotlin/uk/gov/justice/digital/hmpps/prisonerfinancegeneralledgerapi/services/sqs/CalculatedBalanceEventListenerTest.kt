@@ -15,7 +15,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
-import org.mockito.Mockito.mock
 import org.mockito.Spy
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
@@ -23,11 +22,7 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.slf4j.LoggerFactory
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.ProcessBalanceRequest
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.PostingBalanceService
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.ProcessPostingBalanceService
 import java.util.UUID
 
 @ExtendWith(MockitoExtension::class)
@@ -39,7 +34,7 @@ class CalculatedBalanceEventListenerTest {
     .registerModule(JavaTimeModule())
 
   @Mock
-  lateinit var postingBalanceService: PostingBalanceService
+  lateinit var processPostingBalanceService: ProcessPostingBalanceService
 
   @Mock
   lateinit var messagePublisher: MessagePublisher
@@ -72,18 +67,20 @@ class CalculatedBalanceEventListenerTest {
   fun `should process balance when a valid message is received`() {
     val postingId = UUID.randomUUID()
     val accountId = UUID.randomUUID()
+    val source = "test"
+    val chainPosition = 0L
     val message = """
       {
         "postingId" : "$postingId",
         "accountId" : "$accountId",
-        "source" : "test",
-        "chainPosition" : 0
+        "source" : "$source",
+        "chainPosition" : $chainPosition
       }
     """.trimIndent()
 
     calculatedBalanceEventListener.handleEvents(message)
 
-    verify(postingBalanceService).processBalance(postingId)
+    verify(processPostingBalanceService).processBalance(accountId)
     verify(messagePublisher, never())
       .sendMessage(
         payloadDataClass = any<PayloadDataClass>(),
@@ -93,66 +90,26 @@ class CalculatedBalanceEventListenerTest {
   }
 
   @Test
-  fun `should request a new balance calculation nextPosting is returned`() {
-    val postingId = UUID.randomUUID()
-    val accountId = UUID.randomUUID()
-    val message = """
-      {
-        "postingId" : "$postingId",
-        "accountId" : "$accountId",
-        "source" : "TEST",
-        "chainPosition": 0
-      }
-    """.trimIndent()
-
-    val nextPostingId = UUID.randomUUID()
-    val nextPosting = mock<PostingEntity>()
-    val subAccount = mock<SubAccountEntity>()
-    val parentAccount = mock<AccountEntity>()
-
-    whenever(nextPosting.subAccountEntity).thenReturn(subAccount)
-    whenever(subAccount.parentAccountEntity).thenReturn(parentAccount)
-    whenever(parentAccount.id).thenReturn(accountId)
-    whenever(nextPosting.id).thenReturn(nextPostingId)
-
-    whenever(nextPosting.subAccountEntity.parentAccountEntity.id).thenReturn(accountId)
-
-    whenever { postingBalanceService.processBalance(postingId) }.thenReturn(nextPosting)
-
-    calculatedBalanceEventListener.handleEvents(message)
-
-    verify(postingBalanceService).processBalance(postingId)
-    verify(messagePublisher).sendMessage(
-      payloadDataClass = ProcessBalanceRequest(
-        postingId = nextPostingId,
-        accountId = accountId,
-        source = "TEST",
-        chainPosition = 1,
-      ),
-      queueId = SqsQueues.CALCULATED_BALANCE_QUEUE_ID,
-      messageGroupId = accountId.toString(),
-    )
-  }
-
-  @Test
   fun `should log error when balance calculation fails`() {
     val postingId = UUID.randomUUID()
     val accountId = UUID.randomUUID()
+    val source = "test"
+    val chainPosition = 0L
     val message = """
       {
         "postingId" : "$postingId",
         "accountId" : "$accountId",
-        "source" : "Test",
-        "chainPosition": 0
+        "source" : "$source",
+        "chainPosition" : $chainPosition
       }
     """.trimIndent()
 
     val exceptionMessage = "Test error"
-    whenever { postingBalanceService.processBalance(postingId) }.thenThrow(RuntimeException(exceptionMessage))
+    whenever { processPostingBalanceService.processBalance(accountId) }.thenThrow(RuntimeException(exceptionMessage))
 
     assertThatThrownBy { calculatedBalanceEventListener.handleEvents(message) }.isInstanceOf(RuntimeException::class.java)
 
-    verify(postingBalanceService).processBalance(postingId)
+    verify(processPostingBalanceService).processBalance(accountId)
 
     val logList = listAppender.list
     assertThat(logList).hasSize(1)
