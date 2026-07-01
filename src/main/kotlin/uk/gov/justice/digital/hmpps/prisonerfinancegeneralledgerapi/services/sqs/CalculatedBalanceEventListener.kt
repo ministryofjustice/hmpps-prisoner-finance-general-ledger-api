@@ -23,7 +23,6 @@ class CalculatedBalanceEventListener(
     factory = "hmppsQueueContainerFactoryProxy",
     maxConcurrentMessages = "1",
     maxMessagesPerPoll = "1",
-    pollTimeoutSeconds = "600",
   )
   fun handleEvents(requestJson: String?) {
     try {
