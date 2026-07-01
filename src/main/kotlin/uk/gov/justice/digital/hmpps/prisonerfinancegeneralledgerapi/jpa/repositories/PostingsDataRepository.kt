@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.reposit
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.domain.Specification
+import org.springframework.data.jpa.repository.EntityGraph
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor
 import org.springframework.data.jpa.repository.Query
@@ -18,7 +19,6 @@ import java.util.UUID
 interface PostingsDataRepository :
   JpaRepository<PostingEntity, UUID>,
   JpaSpecificationExecutor<PostingEntity> {
-
   fun getPostingsByAccountId(
     accountId: UUID,
     page: Pageable,
@@ -37,24 +37,27 @@ interface PostingsDataRepository :
     return this.findAll(spec, page)
   }
 
+  @EntityGraph(
+    attributePaths = [
+      "transactionEntity",
+      "subAccountEntity",
+      "subAccountEntity.parentAccountEntity",
+      "subAccountEntity.parentAccountEntity.subAccounts",
+      "postingBalanceEntity",
+    ],
+  )
   @Query(
     """
-      SELECT p.id 
-      FROM PostingEntity p 
-      WHERE NOT EXISTS (
-          SELECT 1 
-          FROM PostingEntity p2 
-          WHERE p2.subAccountEntity.parentAccountEntity.id = p.subAccountEntity.parentAccountEntity.id
-            AND (
-                p2.transactionEntity.timestamp < p.transactionEntity.timestamp 
-                OR (p2.transactionEntity.timestamp = p.transactionEntity.timestamp AND p2.transactionEntity.entrySequence < p.transactionEntity.entrySequence)
-                OR (p2.transactionEntity.timestamp = p.transactionEntity.timestamp AND p2.transactionEntity.entrySequence = p.transactionEntity.entrySequence AND p2.entrySequence < p.entrySequence)
-                OR (p2.transactionEntity.timestamp = p.transactionEntity.timestamp AND p2.transactionEntity.entrySequence = p.transactionEntity.entrySequence AND p2.entrySequence = p.entrySequence and p2.id < p.id)
-            )
-      )
-  """,
+        SELECT p
+        FROM PostingEntity AS p
+        WHERE 
+            p.postingBalanceEntity IS NULL AND 
+            p.subAccountEntity.parentAccountEntity.id = :accountId
+        ORDER BY p.transactionEntity.timestamp, p.transactionEntity.entrySequence, p.entrySequence, p.id
+        LIMIT 1
+      """,
   )
-  fun getFirstPostingsForAllAccounts(): List<UUID>
+  fun getFirstMissingPostingBalanceByAccountId(accountId: UUID): PostingEntity?
 
   @Query("SELECT p FROM PostingEntity p WHERE p.subAccountEntity.id = :subAccountId")
   fun getPostingsForSubAccountId(@Param("subAccountId") subAccountId: UUID): List<PostingEntity>
@@ -118,6 +121,15 @@ WHERE sa.account_id = :prisonerId
   )
   fun getBalanceForAPrisonerAtAPrison(@Param("prisonId") prisonId: UUID, @Param("prisonerId") prisonerId: UUID): Long
 
+  @EntityGraph(
+    attributePaths = [
+      "transactionEntity",
+      "subAccountEntity",
+      "subAccountEntity.parentAccountEntity",
+      "subAccountEntity.parentAccountEntity.subAccounts",
+      "postingBalanceEntity",
+    ],
+  )
   // the last OR is a workaround entrySequences that zero due to old data in dev
   @Query(
     """

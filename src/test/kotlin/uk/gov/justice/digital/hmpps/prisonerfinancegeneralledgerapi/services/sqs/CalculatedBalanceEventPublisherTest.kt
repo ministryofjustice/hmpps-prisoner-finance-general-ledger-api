@@ -38,6 +38,9 @@ class CalculatedBalanceEventPublisherTest {
   @Mock
   lateinit var logSqsCalculatedBalanceService: LogSqsCalculatedBalanceService
 
+  @Mock
+  lateinit var deleteCalculatedBalanceHelper: DeleteCalculatedBalanceHelper
+
   @InjectMocks
   lateinit var calculatedBalanceEventPublisher: CalculatedBalanceEventPublisher
 

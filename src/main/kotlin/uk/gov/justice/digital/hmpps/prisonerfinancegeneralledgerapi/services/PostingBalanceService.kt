@@ -7,15 +7,12 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.StatementBalanceEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingBalanceDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.StatementBalanceDataRepository
 import java.time.Instant
-import java.util.UUID
 
 @Service
 class PostingBalanceService(
   private val postingBalanceDataRepository: PostingBalanceDataRepository,
-  private val postingsDataRepository: PostingsDataRepository,
   private val statementBalanceDataRepository: StatementBalanceDataRepository,
 ) {
   enum class BalanceCalculationStrategy {
@@ -101,6 +98,7 @@ class PostingBalanceService(
     postingBalanceDataRepository.save(postingBalanceToSave)
   }
 
+  @Transactional
   fun calculatePostingBalances(
     posting: PostingEntity,
   ) {
@@ -138,19 +136,6 @@ class PostingBalanceService(
       posting = posting,
       newSubAccountBalance = newSubAccountBalance,
       newTotalBalance = newTotalBalance,
-    )
-  }
-
-  @Transactional
-  fun processBalance(postingId: UUID): PostingEntity? {
-    val posting = postingsDataRepository.findById(postingId).orElseThrow { Exception("Posting not found") }
-    calculatePostingBalances(posting = posting)
-    return postingsDataRepository.getTheNextAccountPostingOrNull(
-      postingId = posting.id,
-      accountId = posting.subAccountEntity.parentAccountEntity.id,
-      transactionTimestamp = posting.transactionEntity.timestamp,
-      transactionEntrySequence = posting.transactionEntity.entrySequence,
-      postingEntrySequence = posting.entrySequence,
     )
   }
 }
