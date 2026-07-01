@@ -23,8 +23,9 @@ class CalculatedBalanceEventListener(
     factory = "hmppsQueueContainerFactoryProxy",
     maxConcurrentMessages = "10",
     maxMessagesPerPoll = "10",
+    pollTimeoutSeconds = "600",
   )
-  suspend fun handleEvents(requestJson: String?) {
+  fun handleEvents(requestJson: String?) {
     try {
       val processBalanceRequest = objectMapper.readValue(requestJson, ProcessBalanceRequest::class.java)
       processPostingBalanceService.processBalance(processBalanceRequest.accountId)
