@@ -85,6 +85,8 @@ abstract class IntegrationTestBase {
 
   @AfterEach
   fun tearDownAndRecreateCalculatedBalanceQueue() {
+    integrationTestHelpers.waitUntilEmpty("calculated_balance", hmppsQueueService)
+
     val sqsClient = calculatedBalanceQueue.sqsClient
 
     sqsClient.deleteQueue { it.queueUrl(calculatedBalanceQueue.queueUrl) }.get()

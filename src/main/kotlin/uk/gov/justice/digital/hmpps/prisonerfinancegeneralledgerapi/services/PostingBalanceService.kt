@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services
 
-import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingBalanceEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
@@ -98,7 +97,6 @@ class PostingBalanceService(
     postingBalanceDataRepository.save(postingBalanceToSave)
   }
 
-  @Transactional
   fun calculatePostingBalances(
     posting: PostingEntity,
   ) {

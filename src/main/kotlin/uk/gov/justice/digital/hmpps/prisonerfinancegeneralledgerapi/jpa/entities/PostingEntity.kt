@@ -50,6 +50,7 @@ class PostingEntity(
     mappedBy = "postingEntity",
     optional = true,
     fetch = jakarta.persistence.FetchType.LAZY,
+    cascade = [jakarta.persistence.CascadeType.REMOVE],
   )
   var postingBalanceEntity: PostingBalanceEntity? = null,
 )

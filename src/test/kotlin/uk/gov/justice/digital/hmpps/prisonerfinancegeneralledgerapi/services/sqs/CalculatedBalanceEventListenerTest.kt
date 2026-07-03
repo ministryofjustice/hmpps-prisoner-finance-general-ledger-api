@@ -39,9 +39,6 @@ class CalculatedBalanceEventListenerTest {
   @Mock
   lateinit var messagePublisher: MessagePublisher
 
-  @Mock
-  lateinit var logSqsCalculatedBalanceService: LogSqsCalculatedBalanceService
-
   @InjectMocks
   lateinit var calculatedBalanceEventListener: CalculatedBalanceEventListener
 

@@ -5,17 +5,13 @@ import io.awspring.cloud.sqs.annotation.SqsListener
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.LogSqsCalculatedBalances
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.LogSqsBalancesStatusType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.ProcessBalanceRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.ProcessPostingBalanceService
-import java.time.Instant
 
 @Service
 class CalculatedBalanceEventListener(
   private val objectMapper: ObjectMapper,
   private val processPostingBalanceService: ProcessPostingBalanceService,
-  private val logSqsCalculatedBalanceService: LogSqsCalculatedBalanceService,
 ) {
 
   @SqsListener(
@@ -28,15 +24,6 @@ class CalculatedBalanceEventListener(
     try {
       val processBalanceRequest = objectMapper.readValue(requestJson, ProcessBalanceRequest::class.java)
       processPostingBalanceService.processBalance(processBalanceRequest.accountId)
-
-      logSqsCalculatedBalanceService.save(
-        LogSqsCalculatedBalances(
-          accountId = processBalanceRequest.accountId,
-          postingId = processBalanceRequest.postingId,
-          status = LogSqsBalancesStatusType.PROCESSED,
-          timestamp = Instant.now(),
-        ),
-      )
     } catch (e: Exception) {
       log.error("Failed to process balance calculation.\n${e.message}\nMessage will be retried. Payload: $requestJson", e)
       throw e
