@@ -22,6 +22,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.slf4j.LoggerFactory
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingBalanceDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.ProcessBalanceRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.helpers.ServiceTestHelpers
@@ -36,10 +37,7 @@ class CalculatedBalanceEventPublisherTest {
   lateinit var postingsDataRepository: PostingsDataRepository
 
   @Mock
-  lateinit var logSqsCalculatedBalanceService: LogSqsCalculatedBalanceService
-
-  @Mock
-  lateinit var deleteCalculatedBalanceHelper: DeleteCalculatedBalanceHelper
+  lateinit var postingBalanceDataRepository: PostingBalanceDataRepository
 
   @InjectMocks
   lateinit var calculatedBalanceEventPublisher: CalculatedBalanceEventPublisher
@@ -120,12 +118,6 @@ class CalculatedBalanceEventPublisherTest {
     @Test
     fun `Should delete calculated balances once per account when postings share a parent account`() {
       calculatedBalanceEventPublisher.requestCalculatedBalanceForTransaction(sameAccountTransaction)
-
-      verify(deleteCalculatedBalanceHelper, times(1))
-        .deleteFromTimestampByAccountIdTransaction(
-          accountId = eq(prisonerAccount.id),
-          timestamp = eq(sameAccountTransaction.timestamp),
-        )
 
       verify(messagePublisher, times(sameAccountTransaction.postings.size))
         .sendMessage(

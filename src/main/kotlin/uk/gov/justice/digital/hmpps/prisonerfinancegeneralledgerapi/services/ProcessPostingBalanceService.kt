@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services
 
+import jakarta.transaction.Transactional
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
@@ -15,13 +16,13 @@ class ProcessPostingBalanceService(
 ) {
   private val log = LoggerFactory.getLogger(this::class.java)
 
+  @Transactional
   fun processBalance(accountId: UUID) {
     var posting: PostingEntity? = postingsDataRepository.getFirstMissingPostingBalanceByAccountId(accountId)
 
     log.debug("Processing posting: ${posting?.id}")
     while (posting != null) {
       postingBalanceService.calculatePostingBalances(posting = posting)
-      postingBalanceDataRepository.flush()
 
       posting = postingsDataRepository.getTheNextAccountPostingOrNull(
         postingId = posting.id,
