@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services
 
-import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingBalanceEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
@@ -69,6 +68,7 @@ class PostingBalanceService(
         strategy == BalanceCalculationStrategy.FromPreviousPostingBalance && latestPostingBalance != null -> {
           latestPostingBalance.totalSubAccountBalance
         }
+
         else -> throw Exception("Unexpected pathway in calculateNewBalance")
       }
     }
@@ -98,7 +98,6 @@ class PostingBalanceService(
     postingBalanceDataRepository.save(postingBalanceToSave)
   }
 
-  @Transactional
   fun calculatePostingBalances(
     posting: PostingEntity,
   ) {

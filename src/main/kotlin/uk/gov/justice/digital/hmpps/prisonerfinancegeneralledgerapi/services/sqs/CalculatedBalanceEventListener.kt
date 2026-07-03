@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.sq
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.awspring.cloud.sqs.annotation.SqsListener
+import jakarta.transaction.Transactional
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -24,6 +25,7 @@ class CalculatedBalanceEventListener(
     maxConcurrentMessages = "10",
     maxMessagesPerPoll = "10",
   )
+  @Transactional
   fun handleEvents(requestJson: String?) {
     try {
       val processBalanceRequest = objectMapper.readValue(requestJson, ProcessBalanceRequest::class.java)
