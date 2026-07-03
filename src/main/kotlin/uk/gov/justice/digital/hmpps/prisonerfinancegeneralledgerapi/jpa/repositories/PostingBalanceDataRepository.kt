@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories
 
 import org.springframework.data.jpa.repository.JpaRepository
-import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingBalanceEntity
@@ -60,24 +59,4 @@ interface PostingBalanceDataRepository : JpaRepository<PostingBalanceEntity, Lon
   ): List<PostingBalanceEntity>
 
   fun findByPostingEntity(posting: PostingEntity): PostingBalanceEntity?
-
-  @Modifying
-  @Query(
-    value = """
-      DELETE FROM posting_balance
-      WHERE posting_id IN (
-          SELECT p.posting_id
-          FROM postings p
-          JOIN sub_accounts sa ON sa.sub_account_id = p.sub_account_id
-          JOIN transactions t ON t.transaction_id = p.transaction_id
-          WHERE sa.account_id = :accountId
-            AND t.timestamp >= :timestamp
-      )
-    """,
-    nativeQuery = true,
-  )
-  fun deleteFromTimestampByAccountId(
-    accountId: UUID,
-    timestamp: Instant,
-  )
 }
