@@ -4,7 +4,6 @@ import jakarta.transaction.Transactional
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingBalanceDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import java.util.UUID
 
@@ -12,7 +11,6 @@ import java.util.UUID
 class ProcessPostingBalanceService(
   private val postingsDataRepository: PostingsDataRepository,
   private val postingBalanceService: PostingBalanceService,
-  private val postingBalanceDataRepository: PostingBalanceDataRepository,
 ) {
   private val log = LoggerFactory.getLogger(this::class.java)
 
