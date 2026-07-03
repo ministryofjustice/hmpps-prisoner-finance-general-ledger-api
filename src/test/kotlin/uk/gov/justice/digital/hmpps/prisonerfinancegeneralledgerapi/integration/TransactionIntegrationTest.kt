@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration
 
-import jakarta.transaction.Transactional
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -29,7 +28,6 @@ import kotlin.collections.emptyList
 
 class TransactionIntegrationTest : IntegrationTestBase() {
 
-  @Transactional
   @BeforeEach
   fun resetDB() {
     integrationTestHelpers.clearDB()

@@ -287,13 +287,13 @@ class IntegrationTestHelpers(
     entityManager.flush()
     entityManager.clear()
 
+    logSqsCalculatedBalancesRepository.deleteAllInBatch()
     idempotencyKeyDataRepository.deleteAllInBatch()
     statementBalanceDataRepository.deleteAllInBatch()
-    postingBalanceDataRepository.deleteAllInBatch()
-    postingsDataRepository.deleteAllInBatch()
-    transactionDataRepository.deleteAllInBatch()
-    subAccountDataRepository.deleteAllInBatch()
-    accountDataRepository.deleteAllInBatch()
-    logSqsCalculatedBalancesRepository.deleteAllInBatch()
+    postingBalanceDataRepository.deleteAll()
+    postingsDataRepository.deleteAll()
+    transactionDataRepository.deleteAll()
+    subAccountDataRepository.deleteAll()
+    accountDataRepository.deleteAll()
   }
 }

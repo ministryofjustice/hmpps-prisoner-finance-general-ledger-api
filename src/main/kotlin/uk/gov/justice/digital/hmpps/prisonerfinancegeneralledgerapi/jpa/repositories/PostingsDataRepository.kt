@@ -53,7 +53,10 @@ interface PostingsDataRepository :
         WHERE 
             p.postingBalanceEntity IS NULL AND 
             p.subAccountEntity.parentAccountEntity.id = :accountId
-        ORDER BY p.transactionEntity.timestamp, p.transactionEntity.entrySequence, p.entrySequence, p.id
+        ORDER BY p.transactionEntity.timestamp,
+                 p.transactionEntity.entrySequence, 
+                 p.entrySequence, 
+                 p.id
         LIMIT 1
       """,
   )

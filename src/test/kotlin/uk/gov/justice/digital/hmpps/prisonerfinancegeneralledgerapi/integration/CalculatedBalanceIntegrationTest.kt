@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.LogSqsBalancesStatusType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.LogSqsCalculatedBalancesRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingBalanceDataRepository
@@ -121,64 +120,6 @@ class CalculatedBalanceIntegrationTest(
       assertThat(content[0].amount).isEqualTo(amount)
       assertThat(content[0].subAccountBalance).isEqualTo(amount)
       assertThat(content[0].accountBalance).isEqualTo(amount)
-    }
-
-    @Test
-    fun `Should log to calculatedBalance queue when messages are sent and processed after transaction is posted`() {
-      val amount = 77L
-
-      integrationTestHelpers.createOneToOneTransaction(
-        amount = amount,
-        creditSubAccountId = subAccountPrisonerCash.id,
-        debitSubAccountId = subAccountPrisonCanteen.id,
-        transactionReference = "test",
-        timestamp = Instant.now(),
-        transactionEntrySequence = 1,
-        postingEntrySequence = Pair(1L, 2L),
-      )
-
-      integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE_QUEUE_ID, hmppsQueueService)
-
-      val logs = logSqsCalculatedBalancesRepository.findAll()
-
-      assertThat(logs).hasSize(4)
-      assertThat(logs.filter { it.status == LogSqsBalancesStatusType.ADDED }).hasSize(2)
-      assertThat(logs.filter { it.status == LogSqsBalancesStatusType.PROCESSED }).hasSize(2)
-    }
-
-    @Test
-    fun `Should log to calculatedBalance queue when messages are sent and processed after statement balance is posted`() {
-      val amountFirst = 77L
-      val amountStatementBalance = 27L
-
-      // TXN
-      integrationTestHelpers.createOneToOneTransaction(
-        amount = amountFirst,
-        creditSubAccountId = subAccountPrisonerCash.id,
-        debitSubAccountId = subAccountPrisonCanteen.id,
-        transactionReference = "test",
-        timestamp = Instant.now(),
-        transactionEntrySequence = 1,
-        postingEntrySequence = Pair(1L, 2L),
-      )
-
-      integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE_QUEUE_ID, hmppsQueueService)
-
-      // Insert statement balance
-      val statementBalanceTimestamp = Instant.now().minusSeconds(120)
-      integrationTestHelpers.createStatementBalance(
-        subAccountId = subAccountPrisonerCash.id,
-        amount = amountStatementBalance,
-        timestamp = statementBalanceTimestamp,
-      )
-
-      integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE_QUEUE_ID, hmppsQueueService)
-
-      val logs = logSqsCalculatedBalancesRepository.findAll()
-
-      assertThat(logs).hasSize(6)
-      assertThat(logs.filter { it.status == LogSqsBalancesStatusType.ADDED }).hasSize(3)
-      assertThat(logs.filter { it.status == LogSqsBalancesStatusType.PROCESSED }).hasSize(3)
     }
 
     @Test

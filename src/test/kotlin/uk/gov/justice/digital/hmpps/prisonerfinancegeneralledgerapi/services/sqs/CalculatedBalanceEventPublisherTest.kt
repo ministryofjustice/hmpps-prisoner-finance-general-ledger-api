@@ -22,6 +22,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.slf4j.LoggerFactory
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingBalanceDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.ProcessBalanceRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.helpers.ServiceTestHelpers
@@ -36,10 +37,7 @@ class CalculatedBalanceEventPublisherTest {
   lateinit var postingsDataRepository: PostingsDataRepository
 
   @Mock
-  lateinit var logSqsCalculatedBalanceService: LogSqsCalculatedBalanceService
-
-  @Mock
-  lateinit var deleteCalculatedBalanceHelper: DeleteCalculatedBalanceHelper
+  lateinit var postingsBalanceDataRepository: PostingBalanceDataRepository
 
   @InjectMocks
   lateinit var calculatedBalanceEventPublisher: CalculatedBalanceEventPublisher
@@ -119,8 +117,8 @@ class CalculatedBalanceEventPublisherTest {
       )
         .thenThrow(expectedException)
 
-      val firstPostingId = transaction.postings.first().id
-      val expectedLogMessage = "Failed send balanceCalculation to queue for Transaction: ${transaction.id} Posting: $firstPostingId"
+      val parentAccountId = transaction.postings.first().subAccountEntity.parentAccountEntity.id.toString()
+      val expectedLogMessage = "Failed send balanceCalculation to queue for Transaction: ${transaction.id} AccountId: $parentAccountId"
 
       calculatedBalanceEventPublisher.requestCalculatedBalanceForTransaction(transaction)
 
