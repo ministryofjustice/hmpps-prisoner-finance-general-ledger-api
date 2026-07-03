@@ -60,6 +60,7 @@ interface PostingBalanceDataRepository : JpaRepository<PostingBalanceEntity, Lon
   ): List<PostingBalanceEntity>
 
   fun findByPostingEntity(posting: PostingEntity): PostingBalanceEntity?
+
   @Modifying
   @Query(
     value = """
