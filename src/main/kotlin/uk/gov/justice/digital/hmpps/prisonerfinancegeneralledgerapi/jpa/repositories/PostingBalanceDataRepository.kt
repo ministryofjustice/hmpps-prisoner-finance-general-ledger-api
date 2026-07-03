@@ -60,15 +60,20 @@ interface PostingBalanceDataRepository : JpaRepository<PostingBalanceEntity, Lon
   ): List<PostingBalanceEntity>
 
   fun findByPostingEntity(posting: PostingEntity): PostingBalanceEntity?
-
   @Modifying
   @Query(
-    """
-      DELETE FROM PostingBalanceEntity pb
-      where
-        pb.postingEntity.subAccountEntity.parentAccountEntity.id = :accountId AND
-        pb.postingEntity.transactionEntity.timestamp >= :timestamp
+    value = """
+      DELETE FROM posting_balance
+      WHERE posting_id IN (
+          SELECT p.posting_id
+          FROM postings p
+          JOIN sub_accounts sa ON sa.sub_account_id = p.sub_account_id
+          JOIN transactions t ON t.transaction_id = p.transaction_id
+          WHERE sa.account_id = :accountId
+            AND t.timestamp >= :timestamp
+      )
     """,
+    nativeQuery = true,
   )
   fun deleteFromTimestampByAccountId(
     accountId: UUID,

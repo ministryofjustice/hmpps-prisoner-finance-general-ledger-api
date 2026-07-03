@@ -40,19 +40,32 @@ class CalculatedBalanceEventPublisher(
 ) {
 
   fun requestCalculatedBalanceForTransaction(transactionEntity: TransactionEntity) {
+    val accountIdsWithFailedDeletes = mutableSetOf<UUID>()
+    transactionEntity.postings
+      .map { it.subAccountEntity.parentAccountEntity.id }
+      .distinct()
+      .forEach { accountId ->
+        try {
+          deleteCalculatedBalanceHelper.deleteFromTimestampByAccountIdTransaction(
+            accountId = accountId,
+            timestamp = transactionEntity.timestamp,
+          )
+        } catch (e: Exception) {
+          accountIdsWithFailedDeletes.add(accountId)
+          log.error("Failed to delete calculated balances for Transaction: ${transactionEntity.id} Account: $accountId", e)
+        }
+      }
+
     transactionEntity.postings.forEach { posting ->
+      val accountId = posting.subAccountEntity.parentAccountEntity.id
+      if (accountId in accountIdsWithFailedDeletes) return@forEach
       try {
         val payload = ProcessBalanceRequest.fromPostingEntity(posting, source = "requestCalculatedBalanceForTransaction", chainPosition = 0)
-
-        deleteCalculatedBalanceHelper.deleteFromTimestampByAccountIdTransaction(
-          accountId = posting.subAccountEntity.parentAccountEntity.id,
-          timestamp = transactionEntity.timestamp,
-        )
 
         messagePublisher.sendMessage(
           payloadDataClass = payload,
           queueId = SqsQueues.CALCULATED_BALANCE_QUEUE_ID,
-          messageGroupId = posting.subAccountEntity.parentAccountEntity.id.toString(),
+          messageGroupId = accountId.toString(),
         )
         logSqsCalculatedBalanceService.save(
           LogSqsCalculatedBalances(

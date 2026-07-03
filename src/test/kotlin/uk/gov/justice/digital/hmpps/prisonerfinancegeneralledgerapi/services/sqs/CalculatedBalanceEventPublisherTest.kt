@@ -73,6 +73,16 @@ class CalculatedBalanceEventPublisherTest {
     description = "Test Transaction",
   )
 
+  val prisonerSpendsAccount = serviceTestHelpers.createSubAccount("SPENDS", prisonerAccount)
+
+  val sameAccountTransaction = serviceTestHelpers.createOneToOneTransaction(
+    transactionAmount = 5,
+    transactionDateTime = Instant.now(),
+    debitSubAccount = prisonerCashAccount,
+    creditSubAccount = prisonerSpendsAccount,
+    description = "Same account transfer",
+  )
+
   val statementEntity = serviceTestHelpers.createStatementBalance(
     subAccount = prisonerCashAccount,
     amount = 1000,
@@ -105,6 +115,24 @@ class CalculatedBalanceEventPublisherTest {
       val expectedMessageGroupId = transaction.postings.map { it.subAccountEntity.parentAccountEntity.id.toString() }
       val actualMessageGroupId = capturedGroupIds.map { it }
       assertEquals(expectedMessageGroupId, actualMessageGroupId)
+    }
+
+    @Test
+    fun `Should delete calculated balances once per account when postings share a parent account`() {
+      calculatedBalanceEventPublisher.requestCalculatedBalanceForTransaction(sameAccountTransaction)
+
+      verify(deleteCalculatedBalanceHelper, times(1))
+        .deleteFromTimestampByAccountIdTransaction(
+          accountId = eq(prisonerAccount.id),
+          timestamp = eq(sameAccountTransaction.timestamp),
+        )
+
+      verify(messagePublisher, times(sameAccountTransaction.postings.size))
+        .sendMessage(
+          payloadDataClass = any<ProcessBalanceRequest>(),
+          queueId = eq(SqsQueues.CALCULATED_BALANCE_QUEUE_ID),
+          messageGroupId = eq(prisonerAccount.id.toString()),
+        )
     }
 
     @Test
