@@ -23,6 +23,8 @@ class ProcessPostingBalanceService(
     var posting: PostingEntity? = postingsDataRepository.getFirstMissingPostingBalanceByAccountId(accountId)
 
     log.debug("Processing posting: ${posting?.id}")
+
+    var chainLength = 1
     while (posting != null) {
       val startTime = Instant.now()
 
@@ -34,10 +36,12 @@ class ProcessPostingBalanceService(
         mapOf(
           "postingId" to posting.id.toString(),
           "accountId" to accountId.toString(),
+          "chainLength" to chainLength.toString(),
           "timeTaken" to "${Instant.now().toEpochMilli() - startTime.toEpochMilli()}ms",
         ),
         null,
       )
+      chainLength += 1
       posting = postingsDataRepository.getTheNextAccountPostingOrNull(
         postingId = posting.id,
         accountId = posting.subAccountEntity.parentAccountEntity.id,
