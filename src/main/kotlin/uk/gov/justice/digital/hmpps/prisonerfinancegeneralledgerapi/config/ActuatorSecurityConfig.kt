@@ -10,6 +10,6 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 class ActuatorSecurityConfig {
   @Bean
   fun webSecurityCustomizer(): WebSecurityCustomizer = WebSecurityCustomizer { web ->
-    web.ignoring().requestMatchers("/metrics")
+    web.ignoring().requestMatchers("/metrics/*").requestMatchers("/metrics")
   }
 }
