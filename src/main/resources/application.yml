@@ -12,10 +12,12 @@ spring:
     password: ${DB_PASS}
     driver-class-name: org.postgresql.Driver
     hikari:
+      minimum-idle: 2
       keepalive-time: 10000
+      leak-detection-threshold: 10000
       maximum-pool-size: 50
       max-lifetime: 600000
-      connection-timeout: 10000
+      connection-timeout: 12000
 
   flyway:
     enabled: true

@@ -7,6 +7,7 @@ import ch.qos.logback.core.read.ListAppender
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterEach
@@ -38,6 +39,9 @@ class CalculatedBalanceEventListenerTest {
 
   @Mock
   lateinit var messagePublisher: MessagePublisher
+
+  @Mock
+  lateinit var telemetryClient: TelemetryClient
 
   @InjectMocks
   lateinit var calculatedBalanceEventListener: CalculatedBalanceEventListener
