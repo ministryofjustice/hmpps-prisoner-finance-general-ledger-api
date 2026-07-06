@@ -90,6 +90,7 @@ springdoc:
 hmpps.sqs:
   queueAdminRole: ROLE_PRISONER_FINANCE_GENERAL_LEDGER_API_QUEUE_ADMIN
   provider: ${SQS_PROVIDER:aws}
+  localstackUrl: ${SQS_LOCALSTACK_URL:http://localhost:4566}
   queues:
     calculated_balance:
       queueName: ${CALC_BALANCE_QUEUE_NAME}
