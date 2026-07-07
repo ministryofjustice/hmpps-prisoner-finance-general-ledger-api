@@ -14,7 +14,8 @@ spring:
     hikari:
       leak-detection-threshold: 31000
       maximum-pool-size: 50
-
+      data-source-properties:
+        socketTimeout: 30000
   flyway:
     enabled: true
     locations: classpath:/db/migrations/common
