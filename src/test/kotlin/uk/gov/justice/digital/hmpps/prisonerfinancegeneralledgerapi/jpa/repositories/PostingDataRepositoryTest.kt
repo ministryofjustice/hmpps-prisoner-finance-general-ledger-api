@@ -145,8 +145,8 @@ class PostingDataRepositoryTest @Autowired constructor(
       // two tx today with 4 postings for the account/subaccount transfer == 4 posting
       assertThat(postings).hasSize(4)
 
-      assertThat(postings.last().transactionEntity.id).isEqualTo(txAtMidnight.id)
-      assertThat(postings.first().transactionEntity.id).isEqualTo(txAtOneAM.id)
+      assertThat(postings.last().transactionId).isEqualTo(txAtMidnight.id)
+      assertThat(postings.first().transactionId).isEqualTo(txAtOneAM.id)
     }
 
     @Test
@@ -191,8 +191,8 @@ class PostingDataRepositoryTest @Autowired constructor(
       // two tx today with 4 postings for the account/subaccount transfer == 4 posting
       assertThat(postings).hasSize(4)
 
-      assertThat(postings.last().transactionEntity.id).isEqualTo(txFromYesterday.id)
-      assertThat(postings.first().transactionEntity.id).isEqualTo(txFromMidnight.id)
+      assertThat(postings.last().transactionId).isEqualTo(txFromYesterday.id)
+      assertThat(postings.first().transactionId).isEqualTo(txFromMidnight.id)
     }
 
     @Test
@@ -248,8 +248,8 @@ class PostingDataRepositoryTest @Autowired constructor(
       // two tx today with 4 postings for the account/subaccount transfer == 4 posting
       assertThat(postings).hasSize(4)
 
-      assertThat(postings.last().transactionEntity.id).isEqualTo(txFromMidnight.id)
-      assertThat(postings.first().transactionEntity.id).isEqualTo(txFromTodayAtNoon.id)
+      assertThat(postings.last().transactionId).isEqualTo(txFromMidnight.id)
+      assertThat(postings.first().transactionId).isEqualTo(txFromTodayAtNoon.id)
     }
 
     @Test
@@ -366,12 +366,8 @@ class PostingDataRepositoryTest @Autowired constructor(
 
       assertThat(postings.content).hasSize(12)
 
-      val sortedPostings = postings.content.sortedByDescending { it.transactionEntity.timestamp }
-
-      postings.content.forEachIndexed { index, posting ->
-        assertThat(posting.id).isEqualTo(sortedPostings[index].id)
-        assertThat(posting.transactionEntity.timestamp).isEqualTo(sortedPostings[index].transactionEntity.timestamp)
-      }
+      val timestamps = postings.content.map { it.transactionTimestamp }
+      assertThat(timestamps).isEqualTo(timestamps.sortedDescending())
     }
 
     @Test
@@ -410,7 +406,7 @@ class PostingDataRepositoryTest @Autowired constructor(
 
       assertThat(postings.content).hasSize(pageSize)
 
-      assertThat(postings.content.any { it.transactionEntity.id == transactions.first().id }).isFalse
+      assertThat(postings.content.any { it.transactionId == transactions.first().id }).isFalse
     }
 
     @Test
@@ -442,12 +438,12 @@ class PostingDataRepositoryTest @Autowired constructor(
       val pageZero = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, pageReq)
       assertThat(pageZero.size).isEqualTo(25)
       val feb28 = LocalDate.of(2026, 2, 28).atStartOfDay().toInstant(ZoneOffset.UTC)
-      assertThat(pageZero.content.all { it.transactionEntity.timestamp.isAfter(feb28) }).isTrue
+      assertThat(pageZero.content.all { it.transactionTimestamp.isAfter(feb28) }).isTrue
 
       val pageOne = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, PageRequest.of(1, 25, Sort.Direction.DESC, "transactionEntity.timestamp"))
       assertThat(pageOne.size).isEqualTo(25)
       val march1 = LocalDate.of(2026, 3, 1).atStartOfDay().toInstant(ZoneOffset.UTC)
-      assertThat(pageOne.content.all { it.transactionEntity.timestamp.isBefore(march1) }).isTrue
+      assertThat(pageOne.content.all { it.transactionTimestamp.isBefore(march1) }).isTrue
     }
 
     @Test
@@ -509,7 +505,7 @@ class PostingDataRepositoryTest @Autowired constructor(
 
       assertThat(postings).hasSize(2)
 
-      assertThat(postings.all { posting -> posting.type == PostingType.CR }).isTrue()
+      assertThat(postings.all { posting -> posting.postingType == PostingType.CR }).isTrue()
     }
 
     @Test
@@ -535,7 +531,7 @@ class PostingDataRepositoryTest @Autowired constructor(
 
       assertThat(postings).hasSize(1)
 
-      assertThat(postings.all { posting -> posting.type == PostingType.CR }).isTrue()
+      assertThat(postings.all { posting -> posting.postingType == PostingType.CR }).isTrue()
     }
 
     @Test
@@ -564,7 +560,7 @@ class PostingDataRepositoryTest @Autowired constructor(
 
       assertThat(postings).hasSize(2)
 
-      assertThat(postings.all { posting -> posting.type == PostingType.DR }).isTrue()
+      assertThat(postings.all { posting -> posting.postingType == PostingType.DR }).isTrue()
     }
 
     @Test
@@ -589,7 +585,7 @@ class PostingDataRepositoryTest @Autowired constructor(
 
       assertThat(postings).hasSize(1)
 
-      assertThat(postings.all { posting -> posting.type == PostingType.DR }).isTrue()
+      assertThat(postings.all { posting -> posting.postingType == PostingType.DR }).isTrue()
     }
 
     @Test
@@ -687,12 +683,12 @@ class PostingDataRepositoryTest @Autowired constructor(
       val postingsCanteen = postingsDataRepository.getPostingsByAccountId(accountId = prisonAccount.id, subAccountId = prisonCanteenSubAccount.id, page = pageReq).content
 
       assertThat(postingsCanteen).hasSize(1)
-      assertThat(postingsCanteen.all { posting -> posting.subAccountEntity.id == prisonCanteenSubAccount.id }).isTrue()
+      assertThat(postingsCanteen.all { posting -> posting.subAccountId == prisonCanteenSubAccount.id }).isTrue()
 
       val postingsAdvance = postingsDataRepository.getPostingsByAccountId(accountId = prisonAccount.id, subAccountId = prisonAdvanceSubAccount.id, page = pageReq).content
 
       assertThat(postingsAdvance).hasSize(1)
-      assertThat(postingsAdvance.all { posting -> posting.subAccountEntity.id == prisonAdvanceSubAccount.id }).isTrue()
+      assertThat(postingsAdvance.all { posting -> posting.subAccountId == prisonAdvanceSubAccount.id }).isTrue()
     }
 
     @Test
@@ -720,12 +716,12 @@ class PostingDataRepositoryTest @Autowired constructor(
       val postingsSubOne = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, subAccountId = accountOneSubAccountOne.id, page = pageReq).content
 
       assertThat(postingsSubOne).hasSize(2)
-      assertThat(postingsSubOne.all { posting -> posting.subAccountEntity.id == accountOneSubAccountOne.id }).isTrue()
+      assertThat(postingsSubOne.all { posting -> posting.subAccountId == accountOneSubAccountOne.id }).isTrue()
 
       val postingsSubTwo = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, subAccountId = accountOneSubAccountTwo.id, page = pageReq).content
 
       assertThat(postingsSubTwo).hasSize(2)
-      assertThat(postingsSubTwo.all { posting -> posting.subAccountEntity.id == accountOneSubAccountTwo.id }).isTrue()
+      assertThat(postingsSubTwo.all { posting -> posting.subAccountId == accountOneSubAccountTwo.id }).isTrue()
     }
   }
 

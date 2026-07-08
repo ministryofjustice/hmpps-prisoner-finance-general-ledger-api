@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services
 
 import org.springframework.data.domain.PageRequest
-import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.PagedResponse
@@ -31,15 +30,8 @@ class StatementService(
 
     val zeroIndexedPage = pageNumber - 1
 
-    val pageReq = PageRequest.of(
-      zeroIndexedPage,
-      pageSize,
-      Sort.by(
-        Sort.Order.desc("transactionEntity.timestamp"),
-        Sort.Order.desc("transactionEntity.entrySequence"),
-        Sort.Order.desc("entrySequence"),
-      ),
-    )
+    // Ordering is baked into the repository query, so the page request only carries offset/limit.
+    val pageReq = PageRequest.of(zeroIndexedPage, pageSize)
 
     val page = postingsDataRepository.getPostingsByAccountId(
       accountId,
@@ -51,6 +43,22 @@ class StatementService(
       debit = debit,
     )
 
-    return page.toPageResponse { content -> content.map { StatementEntryResponse.fromEntity(it) } }
+    // Second query: fetch every posting on this page's transactions, grouped by transaction,
+    // so each entry's opposite postings can be stitched in without touching lazy associations.
+    val transactionIds = page.content.map { it.transactionId }.distinct()
+    val oppositePostingsByTransaction = if (transactionIds.isEmpty()) {
+      emptyMap()
+    } else {
+      postingsDataRepository.getOppositePostingsByTransactionIds(transactionIds).groupBy { it.transactionId }
+    }
+
+    return page.toPageResponse { content ->
+      content.map { entry ->
+        val oppositePostings = oppositePostingsByTransaction[entry.transactionId]
+          .orEmpty()
+          .filter { it.type != entry.postingType }
+        StatementEntryResponse.fromProjection(entry, oppositePostings)
+      }
+    }
   }
 }

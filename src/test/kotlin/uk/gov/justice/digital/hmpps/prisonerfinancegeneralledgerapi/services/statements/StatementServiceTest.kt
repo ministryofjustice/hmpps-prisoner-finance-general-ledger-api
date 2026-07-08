@@ -18,9 +18,11 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
-import org.springframework.data.domain.Sort
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.projections.OppositePostingProjection
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.projections.StatementEntryProjection
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.AccountService
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.StatementService
@@ -47,15 +49,8 @@ class StatementServiceTest {
 
   private val serviceTestHelpers = ServiceTestHelpers()
 
-  private val pageReq = PageRequest.of(
-    0,
-    25,
-    Sort.by(
-      Sort.Order.desc("transactionEntity.timestamp"),
-      Sort.Order.desc("transactionEntity.entrySequence"),
-      Sort.Order.desc("entrySequence"),
-    ),
-  )
+  // Ordering is owned by the repository query, so the service now passes an unsorted page request.
+  private val pageReq = PageRequest.of(0, 25)
 
   @Nested
   inner class GetStatement {
@@ -96,10 +91,12 @@ class StatementServiceTest {
       val posting1 = transactionEntity.postings[0]
       val posting2 = transactionEntity.postings[1]
 
-      val page = PageImpl(listOf(posting1, posting2))
+      val page = PageImpl(listOf(posting1, posting2).map { it.toStatementEntryProjection() })
 
       whenever { postingsDataRepository.getPostingsByAccountId(prisonerId, pageReq) }
         .thenReturn(page)
+      whenever { postingsDataRepository.getOppositePostingsByTransactionIds(any()) }
+        .thenReturn(transactionEntity.postings.map { it.toOppositePostingProjection() })
 
       val statementEntries = statementService.listStatementEntries(prisonerId)?.content!!
 
@@ -134,10 +131,12 @@ class StatementServiceTest {
       val posting1 = transactionEntity.postings[0]
       val posting2 = transactionEntity.postings[1]
 
-      val page = PageImpl(listOf(posting1))
+      val page = PageImpl(listOf(posting1).map { it.toStatementEntryProjection() })
 
       whenever { postingsDataRepository.getPostingsByAccountId(prisonerId, pageReq) }
         .thenReturn(page)
+      whenever { postingsDataRepository.getOppositePostingsByTransactionIds(any()) }
+        .thenReturn(transactionEntity.postings.map { it.toOppositePostingProjection() })
 
       val statementEntries = statementService.listStatementEntries(prisonerId)?.content!!
 
@@ -173,10 +172,12 @@ class StatementServiceTest {
       val posting1 = transactionEntity.postings[1]
       val posting2 = transactionEntity.postings[2]
 
-      val page = PageImpl(listOf(prisonPosting))
+      val page = PageImpl(listOf(prisonPosting).map { it.toStatementEntryProjection() })
 
       whenever { postingsDataRepository.getPostingsByAccountId(accountId = prisonAccountEntity.id, pageReq) }
         .thenReturn(page)
+      whenever { postingsDataRepository.getOppositePostingsByTransactionIds(any()) }
+        .thenReturn(transactionEntity.postings.map { it.toOppositePostingProjection() })
 
       val statementEntries = statementService.listStatementEntries(accountId = prisonAccountEntity.id)?.content!!
 
@@ -212,10 +213,12 @@ class StatementServiceTest {
       val prisonPosting = transactionEntity.postings[0]
       val posting1 = transactionEntity.postings[1]
 
-      val page = PageImpl(listOf(posting1))
+      val page = PageImpl(listOf(posting1).map { it.toStatementEntryProjection() })
 
       whenever { postingsDataRepository.getPostingsByAccountId(accountId = accountEntityOne.id, pageReq) }
         .thenReturn(page)
+      whenever { postingsDataRepository.getOppositePostingsByTransactionIds(any()) }
+        .thenReturn(transactionEntity.postings.map { it.toOppositePostingProjection() })
 
       val statementEntries = statementService.listStatementEntries(accountId = accountEntityOne.id)?.content!!
 
@@ -362,3 +365,43 @@ class StatementServiceTest {
     }
   }
 }
+
+// Mirror the repository's JPQL projections for in-memory test entities, so the mocked
+// repository can hand the service the same flat DTOs it would return in production.
+private fun PostingEntity.toStatementEntryProjection() = StatementEntryProjection(
+  transactionId = transactionEntity.id,
+  postingCreatedAt = createdAt,
+  transactionTimestamp = transactionEntity.timestamp,
+  description = transactionEntity.description,
+  amount = amount,
+  postingType = type,
+  subAccountId = subAccountEntity.id,
+  subAccountReference = subAccountEntity.reference,
+  subAccountCreatedBy = subAccountEntity.createdBy,
+  subAccountCreatedAt = subAccountEntity.createdAt,
+  parentAccountId = subAccountEntity.parentAccountEntity.id,
+  parentAccountReference = subAccountEntity.parentAccountEntity.reference,
+  parentAccountCreatedBy = subAccountEntity.parentAccountEntity.createdBy,
+  parentAccountCreatedAt = subAccountEntity.parentAccountEntity.createdAt,
+  parentAccountType = subAccountEntity.parentAccountEntity.type,
+  subAccountBalance = postingBalanceEntity?.totalSubAccountBalance,
+  accountBalance = postingBalanceEntity?.totalAccountBalance,
+)
+
+private fun PostingEntity.toOppositePostingProjection() = OppositePostingProjection(
+  transactionId = transactionEntity.id,
+  postingId = id,
+  createdBy = createdBy,
+  createdAt = createdAt,
+  type = type,
+  amount = amount,
+  subAccountId = subAccountEntity.id,
+  subAccountReference = subAccountEntity.reference,
+  subAccountCreatedBy = subAccountEntity.createdBy,
+  subAccountCreatedAt = subAccountEntity.createdAt,
+  parentAccountId = subAccountEntity.parentAccountEntity.id,
+  parentAccountReference = subAccountEntity.parentAccountEntity.reference,
+  parentAccountCreatedBy = subAccountEntity.parentAccountEntity.createdBy,
+  parentAccountCreatedAt = subAccountEntity.parentAccountEntity.createdAt,
+  parentAccountType = subAccountEntity.parentAccountEntity.type,
+)

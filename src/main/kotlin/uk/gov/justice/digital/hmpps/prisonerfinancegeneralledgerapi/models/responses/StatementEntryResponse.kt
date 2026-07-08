@@ -1,10 +1,10 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses
 import io.swagger.v3.oas.annotations.media.Schema
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.projections.OppositePostingProjection
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.projections.StatementEntryProjection
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.projections.SubAccountWithParentProjection
 import java.time.Instant
 import java.util.UUID
 
@@ -32,19 +32,20 @@ data class StatementEntryResponse(
   val accountBalance: Long? = null,
 ) {
   companion object {
-    fun fromEntity(sourcePostingEntity: PostingEntity) = StatementEntryResponse(
-      transactionId = sourcePostingEntity.transactionEntity.id,
-      postingCreatedAt = sourcePostingEntity.createdAt,
-      description = sourcePostingEntity.transactionEntity.description,
-      oppositePostings = sourcePostingEntity.transactionEntity.postings
-        .filter { posting -> posting.type != sourcePostingEntity.type }
-        .map { posting -> StatementEntryOppositePostingsResponse.fromEntity(posting) },
-      amount = sourcePostingEntity.amount,
-      postingType = sourcePostingEntity.type,
-      transactionTimestamp = sourcePostingEntity.transactionEntity.timestamp,
-      subAccount = SubAccountWithParentResponse.fromEntity(sourcePostingEntity.subAccountEntity),
-      subAccountBalance = sourcePostingEntity.postingBalanceEntity?.totalSubAccountBalance,
-      accountBalance = sourcePostingEntity.postingBalanceEntity?.totalAccountBalance,
+    fun fromProjection(
+      projection: StatementEntryProjection,
+      oppositePostings: List<OppositePostingProjection>,
+    ) = StatementEntryResponse(
+      transactionId = projection.transactionId,
+      postingCreatedAt = projection.postingCreatedAt,
+      description = projection.description,
+      oppositePostings = oppositePostings.map { StatementEntryOppositePostingsResponse.fromProjection(it) },
+      amount = projection.amount,
+      postingType = projection.postingType,
+      transactionTimestamp = projection.transactionTimestamp,
+      subAccount = SubAccountWithParentResponse.fromProjection(projection),
+      subAccountBalance = projection.subAccountBalance,
+      accountBalance = projection.accountBalance,
     )
   }
 }
@@ -61,17 +62,7 @@ data class StatementEntryAccountResponse(
   val createdAt: Instant,
   @field:Schema(description = "The type of account (PRISONER or PRISON)", example = "PRISONER", required = true)
   val type: AccountType,
-) {
-  companion object {
-    fun fromEntity(accountEntity: AccountEntity): StatementEntryAccountResponse = StatementEntryAccountResponse(
-      accountEntity.id,
-      accountEntity.reference,
-      accountEntity.createdBy,
-      accountEntity.createdAt,
-      accountEntity.type,
-    )
-  }
-}
+)
 
 @Schema(description = "Posting response of statement entry")
 data class StatementEntryOppositePostingsResponse(
@@ -89,13 +80,13 @@ data class StatementEntryOppositePostingsResponse(
   val subAccount: SubAccountWithParentResponse,
 ) {
   companion object {
-    fun fromEntity(postingEntity: PostingEntity): StatementEntryOppositePostingsResponse = StatementEntryOppositePostingsResponse(
-      id = postingEntity.id,
-      createdBy = postingEntity.createdBy,
-      createdAt = postingEntity.createdAt,
-      type = postingEntity.type,
-      amount = postingEntity.amount,
-      subAccount = SubAccountWithParentResponse.fromEntity(postingEntity.subAccountEntity),
+    fun fromProjection(projection: OppositePostingProjection): StatementEntryOppositePostingsResponse = StatementEntryOppositePostingsResponse(
+      id = projection.postingId,
+      createdBy = projection.createdBy,
+      createdAt = projection.createdAt,
+      type = projection.type,
+      amount = projection.amount,
+      subAccount = SubAccountWithParentResponse.fromProjection(projection),
     )
   }
 }
@@ -115,12 +106,18 @@ data class SubAccountWithParentResponse(
 ) {
 
   companion object {
-    fun fromEntity(subAccountEntity: SubAccountEntity): SubAccountWithParentResponse = SubAccountWithParentResponse(
-      id = subAccountEntity.id,
-      reference = subAccountEntity.reference,
-      parentAccount = StatementEntryAccountResponse.fromEntity(subAccountEntity.parentAccountEntity),
-      createdBy = subAccountEntity.createdBy,
-      createdAt = subAccountEntity.createdAt,
+    fun fromProjection(projection: SubAccountWithParentProjection): SubAccountWithParentResponse = SubAccountWithParentResponse(
+      id = projection.subAccountId,
+      reference = projection.subAccountReference,
+      parentAccount = StatementEntryAccountResponse(
+        id = projection.parentAccountId,
+        reference = projection.parentAccountReference,
+        createdBy = projection.parentAccountCreatedBy,
+        createdAt = projection.parentAccountCreatedAt,
+        type = projection.parentAccountType,
+      ),
+      createdBy = projection.subAccountCreatedBy,
+      createdAt = projection.subAccountCreatedAt,
     )
   }
 }
