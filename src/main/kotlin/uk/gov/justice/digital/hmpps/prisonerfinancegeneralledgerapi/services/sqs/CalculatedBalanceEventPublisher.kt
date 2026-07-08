@@ -41,7 +41,7 @@ class CalculatedBalanceEventPublisher(
     try {
       val subAccountId = statementBalanceEntity.subAccountEntity.id
       val accountId = subAccountDataRepository.getSubAccountEntityById(subAccountId)?.parentAccountEntity?.id
-        ?: return
+        ?: throw IllegalStateException("Sub account not found")
 
       val posting = postingsDataRepository.getFirstPostingForAccountIdAfterDateTime(
         accountId = accountId,
