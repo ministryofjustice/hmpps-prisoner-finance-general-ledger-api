@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingBalanceDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.ProcessBalanceRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.helpers.ServiceTestHelpers
 import java.time.Instant
@@ -38,6 +39,9 @@ class CalculatedBalanceEventPublisherTest {
 
   @Mock
   lateinit var postingBalanceDataRepository: PostingBalanceDataRepository
+
+  @Mock
+  lateinit var subAccountDataRepository: SubAccountDataRepository
 
   @InjectMocks
   lateinit var calculatedBalanceEventPublisher: CalculatedBalanceEventPublisher
@@ -160,6 +164,7 @@ class CalculatedBalanceEventPublisherTest {
   inner class RequestCalculatedBalanceForStatementBalance {
     @Test
     fun `Should get the next posting if there is one and send a balance calculation request`() {
+      whenever { subAccountDataRepository.getSubAccountEntityById(prisonerCashAccount.id) }.thenReturn(prisonerCashAccount)
       whenever {
         postingsDataRepository.getFirstPostingForAccountIdAfterDateTime(
           accountId = prisonerCashAccount.parentAccountEntity.id,
@@ -180,6 +185,7 @@ class CalculatedBalanceEventPublisherTest {
 
     @Test
     fun `Should not send a balance calculation request if there is no next posting`() {
+      whenever { subAccountDataRepository.getSubAccountEntityById(prisonerCashAccount.id) }.thenReturn(prisonerCashAccount)
       whenever {
         postingsDataRepository.getFirstPostingForAccountIdAfterDateTime(
           accountId = prisonerCashAccount.parentAccountEntity.id,
@@ -198,6 +204,7 @@ class CalculatedBalanceEventPublisherTest {
 
     @Test
     fun `Should log error when sending message fails`() {
+      whenever { subAccountDataRepository.getSubAccountEntityById(prisonerCashAccount.id) }.thenReturn(prisonerCashAccount)
       whenever {
         postingsDataRepository.getFirstPostingForAccountIdAfterDateTime(
           accountId = prisonerCashAccount.parentAccountEntity.id,

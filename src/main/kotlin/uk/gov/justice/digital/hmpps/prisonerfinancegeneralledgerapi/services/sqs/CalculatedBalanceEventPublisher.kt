@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.TransactionEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingBalanceDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.ProcessBalanceRequest
 
 @Service
@@ -15,6 +16,7 @@ class CalculatedBalanceEventPublisher(
   private val messagePublisher: MessagePublisher,
   private val postingsDataRepository: PostingsDataRepository,
   private val postingBalanceDataRepository: PostingBalanceDataRepository,
+  private val subAccountDataRepository: SubAccountDataRepository,
 ) {
 
   fun requestCalculatedBalanceForTransaction(transactionEntity: TransactionEntity) {
@@ -37,8 +39,12 @@ class CalculatedBalanceEventPublisher(
   @Transactional
   fun requestCalculatedBalanceForStatementBalance(statementBalanceEntity: StatementBalanceEntity) {
     try {
+      val subAccountId = statementBalanceEntity.subAccountEntity.id
+      val accountId = subAccountDataRepository.getSubAccountEntityById(subAccountId)?.parentAccountEntity?.id
+        ?: return
+
       val posting = postingsDataRepository.getFirstPostingForAccountIdAfterDateTime(
-        accountId = statementBalanceEntity.subAccountEntity.parentAccountEntity.id,
+        accountId = accountId,
         dateTime = statementBalanceEntity.balanceDateTime,
       )
 
@@ -55,7 +61,7 @@ class CalculatedBalanceEventPublisher(
         messagePublisher.sendMessage(
           payloadDataClass = payload,
           queueId = SqsQueues.CALCULATED_BALANCE_QUEUE_ID,
-          messageGroupId = posting.subAccountEntity.parentAccountEntity.id.toString(),
+          messageGroupId = accountId.toString(),
         )
       }
     } catch (e: Exception) {
