@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.specifications
 
+import jakarta.persistence.criteria.CriteriaQuery
+import jakarta.persistence.criteria.JoinType
 import org.springframework.data.jpa.domain.Specification
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
@@ -10,6 +12,22 @@ import java.time.Instant
 import java.util.UUID
 
 object PostingsSpecification {
+
+  private fun isCountQuery(query: CriteriaQuery<*>?): Boolean = query?.resultType == java.lang.Long::class.java || query?.resultType == Long::class.javaObjectType
+
+  fun fetchFullGraph(): Specification<PostingEntity> = Specification { root, query, _ ->
+    if (isCountQuery(query)) return@Specification null
+
+    query.distinct(true)
+
+    root.fetch<Any, Any>("postingBalanceEntity", JoinType.LEFT)
+    root.fetch<Any, Any>("transactionEntity", JoinType.LEFT)
+
+    val subAccountFetch = root.fetch<Any, Any>("subAccountEntity", JoinType.LEFT)
+    subAccountFetch.fetch<Any, Any>("parentAccountEntity", JoinType.LEFT)
+
+    return@Specification null
+  }
 
   fun byParentAccountId(accountId: UUID): Specification<PostingEntity> = Specification { root, _, cb ->
 

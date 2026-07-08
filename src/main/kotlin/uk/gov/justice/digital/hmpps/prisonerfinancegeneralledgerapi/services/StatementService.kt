@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.PagedResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.StatementEntryResponse
@@ -17,6 +18,8 @@ class StatementService(
   private val postingsDataRepository: PostingsDataRepository,
   private val accountService: AccountService,
 ) {
+
+  @Transactional(readOnly = true)
   fun listStatementEntries(
     accountId: UUID,
     subAccountId: UUID? = null,

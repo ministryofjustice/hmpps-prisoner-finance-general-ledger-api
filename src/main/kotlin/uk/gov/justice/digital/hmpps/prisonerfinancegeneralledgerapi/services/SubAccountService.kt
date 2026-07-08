@@ -57,6 +57,8 @@ class SubAccountService(
     return SubAccountBalanceResponse(subAccountId, Instant.now(), totalBalance)
   }
 
+  fun getStatementBalanceById(id: UUID): StatementBalanceEntity? = statementBalanceDataRepository.findStatementBalanceById(id)
+
   fun createStatementBalance(subAccountID: UUID, amount: Long, balanceDateTime: Instant): StatementBalanceEntity? {
     val subAccount = subAccountDataRepository.getSubAccountEntityById(subAccountID)
     if (subAccount == null) return null

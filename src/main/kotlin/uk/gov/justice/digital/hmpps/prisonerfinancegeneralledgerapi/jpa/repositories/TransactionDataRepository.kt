@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.reposit
 
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.data.jpa.repository.EntityGraph
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
@@ -11,8 +12,23 @@ import java.util.UUID
 
 @Repository
 interface TransactionDataRepository : JpaRepository<TransactionEntity, UUID> {
+
+  @EntityGraph(
+    attributePaths = [
+      "postings",
+      "postings.subAccountEntity",
+      "postings.subAccountEntity.parentAccountEntity",
+    ],
+  )
   fun findTransactionById(id: UUID): TransactionEntity?
 
+  @EntityGraph(
+    attributePaths = [
+      "postings",
+      "postings.subAccountEntity",
+      "postings.subAccountEntity.parentAccountEntity",
+    ],
+  )
   @Query(
     """
     SELECT t
@@ -23,6 +39,13 @@ interface TransactionDataRepository : JpaRepository<TransactionEntity, UUID> {
   )
   fun findTransactionsByIds(transactionIds: List<UUID>, page: Pageable): Page<TransactionEntity>
 
+  @EntityGraph(
+    attributePaths = [
+      "postings",
+      "postings.subAccountEntity",
+      "postings.subAccountEntity.parentAccountEntity",
+    ],
+  )
   @Query(
     """
     SELECT t

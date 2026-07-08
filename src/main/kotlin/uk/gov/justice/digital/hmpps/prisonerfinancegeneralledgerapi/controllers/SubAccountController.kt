@@ -327,10 +327,13 @@ class SubAccountController(
   @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
   @PostMapping("/sub-accounts/{subAccountId}/balance")
   fun postStatementBalance(@PathVariable subAccountId: UUID, @RequestBody statementBalanceRequest: CreateStatementBalanceRequest): ResponseEntity<StatementBalanceResponse> {
-    val subAccountStatementBalance = subAccountService.createStatementBalance(subAccountId, statementBalanceRequest.amount, statementBalanceRequest.balanceDateTime)
-    if (subAccountStatementBalance == null) {
+    val subAccountStatementBalanceCreated = subAccountService.createStatementBalance(subAccountId, statementBalanceRequest.amount, statementBalanceRequest.balanceDateTime)
+    if (subAccountStatementBalanceCreated == null) {
       throw CustomException(message = "Sub Account not found", status = HttpStatus.NOT_FOUND)
     }
+
+    val subAccountStatementBalance = subAccountService.getStatementBalanceById(subAccountStatementBalanceCreated.id)
+      ?: throw IllegalStateException("Statement Balance not found after a successful creation.  ID: ${subAccountStatementBalanceCreated.id}")
 
     calculatedBalanceEventPublisher.requestCalculatedBalanceForStatementBalance(subAccountStatementBalance)
 

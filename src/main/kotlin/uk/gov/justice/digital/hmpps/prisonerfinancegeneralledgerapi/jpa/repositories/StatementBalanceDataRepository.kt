@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories
 
+import org.springframework.data.jpa.repository.EntityGraph
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
@@ -42,4 +43,7 @@ interface StatementBalanceDataRepository : JpaRepository<StatementBalanceEntity,
     accountId: UUID,
     fromTimestamp: Instant = Instant.now(),
   ): List<StatementBalanceEntity>
+
+  @EntityGraph(attributePaths = ["subAccountEntity", "subAccountEntity.parentAccountEntity"])
+  fun findStatementBalanceById(id: UUID): StatementBalanceEntity?
 }
