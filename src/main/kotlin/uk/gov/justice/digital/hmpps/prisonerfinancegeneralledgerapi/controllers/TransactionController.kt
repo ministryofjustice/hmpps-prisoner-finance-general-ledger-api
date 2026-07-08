@@ -121,7 +121,10 @@ class TransactionController(
       val idempotencyEntityOrNull = idempotencyService.readIdempotencyKey(idempotencyKey)
       if (idempotencyEntityOrNull != null) return ResponseEntity<TransactionResponse>.status(HttpStatus.OK).body(TransactionResponse.fromEntity(idempotencyEntityOrNull.transaction))
 
-      val transactionEntity = transactionService.createTransaction(body, createdBy = user.name, idempotencyKey = idempotencyKey)
+      val transactionEntityCreated = transactionService.createTransaction(body, createdBy = user.name, idempotencyKey = idempotencyKey)
+
+      val transactionEntity = transactionService.getTransactionById(transactionEntityCreated.id)
+        ?: throw IllegalStateException("Transaction not found after postTransaction service completed successfully: ${transactionEntityCreated.id}")
 
       calculatedBalanceEventPublisher.requestCalculatedBalanceForTransaction(transactionEntity)
 

@@ -87,8 +87,8 @@ class TransactionIntegrationTest : IntegrationTestBase() {
       assertThat(transactionResponseBody.description).isEqualTo("DESCRIPTION")
       assertThat(transactionResponseBody.postings.size).isEqualTo(2)
       assertThat(transactionResponseBody.createdAt).isEqualTo(transactionResponseBody.postings[0].createdAt)
-      assertThat(transactionResponseBody.postings[0].type).isEqualTo(PostingType.CR)
-      assertThat(transactionResponseBody.postings[1].type).isEqualTo(PostingType.DR)
+      assertThat(transactionResponseBody.postings[0].type).isEqualTo(PostingType.DR)
+      assertThat(transactionResponseBody.postings[1].type).isEqualTo(PostingType.CR)
       assertThat(transactionResponseBody.postings[0].amount).isEqualTo(1L)
       assertThat(transactionResponseBody.postings[1].amount).isEqualTo(1L)
     }
@@ -122,12 +122,12 @@ class TransactionIntegrationTest : IntegrationTestBase() {
         .returnResult()
         .responseBody!!
 
-      assertThat(transactionResponseBody.postings[0].type).isEqualTo(PostingType.DR)
+      assertThat(transactionResponseBody.postings[0].type).isEqualTo(PostingType.CR)
       assertThat(transactionResponseBody.postings[1].type).isEqualTo(PostingType.CR)
-      assertThat(transactionResponseBody.postings[2].type).isEqualTo(PostingType.CR)
-      assertThat(transactionResponseBody.postings[0].amount).isEqualTo(2L)
+      assertThat(transactionResponseBody.postings[2].type).isEqualTo(PostingType.DR)
+      assertThat(transactionResponseBody.postings[0].amount).isEqualTo(1L)
       assertThat(transactionResponseBody.postings[1].amount).isEqualTo(1L)
-      assertThat(transactionResponseBody.postings[2].amount).isEqualTo(1L)
+      assertThat(transactionResponseBody.postings[2].amount).isEqualTo(2L)
     }
 
     @Test
@@ -159,12 +159,12 @@ class TransactionIntegrationTest : IntegrationTestBase() {
         .returnResult()
         .responseBody!!
 
-      assertThat(transactionResponseBody.postings[0].type).isEqualTo(PostingType.DR)
+      assertThat(transactionResponseBody.postings[0].type).isEqualTo(PostingType.CR)
       assertThat(transactionResponseBody.postings[1].type).isEqualTo(PostingType.DR)
-      assertThat(transactionResponseBody.postings[2].type).isEqualTo(PostingType.CR)
-      assertThat(transactionResponseBody.postings[0].amount).isEqualTo(2L)
+      assertThat(transactionResponseBody.postings[2].type).isEqualTo(PostingType.DR)
+      assertThat(transactionResponseBody.postings[0].amount).isEqualTo(3L)
       assertThat(transactionResponseBody.postings[1].amount).isEqualTo(1L)
-      assertThat(transactionResponseBody.postings[2].amount).isEqualTo(3L)
+      assertThat(transactionResponseBody.postings[2].amount).isEqualTo(2L)
     }
 
     @Test

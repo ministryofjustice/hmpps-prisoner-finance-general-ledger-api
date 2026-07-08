@@ -79,4 +79,6 @@ class TransactionService(
 
     return transactionEntityList.map { PrisonerTransactionListResponse.fromEntity(it, accountId) }
   }
+
+  fun getTransactionById(transactionId: UUID): TransactionEntity? = transactionDataRepository.findTransactionById(transactionId)
 }

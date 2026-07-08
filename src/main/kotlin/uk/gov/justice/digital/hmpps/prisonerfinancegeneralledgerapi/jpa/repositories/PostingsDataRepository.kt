@@ -29,7 +29,8 @@ interface PostingsDataRepository :
     debit: Boolean = false,
   ): Page<PostingEntity> {
     val spec = Specification
-      .where(PostingsSpecification.byParentAccountId(accountId))
+      .where(PostingsSpecification.fetchFullGraph())
+      .and(PostingsSpecification.byParentAccountId(accountId))
       .and(PostingsSpecification.bySubAccountId(subAccountId))
       .and(PostingsSpecification.createdBetween(startDate, endDate))
       .and(PostingsSpecification.byPostingType(credit, debit))

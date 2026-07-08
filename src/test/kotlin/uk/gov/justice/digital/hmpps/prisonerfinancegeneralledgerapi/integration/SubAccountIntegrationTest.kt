@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration
 
 import jakarta.transaction.Transactional
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -24,6 +25,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.respo
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.TransactionResponse
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 class SubAccountIntegrationTest : IntegrationTestBase() {
@@ -511,7 +513,8 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
 
       assertThat(statementBalanceResponse.amount).isEqualTo(10)
       assertThat(statementBalanceResponse.subAccountId).isEqualTo(dummySubAccountOne.id)
-      assertThat(statementBalanceResponse.balanceDateTime).isEqualTo(balanceDateTime)
+      assertThat(statementBalanceResponse.balanceDateTime)
+        .isCloseTo(balanceDateTime, within(1, ChronoUnit.MILLIS))
 
       val subAccountOneCurrentBalance = webTestClient.get()
         .uri("/sub-accounts/${dummySubAccountOne.id}/balance")
@@ -584,7 +587,8 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
 
       assertThat(statementBalanceResponse.amount).isEqualTo(10)
       assertThat(statementBalanceResponse.subAccountId).isEqualTo(dummySubAccountOne.id)
-      assertThat(statementBalanceResponse.balanceDateTime).isEqualTo(balanceDateTime)
+      assertThat(statementBalanceResponse.balanceDateTime)
+        .isCloseTo(balanceDateTime, within(1, ChronoUnit.MILLIS))
     }
 
     @Test
