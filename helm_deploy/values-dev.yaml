@@ -18,6 +18,7 @@ generic-service:
   env:
     JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=70.0"
     JAVA_OPTS: ""
+    DB_POOL_SIZE: "35" # t4g.micro instance - 112 total connections, 2 pods (+1), 105 total connections used
     APPLICATIONINSIGHTS_CONFIGURATION_FILE: "applicationinsights.dev.json"
     HMPPS_AUTH_URL: "https://sign-in-dev.hmpps.service.justice.gov.uk/auth"
     ENV_STRING: "dev"
