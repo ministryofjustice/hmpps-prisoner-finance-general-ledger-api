@@ -22,7 +22,7 @@ class CalculatedBalanceEventListener(
     SqsQueues.CALCULATED_BALANCE_QUEUE_ID,
     factory = "hmppsQueueContainerFactoryProxy",
     maxConcurrentMessages = "10",
-    maxMessagesPerPoll = "10",
+    maxMessagesPerPoll = "1",
   )
   fun handleEvents(requestJson: String?) {
     try {
