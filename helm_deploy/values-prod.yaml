@@ -15,7 +15,8 @@ generic-service:
 
   env:
     JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=70.0"
-    SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "20"
+    JAVA_OPTS: ""
+    DB_POOL_SIZE: "30" # t4g.small instance - 171 total connections, 4 pods (+1), 150 total connections used
     HMPPS_AUTH_URL: "https://sign-in.hmpps.service.justice.gov.uk/auth"
 
   postgresDatabaseRestore:

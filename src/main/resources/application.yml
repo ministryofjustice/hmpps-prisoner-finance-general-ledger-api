@@ -13,7 +13,7 @@ spring:
     driver-class-name: org.postgresql.Driver
     hikari:
       leak-detection-threshold: 31000
-      maximum-pool-size: 50
+      maximum-pool-size: ${DB_POOL_SIZE:20}
       data-source-properties:
         socketTimeout: 30000
   flyway:
