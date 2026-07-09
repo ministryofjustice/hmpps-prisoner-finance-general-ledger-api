@@ -24,7 +24,6 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.slf4j.LoggerFactory
 import org.springframework.messaging.Message
-import org.springframework.messaging.support.GenericMessage
 import org.springframework.messaging.support.MessageBuilder
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.ProcessPostingBalanceService
 import java.util.UUID
@@ -33,16 +32,12 @@ import java.util.concurrent.CompletableFuture
 @ExtendWith(MockitoExtension::class)
 class CalculatedBalanceEventListenerTest {
 
-  // This is unused in the test but required for the service
   @Spy
   var objectMapper: ObjectMapper = jacksonObjectMapper()
     .registerModule(JavaTimeModule())
 
   @Mock
   lateinit var processPostingBalanceService: ProcessPostingBalanceService
-
-  @Mock
-  lateinit var messagePublisher: MessagePublisher
 
   @Mock
   lateinit var telemetryClient: TelemetryClient
@@ -105,7 +100,7 @@ class CalculatedBalanceEventListenerTest {
     val accountId = UUID.randomUUID()
     val source = "test"
     val chainPosition = 0L
-    val message = """
+    val payload = """
       {
         "postingId" : "$postingId",
         "accountId" : "$accountId",
@@ -117,15 +112,20 @@ class CalculatedBalanceEventListenerTest {
     val exceptionMessage = "Test error"
     whenever { processPostingBalanceService.processBalance(accountId) }.thenThrow(RuntimeException(exceptionMessage))
 
+    val message = MessageBuilder
+      .withPayload(payload)
+      .setHeader("AcknowledgementCallback", fakeAckCallback)
+      .build()
+
     assertThatThrownBy {
       calculatedBalanceEventListener.handleEvents(
-        listOf(GenericMessage(message)),
+        listOf(message),
       )
     }.isInstanceOf(RuntimeException::class.java)
 
     verify(processPostingBalanceService).processBalance(accountId)
 
-    val logList = listAppender.list
+    val logList = listAppender.list.filter { it.level == Level.ERROR }
     assertThat(logList).hasSize(1)
 
     val logEvent = logList[0]
