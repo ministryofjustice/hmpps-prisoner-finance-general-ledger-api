@@ -4,10 +4,20 @@
 generic-service:
   replicaCount: 2
 
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+
   ingress:
     host: prisoner-finance-general-ledger-api-dev.hmpps.service.justice.gov.uk
 
   env:
+    JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=70.0"
+    JAVA_OPTS: ""
     APPLICATIONINSIGHTS_CONFIGURATION_FILE: "applicationinsights.dev.json"
     HMPPS_AUTH_URL: "https://sign-in-dev.hmpps.service.justice.gov.uk/auth"
     ENV_STRING: "dev"

@@ -2,10 +2,20 @@
 # Per environment values which override defaults in hmpps-prisoner-finance-general-ledger-api/values.yaml
 
 generic-service:
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+
   ingress:
     host: prisoner-finance-general-ledger-api.hmpps.service.justice.gov.uk
 
   env:
+    JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=70.0"
+    SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "20"
     HMPPS_AUTH_URL: "https://sign-in.hmpps.service.justice.gov.uk/auth"
 
   postgresDatabaseRestore:
