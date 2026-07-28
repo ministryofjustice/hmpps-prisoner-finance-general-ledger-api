@@ -135,7 +135,6 @@ class TransactionController(
       }
 
       if (ex.message?.contains("duplicate key value violates unique constraint") == true && ex.message?.contains("_idempotency_key") == true) {
-        println(ex.message)
         val usedIdempotency = idempotencyService.readIdempotencyKey(idempotencyKey)!!
         return ResponseEntity<TransactionResponse>.status(HttpStatus.OK).body(TransactionResponse.fromEntity(usedIdempotency.transaction))
       }
