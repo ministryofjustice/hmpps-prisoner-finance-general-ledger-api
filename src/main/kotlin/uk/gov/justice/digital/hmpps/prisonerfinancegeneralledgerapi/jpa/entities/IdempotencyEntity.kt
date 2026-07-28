@@ -16,7 +16,7 @@ class IdempotencyEntity(
   @Column(name = "id", nullable = false, unique = true)
   val idempotencyKey: UUID,
 
-  @OneToOne(optional = false, fetch = jakarta.persistence.FetchType.LAZY)
+  @OneToOne(optional = false, fetch = jakarta.persistence.FetchType.EAGER)
   @JoinColumn(name = "transaction_id", nullable = false)
   val transaction: TransactionEntity,
 

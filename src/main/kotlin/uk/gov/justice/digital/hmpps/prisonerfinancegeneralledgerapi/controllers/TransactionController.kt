@@ -133,6 +133,12 @@ class TransactionController(
       if (ex.message?.contains("invalid byte sequence for encoding") == true) {
         throw CustomException(status = HttpStatus.BAD_REQUEST, message = "Invalid byte sequence for encoding \"UTF8\"")
       }
+
+      if (ex.message?.contains("duplicate key value violates unique constraint") == true && ex.message?.contains("_idempotency_key") == true) {
+        val usedIdempotency = idempotencyService.readIdempotencyKey(idempotencyKey)!!
+        return ResponseEntity<TransactionResponse>.status(HttpStatus.OK).body(TransactionResponse.fromEntity(usedIdempotency.transaction))
+      }
+
       throw ex
     }
   }
