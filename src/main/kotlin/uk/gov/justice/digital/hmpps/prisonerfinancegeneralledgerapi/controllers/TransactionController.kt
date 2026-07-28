@@ -14,10 +14,8 @@ import jakarta.validation.Valid
 import jakarta.validation.constraints.Min
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.http.HttpStatus
-import org.springframework.http.HttpStatus.BAD_REQUEST
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
-import org.springframework.orm.jpa.JpaObjectRetrievalFailureException
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -131,12 +129,9 @@ class TransactionController(
       return ResponseEntity<TransactionResponse>.status(HttpStatus.CREATED).body(
         TransactionResponse.fromEntity(transactionEntity = transactionEntity),
       )
-    } catch (ex: Exception) {
-      if (ex is DataIntegrityViolationException) {
-        throw CustomException(status = BAD_REQUEST, message = "Duplicate transaction reference: ${body.reference}")
-      }
-      if (ex is JpaObjectRetrievalFailureException) {
-        throw CustomException(status = BAD_REQUEST, message = "Sub-account not found")
+    } catch (ex: DataIntegrityViolationException) {
+      if (ex.message?.contains("invalid byte sequence for encoding") == true) {
+        throw CustomException(status = HttpStatus.BAD_REQUEST, message = "Invalid byte sequence for encoding \"UTF8\"")
       }
       throw ex
     }
