@@ -35,6 +35,7 @@ class TransactionService(
       amount = createTxReq.amount,
       timestamp = createTxReq.timestamp,
       entrySequence = createTxReq.entrySequence,
+      legacyTransactionId = createTxReq.legacyTransactionId,
     )
     transactionDataRepository.save(transactionEntity)
 

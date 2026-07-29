@@ -24,10 +24,13 @@ class SearchTransactionResponse(
   val entrySequence: Long,
   @field:Schema(description = "A collection of postings for the transaction")
   val postings: List<SearchPostingResponse> = emptyList(),
+  @field:Schema(description = "The legacy transaction ID from NOMIS")
+  val legacyTransactionId: Long? = null,
 ) {
   companion object {
     fun fromEntity(transactionEntity: TransactionEntity): SearchTransactionResponse = SearchTransactionResponse(
       id = transactionEntity.id,
+      legacyTransactionId = transactionEntity.legacyTransactionId,
       createdBy = transactionEntity.createdBy,
       createdAt = transactionEntity.createdAt,
       reference = transactionEntity.reference,

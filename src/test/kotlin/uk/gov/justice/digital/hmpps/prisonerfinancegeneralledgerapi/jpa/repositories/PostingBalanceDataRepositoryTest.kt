@@ -162,6 +162,7 @@ class PostingBalanceDataRepositoryTest @Autowired constructor(
         postings = mutableListOf(),
         entrySequence = 1,
         description = "CANTEEN Transactions",
+        legacyTransactionId = null,
       )
 
       val postingEntity1 = PostingEntity(

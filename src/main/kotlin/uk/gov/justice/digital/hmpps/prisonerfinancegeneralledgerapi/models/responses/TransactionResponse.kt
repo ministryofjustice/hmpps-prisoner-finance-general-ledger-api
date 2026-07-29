@@ -22,6 +22,8 @@ class TransactionResponse(
   val amount: Long,
   @field:Schema(description = "A collection of postings for the transaction")
   val postings: List<PostingResponse> = emptyList(),
+  @field:Schema(description = "The legacy transaction ID from NOMIS")
+  val legacyTransactionId: Long? = null,
 ) {
   companion object {
     fun fromEntity(transactionEntity: TransactionEntity): TransactionResponse = TransactionResponse(
@@ -33,6 +35,7 @@ class TransactionResponse(
       timestamp = transactionEntity.timestamp,
       amount = transactionEntity.amount,
       postings = transactionEntity.postings.map { PostingResponse.fromEntity(it) },
+      legacyTransactionId = transactionEntity.legacyTransactionId,
     )
   }
 }

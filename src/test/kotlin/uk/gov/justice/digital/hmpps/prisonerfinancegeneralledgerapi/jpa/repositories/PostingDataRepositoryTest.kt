@@ -880,7 +880,7 @@ class PostingDataRepositoryTest @Autowired constructor(
     @Test
     fun `Should sum credits positively`() {
       val postings = listOf(
-        PostingEntity(amount = 1, type = PostingType.CR, subAccountEntity = SubAccountEntity(reference = "TEST_SUB_ACCOUNT_REF_1"), transactionEntity = TransactionEntity(reference = "TEST_TRANSACTION_REF", entrySequence = 1), entrySequence = 1),
+        PostingEntity(amount = 1, type = PostingType.CR, subAccountEntity = SubAccountEntity(reference = "TEST_SUB_ACCOUNT_REF_1"), transactionEntity = TransactionEntity(reference = "TEST_TRANSACTION_REF", entrySequence = 1, legacyTransactionId = null), entrySequence = 1),
       )
       val balance = postingsDataRepository.calculateBalanceFromPostings(postings)
       assertThat(balance).isEqualTo(1)
@@ -889,7 +889,7 @@ class PostingDataRepositoryTest @Autowired constructor(
     @Test
     fun `Should sum debits negatively`() {
       val postings = listOf(
-        PostingEntity(amount = 1, type = PostingType.DR, subAccountEntity = SubAccountEntity(reference = "TEST_SUB_ACCOUNT_REF_1"), transactionEntity = TransactionEntity(reference = "TEST_TRANSACTION_REF", entrySequence = 1), entrySequence = 1),
+        PostingEntity(amount = 1, type = PostingType.DR, subAccountEntity = SubAccountEntity(reference = "TEST_SUB_ACCOUNT_REF_1"), transactionEntity = TransactionEntity(reference = "TEST_TRANSACTION_REF", entrySequence = 1, legacyTransactionId = null), entrySequence = 1),
       )
       val balance = postingsDataRepository.calculateBalanceFromPostings(postings)
       assertThat(balance).isEqualTo(-1)
@@ -906,6 +906,7 @@ class PostingDataRepositoryTest @Autowired constructor(
             reference =
             "TEST_TRANSACTION_REF",
             entrySequence = 1,
+            legacyTransactionId = null,
           ),
           entrySequence = 1,
         ),
@@ -913,7 +914,7 @@ class PostingDataRepositoryTest @Autowired constructor(
           amount = 1,
           type = PostingType.DR,
           subAccountEntity = SubAccountEntity(reference = "TEST_SUB_ACCOUNT_REF_1"),
-          transactionEntity = TransactionEntity(reference = "TEST_TRANSACTION_REF", entrySequence = 1),
+          transactionEntity = TransactionEntity(reference = "TEST_TRANSACTION_REF", entrySequence = 1, legacyTransactionId = null),
           entrySequence = 2,
         ),
       )
@@ -1579,6 +1580,7 @@ class PostingDataRepositoryTest @Autowired constructor(
         postings = mutableListOf(),
         entrySequence = 1,
         description = "CANTEEN Transactions",
+        legacyTransactionId = null,
       )
 
       val postingEntity1 = PostingEntity(

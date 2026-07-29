@@ -47,4 +47,8 @@ data class CreateTransactionRequest(
   @field:Valid
   @field:Size(min = 2, message = "transaction must have two postings or more")
   val postings: List<CreatePostingRequest>,
+
+  @field:Schema(description = "The legacy transaction ID from NOMIS")
+  val legacyTransactionId: Long? = null,
+
 )

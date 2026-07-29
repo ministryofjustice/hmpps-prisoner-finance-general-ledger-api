@@ -74,6 +74,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
             timestamp = Instant.now(),
             postings = createPostingRequests,
             entrySequence = 1,
+            legacyTransactionId = 999,
           ),
         )
         .exchange()
@@ -85,6 +86,7 @@ class TransactionIntegrationTest : IntegrationTestBase() {
       assertThat(transactionResponseBody.amount).isEqualTo(1L)
       assertThat(transactionResponseBody.reference).isEqualTo("TX")
       assertThat(transactionResponseBody.description).isEqualTo("DESCRIPTION")
+      assertThat(transactionResponseBody.legacyTransactionId).isEqualTo(999)
       assertThat(transactionResponseBody.postings.size).isEqualTo(2)
       assertThat(transactionResponseBody.createdAt).isEqualTo(transactionResponseBody.postings[0].createdAt)
       assertThat(transactionResponseBody.postings[0].type).isEqualTo(PostingType.CR)
