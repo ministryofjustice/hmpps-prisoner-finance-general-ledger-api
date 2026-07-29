@@ -79,6 +79,7 @@ class TransactionServiceTest {
       timestamp = timeStamp,
       amount = transactionAmount,
       entrySequence = 1,
+      legacyTransactionId = null,
     )
     postingEntities = createPostingRequests.map {
       PostingEntity(

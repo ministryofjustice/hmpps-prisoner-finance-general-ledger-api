@@ -16,10 +16,13 @@ data class PrisonerTransactionListResponse(
   val timestamp: Instant,
   @field:Schema(description = "A collection of postings for the transaction")
   val postings: List<PrisonerPostingListResponse>,
+  @field:Schema(description = "The legacy transaction ID from NOMIS")
+  val legacyTransactionId: Long? = null,
 ) {
   companion object {
     fun fromEntity(transactionEntity: TransactionEntity, prisonerAccountId: UUID): PrisonerTransactionListResponse = PrisonerTransactionListResponse(
       id = transactionEntity.id,
+      legacyTransactionId = transactionEntity.legacyTransactionId,
       description = transactionEntity.description,
       timestamp = transactionEntity.timestamp,
       postings = transactionEntity.postings

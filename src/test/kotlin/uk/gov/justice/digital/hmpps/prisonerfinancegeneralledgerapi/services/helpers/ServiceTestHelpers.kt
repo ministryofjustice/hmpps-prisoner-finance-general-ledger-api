@@ -43,6 +43,7 @@ class ServiceTestHelpers {
       amount = transactionAmount,
       timestamp = timeStamp ?: transactionDateTime,
       entrySequence = 1,
+      legacyTransactionId = null,
     )
     val postings = listOf(
       PostingEntity(
@@ -82,6 +83,7 @@ class ServiceTestHelpers {
       amount = overallDebitAmount,
       description = description,
       entrySequence = 1,
+      legacyTransactionId = null,
     )
 
     val postings = mutableListOf<PostingEntity>(
@@ -132,6 +134,7 @@ class ServiceTestHelpers {
       timestamp = transactionTimeStamp,
       postings = mutableListOf(),
       entrySequence = transactionEntrySequence,
+      legacyTransactionId = null,
     )
 
     val postingEntity1 = PostingEntity(

@@ -30,6 +30,8 @@ data class StatementEntryResponse(
   val subAccountBalance: Long? = null,
   @field:Schema(description = "The overall account balance at the time the posting was made")
   val accountBalance: Long? = null,
+  @field:Schema(description = "The legacy transaction ID from NOMIS")
+  val legacyTransactionId: Long? = null,
 ) {
   companion object {
     fun fromEntity(sourcePostingEntity: PostingEntity) = StatementEntryResponse(
@@ -45,6 +47,7 @@ data class StatementEntryResponse(
       subAccount = SubAccountWithParentResponse.fromEntity(sourcePostingEntity.subAccountEntity),
       subAccountBalance = sourcePostingEntity.postingBalanceEntity?.totalSubAccountBalance,
       accountBalance = sourcePostingEntity.postingBalanceEntity?.totalAccountBalance,
+      legacyTransactionId = sourcePostingEntity.transactionEntity.legacyTransactionId,
     )
   }
 }

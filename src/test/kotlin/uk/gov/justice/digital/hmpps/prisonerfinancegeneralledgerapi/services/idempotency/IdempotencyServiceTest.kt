@@ -39,7 +39,7 @@ class IdempotencyServiceTest {
     @Test
     fun `Should return idempotency entity if it exists`() {
       val idempotencyKey = UUID.randomUUID()
-      val tx = TransactionEntity(reference = "TEST", amount = 0L, entrySequence = 1)
+      val tx = TransactionEntity(reference = "TEST", amount = 0L, entrySequence = 1, legacyTransactionId = null)
 
       val idempotencyEntity = IdempotencyEntity(idempotencyKey, tx)
 
