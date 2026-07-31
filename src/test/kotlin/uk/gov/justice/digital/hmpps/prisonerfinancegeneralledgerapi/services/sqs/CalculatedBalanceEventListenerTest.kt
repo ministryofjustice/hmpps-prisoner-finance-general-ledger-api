@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.microsoft.applicationinsights.TelemetryClient
+import io.awspring.cloud.sqs.listener.acknowledgement.AcknowledgementCallback
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterEach
@@ -18,27 +19,25 @@ import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.Spy
 import org.mockito.junit.jupiter.MockitoExtension
-import org.mockito.kotlin.any
-import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.slf4j.LoggerFactory
+import org.springframework.messaging.Message
+import org.springframework.messaging.support.MessageBuilder
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.ProcessPostingBalanceService
 import java.util.UUID
+import java.util.concurrent.CompletableFuture
 
 @ExtendWith(MockitoExtension::class)
 class CalculatedBalanceEventListenerTest {
 
-  // This is unused in the test but required for the service
   @Spy
   var objectMapper: ObjectMapper = jacksonObjectMapper()
     .registerModule(JavaTimeModule())
 
   @Mock
   lateinit var processPostingBalanceService: ProcessPostingBalanceService
-
-  @Mock
-  lateinit var messagePublisher: MessagePublisher
 
   @Mock
   lateinit var telemetryClient: TelemetryClient
@@ -48,6 +47,12 @@ class CalculatedBalanceEventListenerTest {
 
   private lateinit var listAppender: ListAppender<ILoggingEvent>
   private lateinit var eventLogger: Logger
+
+  val fakeAckCallback = object : AcknowledgementCallback<String> {
+    override fun onAcknowledge(message: Message<String>): CompletableFuture<Void> = CompletableFuture.completedFuture(null)
+
+    override fun onAcknowledge(messages: Collection<Message<String>>): CompletableFuture<Void> = CompletableFuture.completedFuture(null)
+  }
 
   @BeforeEach
   fun setupLogger() {
@@ -70,7 +75,7 @@ class CalculatedBalanceEventListenerTest {
     val accountId = UUID.randomUUID()
     val source = "test"
     val chainPosition = 0L
-    val message = """
+    val payload = """
       {
         "postingId" : "$postingId",
         "accountId" : "$accountId",
@@ -79,15 +84,14 @@ class CalculatedBalanceEventListenerTest {
       }
     """.trimIndent()
 
-    calculatedBalanceEventListener.handleEvents(message)
+    val message = MessageBuilder
+      .withPayload(payload)
+      .setHeader("AcknowledgementCallback", fakeAckCallback)
+      .build()
+
+    calculatedBalanceEventListener.handleEvents(listOf(message))
 
     verify(processPostingBalanceService).processBalance(accountId)
-    verify(messagePublisher, never())
-      .sendMessage(
-        payloadDataClass = any<PayloadDataClass>(),
-        queueId = any(),
-        messageGroupId = any(),
-      )
   }
 
   @Test
@@ -96,7 +100,7 @@ class CalculatedBalanceEventListenerTest {
     val accountId = UUID.randomUUID()
     val source = "test"
     val chainPosition = 0L
-    val message = """
+    val payload = """
       {
         "postingId" : "$postingId",
         "accountId" : "$accountId",
@@ -108,16 +112,68 @@ class CalculatedBalanceEventListenerTest {
     val exceptionMessage = "Test error"
     whenever { processPostingBalanceService.processBalance(accountId) }.thenThrow(RuntimeException(exceptionMessage))
 
-    assertThatThrownBy { calculatedBalanceEventListener.handleEvents(message) }.isInstanceOf(RuntimeException::class.java)
+    val message = MessageBuilder
+      .withPayload(payload)
+      .setHeader("AcknowledgementCallback", fakeAckCallback)
+      .build()
+
+    assertThatThrownBy {
+      calculatedBalanceEventListener.handleEvents(
+        listOf(message),
+      )
+    }.isInstanceOf(RuntimeException::class.java)
 
     verify(processPostingBalanceService).processBalance(accountId)
 
-    val logList = listAppender.list
+    val logList = listAppender.list.filter { it.level == Level.ERROR }
     assertThat(logList).hasSize(1)
 
     val logEvent = logList[0]
     assertThat(logEvent.level).isEqualTo(Level.ERROR)
     assertThat(logEvent.formattedMessage).contains("Failed to process balance calculation")
     assertThat(logEvent.formattedMessage).contains(exceptionMessage)
+  }
+
+  @Test
+  fun `should not process messages from the same accountId twice`() {
+    val postingId = UUID.randomUUID()
+    val accountIdOne = UUID.randomUUID()
+    val accountIdTwo = UUID.randomUUID()
+    val source = "test"
+    val chainPosition = 0L
+    val payloadOne = """
+      {
+        "postingId" : "$postingId",
+        "accountId" : "$accountIdOne",
+        "source" : "$source",
+        "chainPosition" : $chainPosition
+      }
+    """.trimIndent()
+    val payloadTwo = """
+      {
+        "postingId" : "$postingId",
+        "accountId" : "$accountIdTwo",
+        "source" : "$source",
+        "chainPosition" : $chainPosition
+      }
+    """.trimIndent()
+
+    val messageOne = MessageBuilder
+      .withPayload(payloadOne)
+      .setHeader("AcknowledgementCallback", fakeAckCallback)
+      .build()
+    val messageTwo = MessageBuilder
+      .withPayload(payloadOne)
+      .setHeader("AcknowledgementCallback", fakeAckCallback)
+      .build()
+    val messageThree = MessageBuilder
+      .withPayload(payloadTwo)
+      .setHeader("AcknowledgementCallback", fakeAckCallback)
+      .build()
+
+    calculatedBalanceEventListener.handleEvents(listOf(messageOne, messageTwo, messageThree))
+
+    verify(processPostingBalanceService, times(1)).processBalance(accountIdOne)
+    verify(processPostingBalanceService, times(1)).processBalance(accountIdTwo)
   }
 }
