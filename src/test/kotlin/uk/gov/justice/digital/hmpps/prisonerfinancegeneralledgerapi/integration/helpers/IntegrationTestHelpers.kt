@@ -8,6 +8,7 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.expectBody
+import org.springframework.transaction.annotation.Transactional
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
@@ -281,7 +282,11 @@ class IntegrationTestHelpers(
   @Autowired
   lateinit var entityManager: EntityManager
 
+  @Transactional(rollbackFor = [Exception::class])
   fun clearDB() {
+    entityManager.clear()
+    entityManager.flush()
+
     idempotencyKeyDataRepository.deleteAllInBatch()
     statementBalanceDataRepository.deleteAllInBatch()
     postingBalanceDataRepository.deleteAllInBatch()
