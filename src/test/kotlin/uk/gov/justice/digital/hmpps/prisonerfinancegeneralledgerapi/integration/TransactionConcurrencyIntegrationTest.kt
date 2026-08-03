@@ -98,6 +98,8 @@ class TransactionConcurrencyIntegrationTest(
 
   @Test
   fun `Should return 200 AND 201 when 2 transactions with the same Idempotency Key are posted at the exact same time`() {
+    transactionDataRepository.deleteAll()
+
     val idempotencyKey = UUID.randomUUID()
     val txRequest = CreateTransactionRequest(
       reference = "TEST",
