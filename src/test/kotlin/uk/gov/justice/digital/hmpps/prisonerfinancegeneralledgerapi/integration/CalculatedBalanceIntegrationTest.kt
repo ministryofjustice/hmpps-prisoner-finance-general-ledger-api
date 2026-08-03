@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration
 
-import jakarta.transaction.Transactional
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -22,7 +21,6 @@ class CalculatedBalanceIntegrationTest(
   @Autowired
   val logSqsCalculatedBalancesRepository: LogSqsCalculatedBalancesRepository,
 ) : IntegrationTestBase() {
-  @Transactional
   @BeforeEach
   fun resetDB() {
     integrationTestHelpers.clearDB()

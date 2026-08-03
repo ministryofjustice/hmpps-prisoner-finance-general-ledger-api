@@ -4,12 +4,14 @@ import com.jayway.jsonpath.JsonPath
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.ExchangeResult
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.TransactionDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreatePostingRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateTransactionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountResponse
@@ -20,7 +22,10 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 
-class TransactionConcurrencyIntegrationTest : IntegrationTestBase() {
+class TransactionConcurrencyIntegrationTest(
+  @Autowired
+  val transactionDataRepository: TransactionDataRepository,
+) : IntegrationTestBase() {
 
 /**
    * Helper to run two tasks in parallel starting at the exact same moment.
@@ -136,5 +141,8 @@ class TransactionConcurrencyIntegrationTest : IntegrationTestBase() {
     val conflictId = JsonPath.read<String>(conflictJsonString, "$.id")
 
     assertThat(createdId).isEqualTo(conflictId)
+
+    val transactions = transactionDataRepository.findAll()
+    assertThat(transactions).hasSize(1)
   }
 }

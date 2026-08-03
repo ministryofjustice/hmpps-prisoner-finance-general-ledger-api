@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration
 
-import jakarta.transaction.Transactional
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.BeforeEach
@@ -32,7 +31,6 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
 
   lateinit var dummyParentAccountOne: AccountResponse
 
-  @Transactional
   @BeforeEach
   fun resetDB() {
     integrationTestHelpers.clearDB()

@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration.helpers
 
 import jakarta.persistence.EntityManager
-import jakarta.transaction.Transactional
 import org.awaitility.Awaitility.await
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.TestConfiguration
@@ -282,11 +281,7 @@ class IntegrationTestHelpers(
   @Autowired
   lateinit var entityManager: EntityManager
 
-  @Transactional
   fun clearDB() {
-    entityManager.flush()
-    entityManager.clear()
-
     idempotencyKeyDataRepository.deleteAllInBatch()
     statementBalanceDataRepository.deleteAllInBatch()
     postingBalanceDataRepository.deleteAllInBatch()
