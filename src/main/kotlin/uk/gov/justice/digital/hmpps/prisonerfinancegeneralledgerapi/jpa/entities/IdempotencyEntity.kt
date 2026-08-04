@@ -6,6 +6,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
+import org.springframework.data.domain.Persistable
 import java.util.UUID
 
 @Entity
@@ -20,4 +21,10 @@ class IdempotencyEntity(
   @JoinColumn(name = "transaction_id", nullable = false)
   val transaction: TransactionEntity,
 
-)
+) : Persistable<UUID> {
+  override fun getId(): UUID = idempotencyKey
+
+  // Because idempotency records are typically write-once and never updated,
+  // When this is hardcoded to true. This forces an INSERT every time.
+  override fun isNew(): Boolean = true
+}
