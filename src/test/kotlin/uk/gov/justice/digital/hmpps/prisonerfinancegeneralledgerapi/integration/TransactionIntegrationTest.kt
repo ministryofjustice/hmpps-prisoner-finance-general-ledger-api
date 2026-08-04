@@ -43,6 +43,8 @@ class TransactionIntegrationTest(@Autowired private val transactionDataRepositor
 
     @BeforeEach
     fun setup() {
+      integrationTestHelpers.clearDB()
+
       for (i in 0..3) {
         val accountResponseBody = integrationTestHelpers.createAccount("TEST_ACCOUNT_$i", AccountType.PRISONER)
         accounts.add(accountResponseBody)
@@ -221,6 +223,9 @@ class TransactionIntegrationTest(@Autowired private val transactionDataRepositor
         .responseBody!!
 
       assertThat(repeatedTransactionResponseBody.id).isEqualTo(transactionResponseBody.id)
+
+      val transactions = transactionDataRepository.findAll()
+      assertThat(transactions).hasSize(1)
     }
 
     @Test
