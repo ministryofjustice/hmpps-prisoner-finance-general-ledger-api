@@ -1,6 +1,6 @@
-# Updating the dashboards vai Azure
+# Updating the dashboards via Azure
 
-## If you have updated the dashboards vai Azure you must do the follow to update the other environments
+## If you have updated the dashboards via Azure you must do the follow to update the other environments
 
 In the Azure UI dashboard "Prod" click Export->download to download the file as .json
 
