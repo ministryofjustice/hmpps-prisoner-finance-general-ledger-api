@@ -37,10 +37,10 @@ class TransactionService(
       entrySequence = createTxReq.entrySequence,
       legacyTransactionId = createTxReq.legacyTransactionId,
     )
-    transactionDataRepository.save(transactionEntity)
+    transactionDataRepository.saveAndFlush(transactionEntity)
 
     val idempotencyEntityToSave = IdempotencyEntity(idempotencyKey, transactionEntity)
-    idempotencyKeyDataRepository.save(idempotencyEntityToSave)
+    idempotencyKeyDataRepository.saveAndFlush(idempotencyEntityToSave)
 
     val postingEntities = createTxReq.postings.map {
       PostingEntity(
@@ -54,7 +54,7 @@ class TransactionService(
         entrySequence = it.entrySequence,
       )
     }
-    postingsDataRepository.saveAll(postingEntities)
+    postingsDataRepository.saveAllAndFlush(postingEntities)
 
     transactionEntity.postings.addAll(postingEntities)
 
