@@ -100,8 +100,8 @@ class TransactionServiceTest {
     @Test
     fun `Save transaction, postings, and idempotency key with the created transaction ID and return it if the idempotency key does not already exist`() {
       val idempotencyKey = UUID.randomUUID()
-      whenever(transactionDataRepository.save<TransactionEntity>(any())).thenReturn(transactionEntity)
-      whenever(postingsDataRepository.saveAll(any<Iterable<PostingEntity>>())).thenReturn(postingEntities)
+      whenever(transactionDataRepository.saveAndFlush<TransactionEntity>(any())).thenReturn(transactionEntity)
+      whenever(postingsDataRepository.saveAllAndFlush(any<Iterable<PostingEntity>>())).thenReturn(postingEntities)
       whenever(subAccountDataRepository.getSubAccountEntityById(any<UUID>())).thenAnswer { SubAccountEntity(id = it.getArgument(0)) }
 
       val txnReq = CreateTransactionRequest(reference = TEST_TREF, description = transactionDescription, amount = transactionAmount, timestamp = timeStamp, postings = createPostingRequests, entrySequence = 1)
@@ -110,7 +110,7 @@ class TransactionServiceTest {
         transactionService.createTransaction(txnReq, createdBy = TEST_USERNAME, idempotencyKey = idempotencyKey)
 
       val transactionCaptor = argumentCaptor<TransactionEntity>()
-      verify(transactionDataRepository, times(1)).save(transactionCaptor.capture())
+      verify(transactionDataRepository, times(1)).saveAndFlush(transactionCaptor.capture())
 
       val transactionToSave = transactionCaptor.firstValue
       assertThat(transactionToSave.reference).isEqualTo(TEST_TREF)
@@ -121,7 +121,7 @@ class TransactionServiceTest {
       assertThat(transactionToSave.entrySequence).isEqualTo(1)
 
       val postingsCaptor = argumentCaptor<List<PostingEntity>>()
-      verify(postingsDataRepository, times(1)).saveAll(postingsCaptor.capture())
+      verify(postingsDataRepository, times(1)).saveAllAndFlush(postingsCaptor.capture())
 
       val postingsToSave = postingsCaptor.firstValue
 
@@ -145,7 +145,7 @@ class TransactionServiceTest {
       }
 
       val idempotencyCaptor = argumentCaptor<IdempotencyEntity>()
-      verify(idempotencyKeyDataRepository, times(1)).save(idempotencyCaptor.capture())
+      verify(idempotencyKeyDataRepository, times(1)).saveAndFlush(idempotencyCaptor.capture())
 
       val idempotencyEntityToSave = idempotencyCaptor.firstValue
       assertThat(idempotencyEntityToSave.idempotencyKey).isEqualTo(idempotencyKey)
