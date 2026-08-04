@@ -1,9 +1,9 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services
 
-import jakarta.transaction.Transactional
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingBalanceDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
@@ -15,7 +15,7 @@ class MigrateService(
   val postingBalanceDataRepository: PostingBalanceDataRepository,
   val accountDataRepository: AccountDataRepository,
 ) {
-  @Transactional
+  @Transactional(rollbackFor = [Exception::class])
   fun migrateAllPostingBalances() {
     postingBalanceDataRepository.deleteAll()
 

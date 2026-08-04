@@ -26,7 +26,7 @@ class TransactionService(
   private val subAccountDataRepository: SubAccountDataRepository,
   private val idempotencyKeyDataRepository: IdempotencyKeyDataRepository,
 ) {
-  @Transactional()
+  @Transactional(rollbackFor = [Exception::class])
   fun createTransaction(createTxReq: CreateTransactionRequest, createdBy: String, idempotencyKey: UUID): TransactionEntity {
     val transactionEntity = TransactionEntity(
       reference = createTxReq.reference,
@@ -48,7 +48,8 @@ class TransactionService(
         createdAt = transactionEntity.createdAt,
         type = it.type,
         amount = it.amount,
-        subAccountEntity = subAccountDataRepository.getSubAccountEntityById(it.subAccountId) ?: throw CustomException("Invalid sub account ID", HttpStatus.BAD_REQUEST),
+        subAccountEntity = subAccountDataRepository.getSubAccountEntityById(it.subAccountId)
+          ?: throw CustomException("Invalid sub account ID", HttpStatus.BAD_REQUEST),
         transactionEntity = transactionEntity,
         entrySequence = it.entrySequence,
       )

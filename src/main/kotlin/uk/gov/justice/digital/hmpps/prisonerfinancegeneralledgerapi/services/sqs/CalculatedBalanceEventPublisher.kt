@@ -1,9 +1,9 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.sqs
 
-import jakarta.transaction.Transactional
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.StatementBalanceEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.TransactionEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingBalanceDataRepository
@@ -17,6 +17,7 @@ class CalculatedBalanceEventPublisher(
   private val postingBalanceDataRepository: PostingBalanceDataRepository,
 ) {
 
+  @Transactional(rollbackFor = [Exception::class])
   fun requestCalculatedBalanceForTransaction(transactionEntity: TransactionEntity) {
     transactionEntity.postings.forEach { posting ->
       val accountId = posting.subAccountEntity.parentAccountEntity.id
@@ -34,7 +35,7 @@ class CalculatedBalanceEventPublisher(
     }
   }
 
-  @Transactional
+  @Transactional(rollbackFor = [Exception::class])
   fun requestCalculatedBalanceForStatementBalance(statementBalanceEntity: StatementBalanceEntity) {
     try {
       val posting = postingsDataRepository.getFirstPostingForAccountIdAfterDateTime(

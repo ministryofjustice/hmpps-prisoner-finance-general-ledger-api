@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.integration.helpers
 
 import jakarta.persistence.EntityManager
-import jakarta.transaction.Transactional
 import org.awaitility.Awaitility.await
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.TestConfiguration
@@ -9,6 +8,7 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.expectBody
+import org.springframework.transaction.annotation.Transactional
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
@@ -282,10 +282,10 @@ class IntegrationTestHelpers(
   @Autowired
   lateinit var entityManager: EntityManager
 
-  @Transactional
+  @Transactional(rollbackFor = [Exception::class])
   fun clearDB() {
-    entityManager.flush()
     entityManager.clear()
+    entityManager.flush()
 
     idempotencyKeyDataRepository.deleteAllInBatch()
     statementBalanceDataRepository.deleteAllInBatch()
