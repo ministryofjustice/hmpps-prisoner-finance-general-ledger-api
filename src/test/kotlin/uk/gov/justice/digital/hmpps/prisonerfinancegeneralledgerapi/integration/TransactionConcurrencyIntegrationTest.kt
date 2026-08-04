@@ -75,6 +75,8 @@ class TransactionConcurrencyIntegrationTest(
 
   @BeforeEach
   fun setup() {
+    integrationTestHelpers.clearDB()
+
     prisonAccount = integrationTestHelpers.createAccount(
       reference = "LEI",
       accountType = AccountType.PRISON,
@@ -98,8 +100,6 @@ class TransactionConcurrencyIntegrationTest(
 
   @Test
   fun `Should return 200 AND 201 when 2 transactions with the same Idempotency Key are posted at the exact same time`() {
-    integrationTestHelpers.clearDB()
-
     val idempotencyKey = UUID.randomUUID()
     val txRequest = CreateTransactionRequest(
       reference = "TEST",

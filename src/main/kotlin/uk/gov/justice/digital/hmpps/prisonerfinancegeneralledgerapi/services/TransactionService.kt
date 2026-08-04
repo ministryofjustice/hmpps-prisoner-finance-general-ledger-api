@@ -48,7 +48,8 @@ class TransactionService(
         createdAt = transactionEntity.createdAt,
         type = it.type,
         amount = it.amount,
-        subAccountEntity = subAccountDataRepository.getSubAccountEntityById(it.subAccountId) ?: throw CustomException("Invalid sub account ID", HttpStatus.BAD_REQUEST),
+        subAccountEntity = subAccountDataRepository.getSubAccountEntityById(it.subAccountId)
+          ?: throw CustomException("Invalid sub account ID", HttpStatus.BAD_REQUEST),
         transactionEntity = transactionEntity,
         entrySequence = it.entrySequence,
       )
