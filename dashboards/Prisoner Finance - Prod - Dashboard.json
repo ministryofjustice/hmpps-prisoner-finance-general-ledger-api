@@ -1,0 +1,1383 @@
+{
+  "properties": {
+    "lenses": [
+      {
+        "order": 0,
+        "parts": [
+          {
+            "position": {
+              "x": 0,
+              "y": 0,
+              "colSpan": 16,
+              "rowSpan": 5
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "resourceTypeMode",
+                  "isOptional": true
+                },
+                {
+                  "name": "ComponentId",
+                  "isOptional": true
+                },
+                {
+                  "name": "Scope",
+                  "value": {
+                    "resourceIds": [
+                      "/subscriptions/a5ddf257-3b21-4ba9-a28c-ab30f751b383/resourcegroups/nomisapi-prod-rg/providers/microsoft.operationalinsights/workspaces/nomisapi-prod"
+                    ]
+                  },
+                  "isOptional": true
+                },
+                {
+                  "name": "PartId",
+                  "value": "45ac6c7d-5f71-400a-b156-24090915b647",
+                  "isOptional": true
+                },
+                {
+                  "name": "Version",
+                  "value": "2.0",
+                  "isOptional": true
+                },
+                {
+                  "name": "TimeRange",
+                  "value": "P1D",
+                  "isOptional": true
+                },
+                {
+                  "name": "DashboardId",
+                  "isOptional": true
+                },
+                {
+                  "name": "DraftRequestParameters",
+                  "isOptional": true
+                },
+                {
+                  "name": "Query",
+                  "value": "AppRequests\n| extend Series = case(\n                      Name == \"POST /transactions\" and ResultCode == 200,\n                      \"General Ledger Transactions - Retried and Recorded\",\n                      Name == \"POST /transactions\" and ResultCode == 201,\n                      \"General Ledger Transactions - Succeeded\",\n                      Name == \"POST /transactions\" and ResultCode != 201,\n                      \"General Ledger Transactions - Failed\",\n                      Name == \"POST /sync/offender-transactions\" and ResultCode == 201,\n                      \"Sync Transactions\",\n                      \"Other\"\n                  )\n| where Series != \"Other\"\n| summarize Hits = count() by bin(TimeGenerated, 5m), Series\n| render timechart\n",
+                  "isOptional": true
+                },
+                {
+                  "name": "ControlType",
+                  "value": "FrameControlChart",
+                  "isOptional": true
+                },
+                {
+                  "name": "SpecificChart",
+                  "value": "Line",
+                  "isOptional": true
+                },
+                {
+                  "name": "PartTitle",
+                  "value": "Analytics",
+                  "isOptional": true
+                },
+                {
+                  "name": "PartSubTitle",
+                  "value": "nomisapi-prod",
+                  "isOptional": true
+                },
+                {
+                  "name": "Dimensions",
+                  "value": {
+                    "xAxis": {
+                      "name": "TimeGenerated",
+                      "type": "datetime"
+                    },
+                    "yAxis": [
+                      {
+                        "name": "Hits",
+                        "type": "long"
+                      }
+                    ],
+                    "splitBy": [
+                      {
+                        "name": "Series",
+                        "type": "string"
+                      }
+                    ],
+                    "aggregation": "Sum"
+                  },
+                  "isOptional": true
+                },
+                {
+                  "name": "LegendOptions",
+                  "value": {
+                    "isEnabled": true,
+                    "position": "Bottom"
+                  },
+                  "isOptional": true
+                },
+                {
+                  "name": "IsQueryContainTimeRange",
+                  "value": false,
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart",
+              "settings": {
+                "content": {
+                  "Query": "AppRequests\n| extend Series = case(\n                      Name == \"POST /transactions\" and ResultCode == 200,\n                      \"General Ledger Transactions - Retried and Recorded\",\n                      Name == \"POST /transactions\" and ResultCode == 201,\n                      \"General Ledger Transactions - Succeeded\",\n                      Name == \"POST /transactions\" and ResultCode != 201,\n                      \"General Ledger Transactions - Failed\",\n                      Name == \"POST /sync/offender-transactions\" and ResultCode == 201,\n                      \"Sync Transactions\",\n                      \"Other\"\n                  )\n| where Series != \"Other\"\n| make-series Hits = count() default=0 on TimeGenerated step 5m by Series\n| mv-expand TimeGenerated to typeof(datetime), Hits to typeof(long)\n| render timechart",
+                  "PartTitle": "Transactions for (Sync & GL)",
+                  "Dimensions": {
+                    "xAxis": {
+                      "name": "TimeGenerated",
+                      "type": "datetime"
+                    },
+                    "yAxis": [
+                      {
+                        "name": "Hits",
+                        "type": "long"
+                      }
+                    ],
+                    "splitBy": [
+                      {
+                        "name": "Series",
+                        "type": "string"
+                      }
+                    ],
+                    "aggregation": "Sum"
+                  },
+                  "IsQueryContainTimeRange": true
+                }
+              }
+            }
+          },
+          {
+            "position": {
+              "x": 0,
+              "y": 5,
+              "colSpan": 16,
+              "rowSpan": 1
+            },
+            "metadata": {
+              "inputs": [],
+              "type": "Extension/HubsExtension/PartType/MarkdownPart",
+              "settings": {
+                "content": {
+                  "content": "",
+                  "title": "Sync & GL Side by Side",
+                  "subtitle": "",
+                  "markdownSource": 1,
+                  "markdownUri": ""
+                }
+              }
+            }
+          },
+          {
+            "position": {
+              "x": 0,
+              "y": 6,
+              "colSpan": 8,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "resourceTypeMode",
+                  "isOptional": true
+                },
+                {
+                  "name": "ComponentId",
+                  "isOptional": true
+                },
+                {
+                  "name": "Scope",
+                  "value": {
+                    "resourceIds": [
+                      "/subscriptions/a5ddf257-3b21-4ba9-a28c-ab30f751b383/resourcegroups/nomisapi-prod-rg/providers/microsoft.operationalinsights/workspaces/nomisapi-prod"
+                    ]
+                  },
+                  "isOptional": true
+                },
+                {
+                  "name": "PartId",
+                  "value": "1513c91d-99f7-4668-b413-fc003e947acf",
+                  "isOptional": true
+                },
+                {
+                  "name": "Version",
+                  "value": "2.0",
+                  "isOptional": true
+                },
+                {
+                  "name": "TimeRange",
+                  "value": "P1D",
+                  "isOptional": true
+                },
+                {
+                  "name": "DashboardId",
+                  "isOptional": true
+                },
+                {
+                  "name": "DraftRequestParameters",
+                  "isOptional": true
+                },
+                {
+                  "name": "Query",
+                  "value": "AppRequests\n| extend Series = case(\n                      Name == \"POST /sync/offender-transactions\" and ResultCode == 201,\n                      \"Sync Transactions\",\n                      \"Other\"\n                  )\n| where Series != \"Other\"\n| summarize Hits = count() by bin(TimeGenerated, 5m), Series\n| render timechart\n",
+                  "isOptional": true
+                },
+                {
+                  "name": "ControlType",
+                  "value": "FrameControlChart",
+                  "isOptional": true
+                },
+                {
+                  "name": "SpecificChart",
+                  "value": "Line",
+                  "isOptional": true
+                },
+                {
+                  "name": "PartTitle",
+                  "value": "Analytics",
+                  "isOptional": true
+                },
+                {
+                  "name": "PartSubTitle",
+                  "value": "nomisapi-prod",
+                  "isOptional": true
+                },
+                {
+                  "name": "Dimensions",
+                  "value": {
+                    "xAxis": {
+                      "name": "TimeGenerated",
+                      "type": "datetime"
+                    },
+                    "yAxis": [
+                      {
+                        "name": "Hits",
+                        "type": "long"
+                      }
+                    ],
+                    "splitBy": [
+                      {
+                        "name": "Series",
+                        "type": "string"
+                      }
+                    ],
+                    "aggregation": "Sum"
+                  },
+                  "isOptional": true
+                },
+                {
+                  "name": "LegendOptions",
+                  "value": {
+                    "isEnabled": true,
+                    "position": "Bottom"
+                  },
+                  "isOptional": true
+                },
+                {
+                  "name": "IsQueryContainTimeRange",
+                  "value": false,
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart",
+              "settings": {
+                "content": {
+                  "PartTitle": "Sync transactions from NOMIS"
+                }
+              }
+            }
+          },
+          {
+            "position": {
+              "x": 8,
+              "y": 6,
+              "colSpan": 8,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "resourceTypeMode",
+                  "isOptional": true
+                },
+                {
+                  "name": "ComponentId",
+                  "isOptional": true
+                },
+                {
+                  "name": "Scope",
+                  "value": {
+                    "resourceIds": [
+                      "/subscriptions/a5ddf257-3b21-4ba9-a28c-ab30f751b383/resourcegroups/nomisapi-prod-rg/providers/microsoft.operationalinsights/workspaces/nomisapi-prod"
+                    ]
+                  },
+                  "isOptional": true
+                },
+                {
+                  "name": "PartId",
+                  "value": "16d7f915-36ae-445f-bb12-988ed5131a11",
+                  "isOptional": true
+                },
+                {
+                  "name": "Version",
+                  "value": "2.0",
+                  "isOptional": true
+                },
+                {
+                  "name": "TimeRange",
+                  "value": "P1D",
+                  "isOptional": true
+                },
+                {
+                  "name": "DashboardId",
+                  "isOptional": true
+                },
+                {
+                  "name": "DraftRequestParameters",
+                  "isOptional": true
+                },
+                {
+                  "name": "Query",
+                  "value": "AppRequests\n| extend Series = case(\n                      Name == \"POST /transactions\" and ResultCode == 200,\n                      \"General Ledger Transactions - Retried and Recorded\",\n                      Name == \"POST /transactions\" and ResultCode == 201,\n                      \"General Ledger Transactions - Succeeded\",\n                      Name == \"POST /transactions\" and ResultCode != 201,\n                      \"General Ledger Transactions - Failed\",\n                      \"Other\"\n                  )\n| where Series != \"Other\"\n| summarize Hits = count() by bin(TimeGenerated, 5m), Series\n| render timechart",
+                  "isOptional": true
+                },
+                {
+                  "name": "ControlType",
+                  "value": "FrameControlChart",
+                  "isOptional": true
+                },
+                {
+                  "name": "SpecificChart",
+                  "value": "Line",
+                  "isOptional": true
+                },
+                {
+                  "name": "PartTitle",
+                  "value": "Analytics",
+                  "isOptional": true
+                },
+                {
+                  "name": "PartSubTitle",
+                  "value": "nomisapi-prod",
+                  "isOptional": true
+                },
+                {
+                  "name": "Dimensions",
+                  "value": {
+                    "xAxis": {
+                      "name": "TimeGenerated",
+                      "type": "datetime"
+                    },
+                    "yAxis": [
+                      {
+                        "name": "Hits",
+                        "type": "long"
+                      }
+                    ],
+                    "splitBy": [
+                      {
+                        "name": "Series",
+                        "type": "string"
+                      }
+                    ],
+                    "aggregation": "Sum"
+                  },
+                  "isOptional": true
+                },
+                {
+                  "name": "LegendOptions",
+                  "value": {
+                    "isEnabled": true,
+                    "position": "Bottom"
+                  },
+                  "isOptional": true
+                },
+                {
+                  "name": "IsQueryContainTimeRange",
+                  "value": false,
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart",
+              "settings": {
+                "content": {
+                  "Query": "let Transactions =\n    AppRequests\n    | extend Series = case(\n        Name == \"POST /transactions\" and ResultCode == 200,\n        \"General Ledger Transactions - Retried and Recorded\",\n        Name == \"POST /transactions\" and ResultCode == 201,\n        \"General Ledger Transactions - Succeeded\",\n        Name == \"POST /transactions\" and ResultCode != 201,\n        \"General Ledger Transactions - Failed\",\n        \"Other\"\n    )\n    | where Series != \"Other\"\n    | summarize Hits = count() by bin(TimeGenerated, 5m), Series;\n\nlet Errors500 =\n    AppRequests\n    | where Url contains \"https://prisoner-finance-general-ledger\"\n    | where ResultCode == 500\n    | summarize Hits = count() by bin(TimeGenerated, 5m), Name\n    | project TimeGenerated, Hits, Series = strcat(\"500 - \", Name);\n\nunion Transactions, Errors500\n| render timechart",
+                  "PartTitle": "General Ledger transactions from Sync"
+                }
+              }
+            }
+          },
+          {
+            "position": {
+              "x": 0,
+              "y": 10,
+              "colSpan": 16,
+              "rowSpan": 1
+            },
+            "metadata": {
+              "inputs": [],
+              "type": "Extension/HubsExtension/PartType/MarkdownPart",
+              "settings": {
+                "content": {
+                  "content": "",
+                  "title": "",
+                  "subtitle": "",
+                  "markdownSource": 1,
+                  "markdownUri": ""
+                }
+              }
+            }
+          },
+          {
+            "position": {
+              "x": 0,
+              "y": 11,
+              "colSpan": 16,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "resourceTypeMode",
+                  "isOptional": true
+                },
+                {
+                  "name": "ComponentId",
+                  "isOptional": true
+                },
+                {
+                  "name": "Scope",
+                  "value": {
+                    "resourceIds": [
+                      "/subscriptions/a5ddf257-3b21-4ba9-a28c-ab30f751b383/resourcegroups/nomisapi-prod-rg/providers/microsoft.operationalinsights/workspaces/nomisapi-prod"
+                    ]
+                  },
+                  "isOptional": true
+                },
+                {
+                  "name": "PartId",
+                  "value": "05c36e93-fc69-4f4f-a11b-a3d4d55daa14",
+                  "isOptional": true
+                },
+                {
+                  "name": "Version",
+                  "value": "2.0",
+                  "isOptional": true
+                },
+                {
+                  "name": "TimeRange",
+                  "value": "P7D",
+                  "isOptional": true
+                },
+                {
+                  "name": "DashboardId",
+                  "isOptional": true
+                },
+                {
+                  "name": "DraftRequestParameters",
+                  "isOptional": true
+                },
+                {
+                  "name": "Query",
+                  "value": "AppRequests\n| where Name == \"POST /sub-accounts/{subAccountId}/balance\"\n| summarize Hits = count() by bin(TimeGenerated, 1m)\n| render timechart\n",
+                  "isOptional": true
+                },
+                {
+                  "name": "ControlType",
+                  "value": "FrameControlChart",
+                  "isOptional": true
+                },
+                {
+                  "name": "SpecificChart",
+                  "value": "Line",
+                  "isOptional": true
+                },
+                {
+                  "name": "PartTitle",
+                  "value": "Analytics",
+                  "isOptional": true
+                },
+                {
+                  "name": "PartSubTitle",
+                  "value": "nomisapi-prod",
+                  "isOptional": true
+                },
+                {
+                  "name": "Dimensions",
+                  "value": {
+                    "xAxis": {
+                      "name": "TimeGenerated",
+                      "type": "datetime"
+                    },
+                    "yAxis": [
+                      {
+                        "name": "Hits",
+                        "type": "long"
+                      }
+                    ],
+                    "splitBy": [],
+                    "aggregation": "Sum"
+                  },
+                  "isOptional": true
+                },
+                {
+                  "name": "LegendOptions",
+                  "value": {
+                    "isEnabled": true,
+                    "position": "Bottom"
+                  },
+                  "isOptional": true
+                },
+                {
+                  "name": "IsQueryContainTimeRange",
+                  "value": false,
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart",
+              "settings": {
+                "content": {
+                  "PartTitle": "General Ledger - Balance Migration"
+                }
+              }
+            }
+          },
+          {
+            "position": {
+              "x": 16,
+              "y": 11,
+              "colSpan": 3,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [],
+              "type": "Extension/HubsExtension/PartType/MarkdownPart",
+              "settings": {
+                "content": {
+                  "content": "NOMIS will send all the balances for an account together, SYNC will send a balance request for each sub account to General Ledger. Prisoners generally have 3 sub accounts therefore requests to General Ledger will be ~3x higher.",
+                  "title": "Note",
+                  "subtitle": "",
+                  "markdownSource": 1,
+                  "markdownUri": ""
+                }
+              }
+            }
+          },
+          {
+            "position": {
+              "x": 0,
+              "y": 15,
+              "colSpan": 16,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "resourceTypeMode",
+                  "isOptional": true
+                },
+                {
+                  "name": "ComponentId",
+                  "isOptional": true
+                },
+                {
+                  "name": "Scope",
+                  "value": {
+                    "resourceIds": [
+                      "/subscriptions/a5ddf257-3b21-4ba9-a28c-ab30f751b383/resourcegroups/nomisapi-prod-rg/providers/microsoft.operationalinsights/workspaces/nomisapi-prod"
+                    ]
+                  },
+                  "isOptional": true
+                },
+                {
+                  "name": "PartId",
+                  "value": "157caab2-1137-45ed-bc51-4bac29185b53",
+                  "isOptional": true
+                },
+                {
+                  "name": "Version",
+                  "value": "2.0",
+                  "isOptional": true
+                },
+                {
+                  "name": "TimeRange",
+                  "value": "2026-05-01T14:17:30.000Z/2026-07-01T14:17:30.950Z",
+                  "isOptional": true
+                },
+                {
+                  "name": "DashboardId",
+                  "isOptional": true
+                },
+                {
+                  "name": "DraftRequestParameters",
+                  "isOptional": true
+                },
+                {
+                  "name": "Query",
+                  "value": "AppRequests\n| where Name == \"POST /migrate/prisoner-balances/{prisonNumber}\"\n| summarize Hits = count() by bin(TimeGenerated, 1m)\n| render timechart\n\n",
+                  "isOptional": true
+                },
+                {
+                  "name": "ControlType",
+                  "value": "FrameControlChart",
+                  "isOptional": true
+                },
+                {
+                  "name": "SpecificChart",
+                  "value": "Line",
+                  "isOptional": true
+                },
+                {
+                  "name": "PartTitle",
+                  "value": "Analytics",
+                  "isOptional": true
+                },
+                {
+                  "name": "PartSubTitle",
+                  "value": "nomisapi-prod",
+                  "isOptional": true
+                },
+                {
+                  "name": "Dimensions",
+                  "value": {
+                    "xAxis": {
+                      "name": "TimeGenerated",
+                      "type": "datetime"
+                    },
+                    "yAxis": [
+                      {
+                        "name": "Hits",
+                        "type": "long"
+                      }
+                    ],
+                    "splitBy": [],
+                    "aggregation": "Sum"
+                  },
+                  "isOptional": true
+                },
+                {
+                  "name": "LegendOptions",
+                  "value": {
+                    "isEnabled": true,
+                    "position": "Bottom"
+                  },
+                  "isOptional": true
+                },
+                {
+                  "name": "IsQueryContainTimeRange",
+                  "value": false,
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart",
+              "settings": {
+                "content": {
+                  "PartTitle": "Sync Offender - Balance Migration"
+                }
+              }
+            }
+          },
+          {
+            "position": {
+              "x": 0,
+              "y": 19,
+              "colSpan": 4,
+              "rowSpan": 2
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "resourceTypeMode",
+                  "isOptional": true
+                },
+                {
+                  "name": "ComponentId",
+                  "isOptional": true
+                },
+                {
+                  "name": "Scope",
+                  "value": {
+                    "resourceIds": [
+                      "/subscriptions/a5ddf257-3b21-4ba9-a28c-ab30f751b383/resourcegroups/nomisapi-prod-rg/providers/microsoft.operationalinsights/workspaces/nomisapi-prod"
+                    ]
+                  },
+                  "isOptional": true
+                },
+                {
+                  "name": "PartId",
+                  "value": "14319dc6-31bf-4d8c-a95c-3b91b53bd396",
+                  "isOptional": true
+                },
+                {
+                  "name": "Version",
+                  "value": "2.0",
+                  "isOptional": true
+                },
+                {
+                  "name": "TimeRange",
+                  "value": "P1D",
+                  "isOptional": true
+                },
+                {
+                  "name": "DashboardId",
+                  "isOptional": true
+                },
+                {
+                  "name": "DraftRequestParameters",
+                  "isOptional": true
+                },
+                {
+                  "name": "Query",
+                  "value": "AppRequests\n| where Name == \"POST /accounts\"\n| count",
+                  "isOptional": true
+                },
+                {
+                  "name": "ControlType",
+                  "value": "AnalyticsGrid",
+                  "isOptional": true
+                },
+                {
+                  "name": "SpecificChart",
+                  "isOptional": true
+                },
+                {
+                  "name": "PartTitle",
+                  "value": "Analytics",
+                  "isOptional": true
+                },
+                {
+                  "name": "PartSubTitle",
+                  "value": "nomisapi-prod",
+                  "isOptional": true
+                },
+                {
+                  "name": "Dimensions",
+                  "isOptional": true
+                },
+                {
+                  "name": "LegendOptions",
+                  "isOptional": true
+                },
+                {
+                  "name": "IsQueryContainTimeRange",
+                  "value": false,
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart",
+              "settings": {
+                "content": {
+                  "PartTitle": "General Ledger - Accounts created"
+                }
+              }
+            }
+          },
+          {
+            "position": {
+              "x": 4,
+              "y": 19,
+              "colSpan": 4,
+              "rowSpan": 2
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "resourceTypeMode",
+                  "isOptional": true
+                },
+                {
+                  "name": "ComponentId",
+                  "isOptional": true
+                },
+                {
+                  "name": "Scope",
+                  "value": {
+                    "resourceIds": [
+                      "/subscriptions/a5ddf257-3b21-4ba9-a28c-ab30f751b383/resourcegroups/nomisapi-prod-rg/providers/microsoft.operationalinsights/workspaces/nomisapi-prod"
+                    ]
+                  },
+                  "isOptional": true
+                },
+                {
+                  "name": "PartId",
+                  "value": "3aa7dc3e-3e3d-49d5-a65e-3355c91f9936",
+                  "isOptional": true
+                },
+                {
+                  "name": "Version",
+                  "value": "2.0",
+                  "isOptional": true
+                },
+                {
+                  "name": "TimeRange",
+                  "value": "P1D",
+                  "isOptional": true
+                },
+                {
+                  "name": "DashboardId",
+                  "isOptional": true
+                },
+                {
+                  "name": "DraftRequestParameters",
+                  "isOptional": true
+                },
+                {
+                  "name": "Query",
+                  "value": "AppRequests\n| where Name == \"POST /accounts/{parentAccountId}/sub-accounts\"\n| count\n",
+                  "isOptional": true
+                },
+                {
+                  "name": "ControlType",
+                  "value": "AnalyticsGrid",
+                  "isOptional": true
+                },
+                {
+                  "name": "SpecificChart",
+                  "isOptional": true
+                },
+                {
+                  "name": "PartTitle",
+                  "value": "Analytics",
+                  "isOptional": true
+                },
+                {
+                  "name": "PartSubTitle",
+                  "value": "nomisapi-prod",
+                  "isOptional": true
+                },
+                {
+                  "name": "Dimensions",
+                  "isOptional": true
+                },
+                {
+                  "name": "LegendOptions",
+                  "isOptional": true
+                },
+                {
+                  "name": "IsQueryContainTimeRange",
+                  "value": false,
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart",
+              "settings": {
+                "content": {
+                  "PartTitle": "General Ledger - Subaccounts created"
+                }
+              }
+            }
+          },
+          {
+            "position": {
+              "x": 0,
+              "y": 21,
+              "colSpan": 16,
+              "rowSpan": 1
+            },
+            "metadata": {
+              "inputs": [],
+              "type": "Extension/HubsExtension/PartType/MarkdownPart",
+              "settings": {
+                "content": {
+                  "content": "",
+                  "title": "Database Performance",
+                  "subtitle": "",
+                  "markdownSource": 1,
+                  "markdownUri": ""
+                }
+              }
+            }
+          },
+          {
+            "position": {
+              "x": 0,
+              "y": 22,
+              "colSpan": 16,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "resourceTypeMode",
+                  "isOptional": true
+                },
+                {
+                  "name": "ComponentId",
+                  "isOptional": true
+                },
+                {
+                  "name": "Scope",
+                  "value": {
+                    "resourceIds": [
+                      "/subscriptions/a5ddf257-3b21-4ba9-a28c-ab30f751b383/resourceGroups/nomisapi-prod-rg/providers/microsoft.insights/components/nomisapi-prod"
+                    ]
+                  },
+                  "isOptional": true
+                },
+                {
+                  "name": "PartId",
+                  "value": "1302ba77-11c5-4641-8747-442683f0e4df",
+                  "isOptional": true
+                },
+                {
+                  "name": "Version",
+                  "value": "2.0",
+                  "isOptional": true
+                },
+                {
+                  "name": "TimeRange",
+                  "value": "PT12H",
+                  "isOptional": true
+                },
+                {
+                  "name": "DashboardId",
+                  "isOptional": true
+                },
+                {
+                  "name": "DraftRequestParameters",
+                  "isOptional": true
+                },
+                {
+                  "name": "Query",
+                  "value": "dependencies\n| where type == \"postgresql\"\n| where cloud_RoleName contains \"hmpps-prisoner-finance-general-ledger-api\"\n| summarize\n    AverageMs = avg(duration),\n    P95Ms = percentiles(duration, 95),\n    MaxMs = max(duration)\n    by bin(timestamp, 1m)\n| render timechart",
+                  "isOptional": true
+                },
+                {
+                  "name": "ControlType",
+                  "value": "FrameControlChart",
+                  "isOptional": true
+                },
+                {
+                  "name": "SpecificChart",
+                  "value": "Line",
+                  "isOptional": true
+                },
+                {
+                  "name": "PartTitle",
+                  "value": "Analytics",
+                  "isOptional": true
+                },
+                {
+                  "name": "PartSubTitle",
+                  "value": "nomisapi-prod",
+                  "isOptional": true
+                },
+                {
+                  "name": "Dimensions",
+                  "value": {
+                    "xAxis": {
+                      "name": "timestamp",
+                      "type": "datetime"
+                    },
+                    "yAxis": [
+                      {
+                        "name": "AverageMs",
+                        "type": "real"
+                      },
+                      {
+                        "name": "P95Ms",
+                        "type": "real"
+                      },
+                      {
+                        "name": "MaxMs",
+                        "type": "real"
+                      }
+                    ],
+                    "splitBy": [],
+                    "aggregation": "Sum"
+                  },
+                  "isOptional": true
+                },
+                {
+                  "name": "LegendOptions",
+                  "value": {
+                    "isEnabled": true,
+                    "position": "Bottom"
+                  },
+                  "isOptional": true
+                },
+                {
+                  "name": "IsQueryContainTimeRange",
+                  "value": false,
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart",
+              "settings": {
+                "content": {
+                  "Query": "dependencies\n| where type == \"postgresql\"\n| where cloud_RoleName contains \"hmpps-prisoner-finance-general-ledger-api\"\n| make-series\n    AverageMs = avg(duration),\n    P95Ms = percentile(duration, 95),\n    MaxMs = max(duration)\n    default=0\n    on timestamp\n    from ago(24h)\n    to now()\n    step 1m\n| render timechart\n",
+                  "PartTitle": "General Ledger - Database request time",
+                  "IsQueryContainTimeRange": true
+                }
+              }
+            }
+          },
+          {
+            "position": {
+              "x": 0,
+              "y": 26,
+              "colSpan": 16,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "resourceTypeMode",
+                  "isOptional": true
+                },
+                {
+                  "name": "ComponentId",
+                  "isOptional": true
+                },
+                {
+                  "name": "Scope",
+                  "value": {
+                    "resourceIds": [
+                      "/subscriptions/a5ddf257-3b21-4ba9-a28c-ab30f751b383/resourceGroups/nomisapi-prod-rg/providers/microsoft.insights/components/nomisapi-prod"
+                    ]
+                  },
+                  "isOptional": true
+                },
+                {
+                  "name": "PartId",
+                  "value": "25c490de-a078-4672-8197-532ff94d89b0",
+                  "isOptional": true
+                },
+                {
+                  "name": "Version",
+                  "value": "2.0",
+                  "isOptional": true
+                },
+                {
+                  "name": "TimeRange",
+                  "value": "PT12H",
+                  "isOptional": true
+                },
+                {
+                  "name": "DashboardId",
+                  "isOptional": true
+                },
+                {
+                  "name": "DraftRequestParameters",
+                  "isOptional": true
+                },
+                {
+                  "name": "Query",
+                  "value": "dependencies\n| where type == \"postgresql\"\n| where cloud_RoleName in (\n    \"hmpps-prisoner-finance-general-ledger-api\",\n    \"hmpps-prisoner-finance-sync-api\"\n)\n| summarize\n    AverageMs = avg(duration),\n    P95Ms = percentiles(duration, 95),\n    MaxMs = max(duration)\n    by bin(timestamp, 1m), cloud_RoleName\n| render timechart",
+                  "isOptional": true
+                },
+                {
+                  "name": "ControlType",
+                  "value": "FrameControlChart",
+                  "isOptional": true
+                },
+                {
+                  "name": "SpecificChart",
+                  "value": "Line",
+                  "isOptional": true
+                },
+                {
+                  "name": "PartTitle",
+                  "value": "Analytics",
+                  "isOptional": true
+                },
+                {
+                  "name": "PartSubTitle",
+                  "value": "nomisapi-prod",
+                  "isOptional": true
+                },
+                {
+                  "name": "Dimensions",
+                  "value": {
+                    "xAxis": {
+                      "name": "timestamp",
+                      "type": "datetime"
+                    },
+                    "yAxis": [
+                      {
+                        "name": "AverageMs",
+                        "type": "real"
+                      }
+                    ],
+                    "splitBy": [
+                      {
+                        "name": "cloud_RoleName",
+                        "type": "string"
+                      }
+                    ],
+                    "aggregation": "Sum"
+                  },
+                  "isOptional": true
+                },
+                {
+                  "name": "LegendOptions",
+                  "value": {
+                    "isEnabled": true,
+                    "position": "Bottom"
+                  },
+                  "isOptional": true
+                },
+                {
+                  "name": "IsQueryContainTimeRange",
+                  "value": false,
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart",
+              "settings": {
+                "content": {
+                  "Query": "dependencies\n| where type == \"postgresql\"\n| where cloud_RoleName in (\n    \"hmpps-prisoner-finance-general-ledger-api\",\n    \"hmpps-prisoner-finance-sync-api\"\n)\n| make-series\n    AverageMs = avg(duration),\n    P95Ms = percentile(duration, 95),\n    MaxMs = max(duration)\n    default=double(null)\n    on timestamp\n    from ago(24h)\n    to now()\n    step 1m\n    by cloud_RoleName\n| render timechart\n",
+                  "PartTitle": "Sync & GL Database request times",
+                  "IsQueryContainTimeRange": true
+                }
+              }
+            }
+          },
+          {
+            "position": {
+              "x": 0,
+              "y": 30,
+              "colSpan": 6,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "resourceTypeMode",
+                  "isOptional": true
+                },
+                {
+                  "name": "ComponentId",
+                  "isOptional": true
+                },
+                {
+                  "name": "Scope",
+                  "value": {
+                    "resourceIds": [
+                      "/subscriptions/a5ddf257-3b21-4ba9-a28c-ab30f751b383/resourcegroups/nomisapi-prod-rg/providers/microsoft.operationalinsights/workspaces/nomisapi-prod"
+                    ]
+                  },
+                  "isOptional": true
+                },
+                {
+                  "name": "PartId",
+                  "value": "107d54c4-143c-4c65-bf81-9c9fe3d94908",
+                  "isOptional": true
+                },
+                {
+                  "name": "Version",
+                  "value": "2.0",
+                  "isOptional": true
+                },
+                {
+                  "name": "TimeRange",
+                  "value": "P1D",
+                  "isOptional": true
+                },
+                {
+                  "name": "DashboardId",
+                  "isOptional": true
+                },
+                {
+                  "name": "DraftRequestParameters",
+                  "isOptional": true
+                },
+                {
+                  "name": "Query",
+                  "value": "   AppRequests\n| where Name in (\n    \"POST /validate/prisoner-balances/{prisonNumber}\",\n    \"GET /sync/offender-transactions\",\n    \"POST /sync/offender-transactions\",\n    \"GET /sync/general-ledger-transactions\",\n    \"POST /sync/general-ledger-transactions\",\n    \"POST /migrate/prisoner-balances/{prisonNumber}\",\n    \"POST /migrate/general-ledger-balances/{prisonId}\",\n    \"GET /sync/offender-transactions/{id}\",\n    \"GET /sync/general-ledger-transactions/{id}\",\n    \"GET /reconcile/prisoner-balances/{prisonNumber}\",\n    \"GET /reconcile/offender-transactions/{legacyTransactionId}\",\n    \"GET /reconcile/general-ledger-balances/{prisonId}\",\n    \"PUT /queue-admin/retry-dlq/{dlqName}\",\n    \"PUT /queue-admin/retry-all-dlqs\",\n    \"PUT /queue-admin/purge-queue/{queueName}\",\n    \"GET /queue-admin/get-dlq-messages/{dlqName}\",\n    \"GET /audit/history\",\n    \"GET /audit/history/{requestId}\"\n)\n| where ResultCode in (200, 201)\n| where Url contains \"https://prisoner-finance-sync\"\n| summarize Hits = count() by Name\n| order by Name asc",
+                  "isOptional": true
+                },
+                {
+                  "name": "ControlType",
+                  "value": "AnalyticsGrid",
+                  "isOptional": true
+                },
+                {
+                  "name": "SpecificChart",
+                  "isOptional": true
+                },
+                {
+                  "name": "PartTitle",
+                  "value": "Analytics",
+                  "isOptional": true
+                },
+                {
+                  "name": "PartSubTitle",
+                  "value": "nomisapi-prod",
+                  "isOptional": true
+                },
+                {
+                  "name": "Dimensions",
+                  "isOptional": true
+                },
+                {
+                  "name": "LegendOptions",
+                  "isOptional": true
+                },
+                {
+                  "name": "IsQueryContainTimeRange",
+                  "value": false,
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart",
+              "settings": {
+                "content": {
+                  "Query": "   AppRequests\n| where Name in (\n    \"POST /validate/prisoner-balances/{prisonNumber}\",\n    \"GET /sync/offender-transactions\",\n    \"POST /sync/offender-transactions\",\n    \"GET /sync/general-ledger-transactions\",\n    \"POST /sync/general-ledger-transactions\",\n    \"POST /migrate/prisoner-balances/{prisonNumber}\",\n    \"POST /migrate/general-ledger-balances/{prisonId}\",\n    \"GET /sync/offender-transactions/{id}\",\n    \"GET /sync/general-ledger-transactions/{id}\",\n    \"GET /reconcile/prisoner-balances/{prisonNumber}\",\n    \"GET /reconcile/offender-transactions/{legacyTransactionId}\",\n    \"GET /reconcile/general-ledger-balances/{prisonId}\",\n    \"PUT /queue-admin/retry-dlq/{dlqName}\",\n    \"PUT /queue-admin/retry-all-dlqs\",\n    \"PUT /queue-admin/purge-queue/{queueName}\",\n    \"GET /queue-admin/get-dlq-messages/{dlqName}\",\n    \"GET /audit/history\",\n    \"GET /audit/history/{requestId}\",\n    \"GET /health\"\n    )\n//| where ResultCode in (200, 201)\n| where Url contains \"https://prisoner-finance-sync\"\n| summarize Hits = count() by Name, ResultCode\n| order by Name asc, ResultCode asc",
+                  "PartTitle": "All Sync Endpoints - Count"
+                }
+              }
+            }
+          },
+          {
+            "position": {
+              "x": 7,
+              "y": 30,
+              "colSpan": 7,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "resourceTypeMode",
+                  "isOptional": true
+                },
+                {
+                  "name": "ComponentId",
+                  "isOptional": true
+                },
+                {
+                  "name": "Scope",
+                  "value": {
+                    "resourceIds": [
+                      "/subscriptions/a5ddf257-3b21-4ba9-a28c-ab30f751b383/resourcegroups/nomisapi-prod-rg/providers/microsoft.operationalinsights/workspaces/nomisapi-prod"
+                    ]
+                  },
+                  "isOptional": true
+                },
+                {
+                  "name": "PartId",
+                  "value": "8b20c6d4-5ac4-4dfc-b144-9b51b53a858d",
+                  "isOptional": true
+                },
+                {
+                  "name": "Version",
+                  "value": "2.0",
+                  "isOptional": true
+                },
+                {
+                  "name": "TimeRange",
+                  "value": "P1D",
+                  "isOptional": true
+                },
+                {
+                  "name": "DashboardId",
+                  "isOptional": true
+                },
+                {
+                  "name": "DraftRequestParameters",
+                  "isOptional": true
+                },
+                {
+                  "name": "Query",
+                  "value": "AppRequests\n| where Name in (\n    \"PUT /queue-admin/retry-dlq/{dlqName}\",\n    \"PUT /queue-admin/retry-all-dlqs\",\n    \"PUT /queue-admin/purge-queue/{queueName}\",\n    \"GET /queue-admin/get-dlq-messages/{dlqName}\",\n    \"POST /transactions\",\n    \"POST /transactions/search\",\n    \"GET /transactions/{transactionUUID}\",\n    \"GET /accounts/{accountId}/transactions\",\n    \"GET /sub-accounts/{subAccountId}/balance\",\n    \"POST /sub-accounts/{subAccountId}/balance\",\n    \"POST /accounts/{parentAccountId}/sub-accounts\",\n    \"GET /sub-accounts\",\n    \"GET /sub-accounts/{subAccountId}\",\n    \"POST /migrate/subAccountBalances\",\n    \"GET /accounts\",\n    \"POST /accounts\",\n    \"POST /accounts/search\",\n    \"GET /accounts/{accountUUID}\",\n    \"GET /accounts/{accountId}/balance\",\n    \"GET /hello\",\n    \"GET /accounts/{accountId}/statement\"\n)\n| where ResultCode in (200, 201)\n| where Url contains \"https://prisoner-finance-general-ledger\"\n| summarize Hits = count() by Name\n| order by Name asc\n",
+                  "isOptional": true
+                },
+                {
+                  "name": "ControlType",
+                  "value": "AnalyticsGrid",
+                  "isOptional": true
+                },
+                {
+                  "name": "SpecificChart",
+                  "isOptional": true
+                },
+                {
+                  "name": "PartTitle",
+                  "value": "Analytics",
+                  "isOptional": true
+                },
+                {
+                  "name": "PartSubTitle",
+                  "value": "nomisapi-prod",
+                  "isOptional": true
+                },
+                {
+                  "name": "Dimensions",
+                  "isOptional": true
+                },
+                {
+                  "name": "LegendOptions",
+                  "isOptional": true
+                },
+                {
+                  "name": "IsQueryContainTimeRange",
+                  "value": false,
+                  "isOptional": true
+                }
+              ],
+              "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart",
+              "settings": {
+                "content": {
+                  "GridColumnsWidth": {
+                    "Name": "253px"
+                  },
+                  "Query": "AppRequests\n| where Name in (\n    \"PUT /queue-admin/retry-dlq/{dlqName}\",\n    \"PUT /queue-admin/retry-all-dlqs\",\n    \"PUT /queue-admin/purge-queue/{queueName}\",\n    \"GET /queue-admin/get-dlq-messages/{dlqName}\",\n    \"POST /transactions\",\n    \"POST /transactions/search\",\n    \"GET /transactions/{transactionUUID}\",\n    \"GET /accounts/{accountId}/transactions\",\n    \"GET /sub-accounts/{subAccountId}/balance\",\n    \"POST /sub-accounts/{subAccountId}/balance\",\n    \"POST /accounts/{parentAccountId}/sub-accounts\",\n    \"GET /sub-accounts\",\n    \"GET /sub-accounts/{subAccountId}\",\n    \"POST /migrate/subAccountBalances\",\n    \"GET /accounts\",\n    \"POST /accounts\",\n    \"POST /accounts/search\",\n    \"GET /accounts/{accountUUID}\",\n    \"GET /accounts/{accountId}/balance\",\n    \"GET /hello\",\n    \"GET /accounts/{accountId}/statement\"\n    )\n| where Url contains \"https://prisoner-finance-general-ledger\"\n| summarize Hits = count() by Name, ResultCode\n| order by Name asc, ResultCode asc\n\n",
+                  "PartTitle": "All General Ledger Endpoints - Count"
+                }
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "model": {
+        "timeRange": {
+          "value": {
+            "relative": {
+              "duration": 24,
+              "timeUnit": 1
+            }
+          },
+          "type": "MsPortalFx.Composition.Configuration.ValueTypes.TimeRange"
+        },
+        "filterLocale": {
+          "value": "en-us"
+        },
+        "filters": {
+          "value": {
+            "MsPortalFx_TimeRange": {
+              "model": {
+                "format": "utc",
+                "granularity": "5m",
+                "relative": "24h"
+              },
+              "displayCache": {
+                "name": "UTC Time",
+                "value": "Past 24 hours"
+              },
+              "filteredPartIds": [
+                "StartboardPart-LogsDashboardPart-19fa17c1-8dae-4915-a656-0d2fef0af00e",
+                "StartboardPart-LogsDashboardPart-19fa17c1-8dae-4915-a656-0d2fef0af012",
+                "StartboardPart-LogsDashboardPart-19fa17c1-8dae-4915-a656-0d2fef0af014",
+                "StartboardPart-LogsDashboardPart-19fa17c1-8dae-4915-a656-0d2fef0af018",
+                "StartboardPart-LogsDashboardPart-19fa17c1-8dae-4915-a656-0d2fef0af01c",
+                "StartboardPart-LogsDashboardPart-19fa17c1-8dae-4915-a656-0d2fef0af01e",
+                "StartboardPart-LogsDashboardPart-19fa17c1-8dae-4915-a656-0d2fef0af020",
+                "StartboardPart-LogsDashboardPart-19fa17c1-8dae-4915-a656-0d2fef0af024",
+                "StartboardPart-LogsDashboardPart-19fa17c1-8dae-4915-a656-0d2fef0af026",
+                "StartboardPart-LogsDashboardPart-19fa17c1-8dae-4915-a656-0d2fef0af028",
+                "StartboardPart-LogsDashboardPart-19fa17c1-8dae-4915-a656-0d2fef0af02a"
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "name": "Prisoner Finance - Prod - Dashboard",
+  "type": "Microsoft.Portal/dashboards",
+  "location": "INSERT LOCATION",
+  "tags": {
+    "hidden-title": "Prisoner Finance - Prod - Dashboard"
+  },
+  "apiVersion": "2022-12-01-preview"
+}
