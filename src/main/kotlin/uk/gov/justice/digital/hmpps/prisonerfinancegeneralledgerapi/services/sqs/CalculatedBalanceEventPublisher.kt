@@ -17,7 +17,7 @@ class CalculatedBalanceEventPublisher(
   private val postingBalanceDataRepository: PostingBalanceDataRepository,
 ) {
 
-  @Transactional(rollbackFor = [Exception::class])
+  @Transactional(rollbackFor = [Exception::class, Error::class])
   fun requestCalculatedBalanceForTransaction(transactionEntity: TransactionEntity) {
     transactionEntity.postings.forEach { posting ->
       val accountId = posting.subAccountEntity.parentAccountEntity.id
@@ -35,7 +35,7 @@ class CalculatedBalanceEventPublisher(
     }
   }
 
-  @Transactional(rollbackFor = [Exception::class])
+  @Transactional(rollbackFor = [Exception::class, Error::class])
   fun requestCalculatedBalanceForStatementBalance(statementBalanceEntity: StatementBalanceEntity) {
     try {
       val posting = postingsDataRepository.getFirstPostingForAccountIdAfterDateTime(

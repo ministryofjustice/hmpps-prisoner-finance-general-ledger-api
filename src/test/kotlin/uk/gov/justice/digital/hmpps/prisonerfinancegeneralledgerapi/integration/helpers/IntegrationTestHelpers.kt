@@ -282,7 +282,7 @@ class IntegrationTestHelpers(
   @Autowired
   lateinit var entityManager: EntityManager
 
-  @Transactional(rollbackFor = [Exception::class])
+  @Transactional(rollbackFor = [Exception::class, Error::class])
   fun clearDB() {
     entityManager.clear()
     entityManager.flush()

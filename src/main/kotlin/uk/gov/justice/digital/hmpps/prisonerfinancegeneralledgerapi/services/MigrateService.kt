@@ -15,7 +15,7 @@ class MigrateService(
   val postingBalanceDataRepository: PostingBalanceDataRepository,
   val accountDataRepository: AccountDataRepository,
 ) {
-  @Transactional(rollbackFor = [Exception::class])
+  @Transactional(rollbackFor = [Exception::class, Error::class])
   fun migrateAllPostingBalances() {
     postingBalanceDataRepository.deleteAll()
 

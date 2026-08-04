@@ -26,7 +26,7 @@ class TransactionService(
   private val subAccountDataRepository: SubAccountDataRepository,
   private val idempotencyKeyDataRepository: IdempotencyKeyDataRepository,
 ) {
-  @Transactional(rollbackFor = [Exception::class])
+  @Transactional(rollbackFor = [Exception::class, Error::class])
   fun createTransaction(createTxReq: CreateTransactionRequest, createdBy: String, idempotencyKey: UUID): TransactionEntity {
     val transactionEntity = TransactionEntity(
       reference = createTxReq.reference,
