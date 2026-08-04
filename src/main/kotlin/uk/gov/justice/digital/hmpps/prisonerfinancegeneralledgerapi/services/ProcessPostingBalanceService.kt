@@ -18,7 +18,7 @@ class ProcessPostingBalanceService(
 ) {
   private val log = LoggerFactory.getLogger(this::class.java)
 
-  @Transactional(rollbackFor = [Exception::class])
+  @Transactional(rollbackFor = [Exception::class, Error::class])
   fun processBalance(accountId: UUID) {
     var posting: PostingEntity? = postingsDataRepository.getFirstMissingPostingBalanceByAccountId(accountId)
 

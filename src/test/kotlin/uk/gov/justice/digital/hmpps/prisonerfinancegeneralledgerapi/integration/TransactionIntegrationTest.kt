@@ -7,12 +7,14 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.ValueSource
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.TransactionDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreatePostingRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.CreateTransactionRequest
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.AccountResponse
@@ -26,7 +28,7 @@ import java.time.Instant
 import java.util.UUID
 import kotlin.collections.emptyList
 
-class TransactionIntegrationTest : IntegrationTestBase() {
+class TransactionIntegrationTest(@Autowired private val transactionDataRepository: TransactionDataRepository) : IntegrationTestBase() {
 
   @BeforeEach
   fun resetDB() {
@@ -41,6 +43,8 @@ class TransactionIntegrationTest : IntegrationTestBase() {
 
     @BeforeEach
     fun setup() {
+      integrationTestHelpers.clearDB()
+
       for (i in 0..3) {
         val accountResponseBody = integrationTestHelpers.createAccount("TEST_ACCOUNT_$i", AccountType.PRISONER)
         accounts.add(accountResponseBody)
@@ -219,6 +223,9 @@ class TransactionIntegrationTest : IntegrationTestBase() {
         .responseBody!!
 
       assertThat(repeatedTransactionResponseBody.id).isEqualTo(transactionResponseBody.id)
+
+      val transactions = transactionDataRepository.findAll()
+      assertThat(transactions).hasSize(1)
     }
 
     @Test

@@ -116,9 +116,6 @@ class TransactionController(
     user: Principal,
   ): ResponseEntity<TransactionResponse> {
     try {
-      val idempotencyEntityOrNull = idempotencyService.readIdempotencyKey(idempotencyKey)
-      if (idempotencyEntityOrNull != null) return ResponseEntity<TransactionResponse>.status(HttpStatus.OK).body(TransactionResponse.fromEntity(idempotencyEntityOrNull.transaction))
-
       val transactionEntityCreated = transactionService.createTransaction(body, createdBy = user.name, idempotencyKey = idempotencyKey)
 
       val transactionEntity = transactionService.getTransactionById(transactionEntityCreated.id)
