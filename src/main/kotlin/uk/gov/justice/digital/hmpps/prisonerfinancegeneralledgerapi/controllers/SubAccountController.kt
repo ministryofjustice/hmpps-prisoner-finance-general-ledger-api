@@ -339,4 +339,12 @@ class SubAccountController(
 
     return ResponseEntity.status(201).body(StatementBalanceResponse.fromEntity(subAccountStatementBalance))
   }
+
+  @GetMapping("/sub-accounts/{subAccountId}/statementBalances")
+  fun getSubAccountStatementBalances(@PathVariable subAccountId: UUID) : ResponseEntity<List<StatementBalanceResponse>> {
+
+    val statementBalancesResponse = subAccountService.getStatementBalancesBySubAccountId(subAccountId)
+
+    return ResponseEntity.status(HttpStatus.OK).body(emptyList())
+  }
 }

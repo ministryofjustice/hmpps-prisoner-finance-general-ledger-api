@@ -223,4 +223,22 @@ class StatementBalanceDataRepositoryTest @Autowired constructor(
       assertThat(savingsStatementBalance.subAccountEntity.id).isEqualTo(savingsSubAccount.id)
     }
   }
+
+  @Nested
+  inner class FindStatementBalancesBySubAccountId {
+
+    @Test
+    fun `Should find 1 statement balance from sub-account id` () {
+      val parentAccount = repoTestHelpers.createAccount("ABX123XZ")
+      val cashSubAccount = repoTestHelpers.createSubAccount("CASH", parentAccount)
+
+      val statementBalanceCash = repoTestHelpers.createStatementBalance(amount = 500, balanceDateTime = Instant.now(), subAccount = cashSubAccount)
+
+      val statementBalances = statementBalanceDataRepository.getStatementBalancesBySubAccountId(cashSubAccount.id)
+
+      assertThat(statementBalances).hasSize(1)
+      assertThat(statementBalances.first().amount).isEqualTo(statementBalanceCash.amount)
+    }
+  }
 }
+

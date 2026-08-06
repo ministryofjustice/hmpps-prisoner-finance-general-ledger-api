@@ -637,4 +637,21 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
         .expectStatus().isNotFound
     }
   }
+
+  @Nested
+  inner class GetStatementBalances {
+    @Test
+    fun `should return 200 and we get 1 statement balance returned for sub-account`() {
+      val statementBalances = webTestClient.get()
+        .uri("/sub-accounts/${UUID.randomUUID()}/statementBalances")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<List<StatementBalanceResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(statementBalances.size).isEqualTo(1)
+    }
+  }
 }
