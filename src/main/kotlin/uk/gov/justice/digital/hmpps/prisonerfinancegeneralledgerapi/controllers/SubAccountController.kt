@@ -340,11 +340,40 @@ class SubAccountController(
     return ResponseEntity.status(201).body(StatementBalanceResponse.fromEntity(subAccountStatementBalance))
   }
 
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Returns statement balances from a sub-account id",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = StatementBalanceResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Bad Request",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Resource not found - Sub account not found",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW])
+  @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
   @GetMapping("/sub-accounts/{subAccountId}/statementBalances")
   fun getSubAccountStatementBalances(@PathVariable subAccountId: UUID) : ResponseEntity<List<StatementBalanceResponse>> {
 
-    val statementBalancesResponse = subAccountService.getStatementBalancesBySubAccountId(subAccountId)
+    subAccountService.getSubAccountByID(subAccountId) ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        .body(emptyList())
 
-    return ResponseEntity.status(HttpStatus.OK).body(emptyList())
+    val statementBalancesEntityResponse = subAccountService.getStatementBalancesBySubAccountId(subAccountId)
+
+    return ResponseEntity.status(HttpStatus.OK).body( statementBalancesEntityResponse.map { StatementBalanceResponse.fromEntity(it) })
   }
 }

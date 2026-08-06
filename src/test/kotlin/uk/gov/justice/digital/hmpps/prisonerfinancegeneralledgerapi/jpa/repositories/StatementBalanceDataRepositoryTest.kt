@@ -239,6 +239,53 @@ class StatementBalanceDataRepositoryTest @Autowired constructor(
       assertThat(statementBalances).hasSize(1)
       assertThat(statementBalances.first().amount).isEqualTo(statementBalanceCash.amount)
     }
+
+    @Test
+    fun `Should return multiple statement balances from a sub-account id` () {
+      val parentAccount = repoTestHelpers.createAccount("ABX123XZ")
+      val cashSubAccount = repoTestHelpers.createSubAccount("CASH", parentAccount)
+
+      val statementBalanceCashOne = repoTestHelpers.createStatementBalance(amount = 500, balanceDateTime = Instant.now(), subAccount = cashSubAccount)
+
+      val statementBalanceCashTwo = repoTestHelpers.createStatementBalance(amount = 1000, balanceDateTime = Instant.now().minusSeconds(1), subAccount = cashSubAccount)
+
+      val statementBalances = statementBalanceDataRepository.getStatementBalancesBySubAccountId(cashSubAccount.id)
+
+      assertThat(statementBalances).hasSize(2)
+      assertThat(statementBalances[0].amount).isEqualTo(statementBalanceCashOne.amount)
+      assertThat(statementBalances[1].amount).isEqualTo(statementBalanceCashTwo.amount)
+    }
+
+    @Test
+    fun `Should not find any statement balances  from a different sub-account that has no statement balances` () {
+      val parentAccount = repoTestHelpers.createAccount("ABX123XZ")
+      val cashSubAccount = repoTestHelpers.createSubAccount("CASH", parentAccount)
+
+      repoTestHelpers.createStatementBalance(amount = 500, balanceDateTime = Instant.now(), subAccount = cashSubAccount)
+
+      val statementBalances = statementBalanceDataRepository.getStatementBalancesBySubAccountId(UUID.randomUUID())
+
+      assertThat(statementBalances).hasSize(0)
+    }
+
+    @Test
+    fun `Should not find any statement balances from the same sub-account that has no statement balances` () {
+      val parentAccount = repoTestHelpers.createAccount("ABX123XZ")
+      val cashSubAccount = repoTestHelpers.createSubAccount("CASH", parentAccount)
+
+      val statementBalances = statementBalanceDataRepository.getStatementBalancesBySubAccountId(cashSubAccount.id)
+
+      assertThat(statementBalances).hasSize(0)
+    }
+
+    @Test
+    fun `Should not find any statement balances from sub-account where sub account does not exist` () {
+
+      val statementBalances = statementBalanceDataRepository.getStatementBalancesBySubAccountId(UUID.randomUUID())
+
+      assertThat(statementBalances).hasSize(0)
+    }
+
   }
 }
 
