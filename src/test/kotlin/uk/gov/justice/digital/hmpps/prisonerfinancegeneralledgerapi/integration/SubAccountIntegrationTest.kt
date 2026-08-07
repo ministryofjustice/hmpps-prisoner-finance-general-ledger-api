@@ -571,7 +571,7 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should return 201 and the created statement balance`() {
+    fun `Should return 201 and the created statement balance`() {
       val balanceDateTime = Instant.now()
       val statementBalanceResponse = webTestClient.post()
         .uri("/sub-accounts/${dummySubAccountOne.id}/balance")
@@ -590,7 +590,7 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should return 400 when given a malformed body`() {
+    fun `Should return 400 when given a malformed body`() {
       webTestClient.post()
         .uri("/sub-accounts/${dummySubAccountOne.id}/balance")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
@@ -600,7 +600,7 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should return 400 when post body are incorrect types`() {
+    fun `Should return 400 when post body are incorrect types`() {
       webTestClient.post()
         .uri("/sub-accounts/${dummySubAccountOne.id}/balance")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
@@ -616,7 +616,7 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should return 403 when called with incorrect role`() {
+    fun `Should return 403 when called with incorrect role`() {
       webTestClient.post()
         .uri("/sub-accounts/${dummySubAccountOne.id}/balance")
         .headers(setAuthorisation(roles = listOf("WRONG_ROLE")))
@@ -627,7 +627,7 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should return 404 when sub-account does not exist`() {
+    fun `Should return 404 when sub-account does not exist`() {
       webTestClient.post()
         .uri("/sub-accounts/${UUID.randomUUID()}/balance")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
@@ -635,6 +635,122 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
         .bodyValue(CreateStatementBalanceRequest(amount = 10, balanceDateTime = Instant.now()))
         .exchange()
         .expectStatus().isNotFound
+    }
+  }
+
+  @Nested
+  inner class GetStatementBalances {
+
+    lateinit var dummyParentAccountOne: AccountResponse
+    lateinit var dummySubAccountOne: SubAccountResponse
+
+    @BeforeEach
+    fun seedAccountAndSubAccount() {
+      dummyParentAccountOne = integrationTestHelpers.createAccount("TEST_ACCOUNT_REF", AccountType.PRISONER)
+      dummySubAccountOne = integrationTestHelpers.createSubAccount(dummyParentAccountOne.id, "TEST_SUB_ACCOUNT_REF_1")
+    }
+
+    @Test
+    fun `Should return 200 with a statement balance for a sub-account`() {
+      val balanceDateTime = Instant.now()
+      webTestClient.post()
+        .uri("/sub-accounts/${dummySubAccountOne.id}/balance")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateStatementBalanceRequest(amount = 10, balanceDateTime = balanceDateTime))
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody<StatementBalanceResponse>()
+        .returnResult().responseBody!!
+
+      val statementBalances = webTestClient.get()
+        .uri("/sub-accounts/${dummySubAccountOne.id}/statementBalances")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<List<StatementBalanceResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(statementBalances.size).isEqualTo(1)
+    }
+
+    @Test
+    fun `Should return 200 with multiple statement balances for sub-account`() {
+      val balanceDateTime = Instant.now()
+      webTestClient.post()
+        .uri("/sub-accounts/${dummySubAccountOne.id}/balance")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateStatementBalanceRequest(amount = 10, balanceDateTime = balanceDateTime.minusSeconds(1)))
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody<StatementBalanceResponse>()
+        .returnResult().responseBody!!
+
+      webTestClient.post()
+        .uri("/sub-accounts/${dummySubAccountOne.id}/balance")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateStatementBalanceRequest(amount = 66, balanceDateTime = balanceDateTime))
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody<StatementBalanceResponse>()
+        .returnResult().responseBody!!
+
+      val statementBalances = webTestClient.get()
+        .uri("/sub-accounts/${dummySubAccountOne.id}/statementBalances")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<List<StatementBalanceResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(statementBalances.size).isEqualTo(2)
+      assertThat(statementBalances[0].amount).isEqualTo(66)
+      assertThat(statementBalances[1].amount).isEqualTo(10)
+    }
+
+    @Test
+    fun `Should return 200 empty list if sub-account exists but no statement balances`() {
+      val statementBalances = webTestClient.get()
+        .uri("/sub-accounts/${dummySubAccountOne.id}/statementBalances")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<List<StatementBalanceResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(statementBalances.size).isEqualTo(0)
+    }
+
+    @Test
+    fun `Should return 400 bad request`() {
+      webTestClient.get()
+        .uri("/sub-accounts/abc/statementBalances")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    fun `Should return 404 when sub-account does not exist`() {
+      webTestClient.get()
+        .uri("/sub-accounts/${UUID.randomUUID()}/statementBalances")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `Should return 403 when role is incorrect `() {
+      webTestClient.get()
+        .uri("/sub-accounts/${UUID.randomUUID()}/statementBalances")
+        .headers(setAuthorisation(roles = listOf("WRONG_ROLE")))
+        .exchange()
+        .expectStatus().isForbidden
     }
   }
 }

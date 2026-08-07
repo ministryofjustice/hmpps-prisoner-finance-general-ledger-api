@@ -46,4 +46,14 @@ interface StatementBalanceDataRepository : JpaRepository<StatementBalanceEntity,
 
   @EntityGraph(attributePaths = ["subAccountEntity", "subAccountEntity.parentAccountEntity"])
   fun findStatementBalanceById(id: UUID): StatementBalanceEntity?
+
+  @Query(
+    """
+    SELECT * FROM statement_balances 
+    WHERE statement_balances.sub_account_id = :subAccountId 
+    ORDER BY balance_date_time DESC 
+    """,
+    nativeQuery = true,
+  )
+  fun getStatementBalancesBySubAccountId(subAccountId: UUID): List<StatementBalanceEntity>
 }

@@ -65,4 +65,9 @@ class SubAccountService(
     val entity = StatementBalanceEntity(subAccountEntity = subAccount, amount = amount, balanceDateTime = balanceDateTime)
     return statementBalanceDataRepository.save(entity)
   }
+
+  fun getStatementBalancesBySubAccountId(subAccountID: UUID): List<StatementBalanceEntity> {
+    val retrievedStatementBalances = statementBalanceDataRepository.getStatementBalancesBySubAccountId(subAccountID)
+    return retrievedStatementBalances
+  }
 }

@@ -204,4 +204,18 @@ class SubAccountServiceTest {
       assertThat(returnedBalance).isNull()
     }
   }
+
+  @Nested
+  inner class GetStatementBalances {
+    @Test
+    fun `Should return a list of statement balances`() {
+      val dummyStatementBalanceEntity = StatementBalanceEntity(subAccountEntity = dummySubAccountEntity, amount = 10, balanceDateTime = Instant.now())
+
+      whenever(statementBalanceDataRepository.getStatementBalancesBySubAccountId(dummySubAccountUUID)).thenReturn(listOf(dummyStatementBalanceEntity))
+
+      val returnedStates = subAccountService.getStatementBalancesBySubAccountId(dummySubAccountUUID)
+
+      assertThat(returnedStates).containsExactly(dummyStatementBalanceEntity)
+    }
+  }
 }
