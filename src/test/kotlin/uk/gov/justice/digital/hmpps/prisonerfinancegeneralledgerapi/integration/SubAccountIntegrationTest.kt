@@ -571,7 +571,7 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should return 201 and the created statement balance`() {
+    fun `Should return 201 and the created statement balance`() {
       val balanceDateTime = Instant.now()
       val statementBalanceResponse = webTestClient.post()
         .uri("/sub-accounts/${dummySubAccountOne.id}/balance")
@@ -590,7 +590,7 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should return 400 when given a malformed body`() {
+    fun `Should return 400 when given a malformed body`() {
       webTestClient.post()
         .uri("/sub-accounts/${dummySubAccountOne.id}/balance")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
@@ -600,7 +600,7 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should return 400 when post body are incorrect types`() {
+    fun `Should return 400 when post body are incorrect types`() {
       webTestClient.post()
         .uri("/sub-accounts/${dummySubAccountOne.id}/balance")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
@@ -616,7 +616,7 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should return 403 when called with incorrect role`() {
+    fun `Should return 403 when called with incorrect role`() {
       webTestClient.post()
         .uri("/sub-accounts/${dummySubAccountOne.id}/balance")
         .headers(setAuthorisation(roles = listOf("WRONG_ROLE")))
@@ -627,7 +627,7 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should return 404 when sub-account does not exist`() {
+    fun `Should return 404 when sub-account does not exist`() {
       webTestClient.post()
         .uri("/sub-accounts/${UUID.randomUUID()}/balance")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
@@ -651,7 +651,7 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should return 200 and we get 1 statement balance returned for sub-account`() {
+    fun `Should return 200 with a statement balance for a sub-account`() {
       val balanceDateTime = Instant.now()
       webTestClient.post()
         .uri("/sub-accounts/${dummySubAccountOne.id}/balance")
@@ -676,7 +676,7 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should return 200 and we get 2 statement balances returned for sub-account`() {
+    fun `Should return 200 with multiple statement balances for sub-account`() {
       val balanceDateTime = Instant.now()
       webTestClient.post()
         .uri("/sub-accounts/${dummySubAccountOne.id}/balance")

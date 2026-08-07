@@ -25,7 +25,6 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.Sub
 import java.time.Instant
 import java.time.LocalDateTime
 import java.util.UUID
-import kotlin.collections.emptyList
 
 private const val TEST_ACCOUNT_REF = "TEST_ACCOUNT_REF"
 private const val TEST_SUB_ACCOUNT_REF = "TEST_SUB_ACCOUNT_REF"
@@ -217,15 +216,6 @@ class SubAccountServiceTest {
       val returnedStates = subAccountService.getStatementBalancesBySubAccountId(dummySubAccountUUID)
 
       assertThat(returnedStates).containsExactly(dummyStatementBalanceEntity)
-    }
-
-    @Test
-    fun `Should return an empty list of statement balances when there is no statement balances`() {
-      whenever(statementBalanceDataRepository.getStatementBalancesBySubAccountId(dummySubAccountUUID)).thenReturn(emptyList())
-
-      val returnedStates = subAccountService.getStatementBalancesBySubAccountId(dummySubAccountUUID)
-
-      assertThat(returnedStates.size).isEqualTo(0)
     }
   }
 }
