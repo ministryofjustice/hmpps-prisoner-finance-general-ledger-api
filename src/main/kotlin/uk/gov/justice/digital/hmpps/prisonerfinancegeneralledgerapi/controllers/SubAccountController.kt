@@ -367,13 +367,12 @@ class SubAccountController(
   @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW])
   @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
   @GetMapping("/sub-accounts/{subAccountId}/statementBalances")
-  fun getSubAccountStatementBalances(@PathVariable subAccountId: UUID) : ResponseEntity<List<StatementBalanceResponse>> {
-
+  fun getSubAccountStatementBalances(@PathVariable subAccountId: UUID): ResponseEntity<List<StatementBalanceResponse>> {
     subAccountService.getSubAccountByID(subAccountId) ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
-        .body(emptyList())
+      .body(emptyList())
 
     val statementBalancesEntityResponse = subAccountService.getStatementBalancesBySubAccountId(subAccountId)
 
-    return ResponseEntity.status(HttpStatus.OK).body( statementBalancesEntityResponse.map { StatementBalanceResponse.fromEntity(it) })
+    return ResponseEntity.status(HttpStatus.OK).body(statementBalancesEntityResponse.map { StatementBalanceResponse.fromEntity(it) })
   }
 }

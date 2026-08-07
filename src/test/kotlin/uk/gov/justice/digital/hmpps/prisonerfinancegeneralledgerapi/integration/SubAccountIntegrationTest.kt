@@ -652,9 +652,8 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
 
     @Test
     fun `should return 200 and we get 1 statement balance returned for sub-account`() {
-
       val balanceDateTime = Instant.now()
-      val statementBalanceResponse = webTestClient.post()
+      webTestClient.post()
         .uri("/sub-accounts/${dummySubAccountOne.id}/balance")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .contentType(MediaType.APPLICATION_JSON)
@@ -677,8 +676,59 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `should return 200 and we get 2 statement balances returned for sub-account`() {
+      val balanceDateTime = Instant.now()
+      webTestClient.post()
+        .uri("/sub-accounts/${dummySubAccountOne.id}/balance")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateStatementBalanceRequest(amount = 10, balanceDateTime = balanceDateTime.minusSeconds(1)))
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody<StatementBalanceResponse>()
+        .returnResult().responseBody!!
+
+      webTestClient.post()
+        .uri("/sub-accounts/${dummySubAccountOne.id}/balance")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateStatementBalanceRequest(amount = 66, balanceDateTime = balanceDateTime))
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody<StatementBalanceResponse>()
+        .returnResult().responseBody!!
+
+      val statementBalances = webTestClient.get()
+        .uri("/sub-accounts/${dummySubAccountOne.id}/statementBalances")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<List<StatementBalanceResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(statementBalances.size).isEqualTo(2)
+      assertThat(statementBalances[0].amount).isEqualTo(66)
+      assertThat(statementBalances[1].amount).isEqualTo(10)
+    }
+
+    @Test
+    fun `Should return 200 empty list if sub-account exists but no statement balances`() {
+      val statementBalances = webTestClient.get()
+        .uri("/sub-accounts/${dummySubAccountOne.id}/statementBalances")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<List<StatementBalanceResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(statementBalances.size).isEqualTo(0)
+    }
+
+    @Test
     fun `Should return 400 bad request`() {
-       webTestClient.get()
+      webTestClient.get()
         .uri("/sub-accounts/abc/statementBalances")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .exchange()

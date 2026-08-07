@@ -218,6 +218,7 @@ class SubAccountServiceTest {
 
       assertThat(returnedStates).containsExactly(dummyStatementBalanceEntity)
     }
+
     @Test
     fun `Should return an empty list of statement balances when there is no statement balances`() {
       whenever(statementBalanceDataRepository.getStatementBalancesBySubAccountId(dummySubAccountUUID)).thenReturn(emptyList())
