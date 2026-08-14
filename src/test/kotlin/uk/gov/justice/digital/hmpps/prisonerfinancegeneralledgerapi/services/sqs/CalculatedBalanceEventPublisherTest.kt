@@ -21,6 +21,10 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.slf4j.LoggerFactory
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.StatementBalanceEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.TransactionEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingBalanceDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
@@ -44,6 +48,20 @@ class CalculatedBalanceEventPublisherTest {
 
   private lateinit var listAppender: ListAppender<ILoggingEvent>
   private lateinit var eventLogger: Logger
+  private val serviceTestHelpers = ServiceTestHelpers()
+
+  lateinit var prisonerAccount: AccountEntity
+  lateinit var prisonerCashAccount: SubAccountEntity
+
+  lateinit var prisonAccount: AccountEntity
+  lateinit var prisonCantAccount: SubAccountEntity
+
+  lateinit var transaction: TransactionEntity
+
+  lateinit var prisonerSpendsAccount: SubAccountEntity
+  lateinit var sameAccountTransaction: TransactionEntity
+
+  lateinit var statementEntity: StatementBalanceEntity
 
   @BeforeEach
   fun setupLogger() {
@@ -53,50 +71,50 @@ class CalculatedBalanceEventPublisherTest {
     listAppender.start()
 
     eventLogger.addAppender(listAppender)
+
+    prisonerAccount = serviceTestHelpers.createAccount("ABC123XZ", AccountType.PRISONER)
+    prisonerCashAccount = serviceTestHelpers.createSubAccount("CASH", prisonerAccount)
+
+    prisonAccount = serviceTestHelpers.createAccount("LEI", AccountType.PRISON)
+    prisonCantAccount = serviceTestHelpers.createSubAccount("CANT:1010", prisonAccount)
+
+    val transactionTime = Instant.now()
+
+    transaction = serviceTestHelpers.createOneToOneTransaction(
+      transactionAmount = 1,
+      transactionDateTime = transactionTime,
+      debitSubAccount = prisonerCashAccount,
+      creditSubAccount = prisonCantAccount,
+      description = "Test Transaction",
+    )
+
+    prisonerSpendsAccount = serviceTestHelpers.createSubAccount("SPENDS", prisonerAccount)
+
+    sameAccountTransaction = serviceTestHelpers.createOneToOneTransaction(
+      transactionAmount = 5,
+      transactionDateTime = transactionTime,
+      debitSubAccount = prisonerCashAccount,
+      creditSubAccount = prisonerSpendsAccount,
+      description = "Same account transfer",
+    )
+
+    statementEntity = serviceTestHelpers.createStatementBalance(
+      subAccount = prisonerCashAccount,
+      amount = 1000,
+      balanceDateTime = transactionTime.minusSeconds(60),
+    )
   }
-
-  private val serviceTestHelpers = ServiceTestHelpers()
-
-  val prisonerAccount = serviceTestHelpers.createAccount("ABC123XZ", AccountType.PRISONER)
-  val prisonerCashAccount = serviceTestHelpers.createSubAccount("CASH", prisonerAccount)
-
-  val prisonAccount = serviceTestHelpers.createAccount("LEI", AccountType.PRISON)
-  val prisonCantAccount = serviceTestHelpers.createSubAccount("CANT:1010", prisonAccount)
-
-  val transaction = serviceTestHelpers.createOneToOneTransaction(
-    transactionAmount = 1,
-    transactionDateTime = Instant.now(),
-    debitSubAccount = prisonerCashAccount,
-    creditSubAccount = prisonCantAccount,
-    description = "Test Transaction",
-  )
-
-  val prisonerSpendsAccount = serviceTestHelpers.createSubAccount("SPENDS", prisonerAccount)
-
-  val sameAccountTransaction = serviceTestHelpers.createOneToOneTransaction(
-    transactionAmount = 5,
-    transactionDateTime = Instant.now(),
-    debitSubAccount = prisonerCashAccount,
-    creditSubAccount = prisonerSpendsAccount,
-    description = "Same account transfer",
-  )
-
-  val statementEntity = serviceTestHelpers.createStatementBalance(
-    subAccount = prisonerCashAccount,
-    amount = 1000,
-    balanceDateTime = Instant.now(),
-  )
 
   @Nested
   inner class RequestCalculatedBalanceForTransaction {
     @Test
-    fun `Should send a message for each posting`() {
+    fun `Should send a message for a prisoner posting and not send one for the prison posting`() {
       calculatedBalanceEventPublisher.requestCalculatedBalanceForTransaction(transaction)
 
       val messageRequestCaptor = argumentCaptor<ProcessBalanceRequest>()
       val messageGroupIdCaptor = argumentCaptor<String>()
 
-      verify(messagePublisher, times(transaction.postings.size))
+      verify(messagePublisher, times(1))
         .sendMessage(
           payloadDataClass = messageRequestCaptor.capture(),
           queueId = eq(SqsQueues.CALCULATED_BALANCE_QUEUE_ID),
@@ -106,13 +124,16 @@ class CalculatedBalanceEventPublisherTest {
       val capturedGroupIds = messageGroupIdCaptor.allValues
       val capturedRequests = messageRequestCaptor.allValues
 
-      val expectedPostingIds = transaction.postings.map { it.id }
+      val prisonerPosting = transaction.postings.find { it.subAccountEntity.parentAccountEntity.type == AccountType.PRISONER }!!
       val actualPostingIds = capturedRequests.map { it.postingId }
-      assertEquals(expectedPostingIds, actualPostingIds)
 
-      val expectedMessageGroupId = transaction.postings.map { it.subAccountEntity.parentAccountEntity.id.toString() }
+      assertThat(actualPostingIds).hasSize(1)
+      assertEquals(prisonerPosting.id, actualPostingIds.first())
+
+      val expectedMessageGroupId = prisonerPosting.subAccountEntity.parentAccountEntity.id.toString()
       val actualMessageGroupId = capturedGroupIds.map { it }
-      assertEquals(expectedMessageGroupId, actualMessageGroupId)
+      assertThat(actualMessageGroupId).hasSize(1)
+      assertEquals(expectedMessageGroupId, actualMessageGroupId.first())
     }
 
     @Test
@@ -145,7 +166,8 @@ class CalculatedBalanceEventPublisherTest {
       calculatedBalanceEventPublisher.requestCalculatedBalanceForTransaction(transaction)
 
       val logs = listAppender.list
-      assertThat(logs).hasSize(transaction.postings.size)
+      val prisonerPostings = transaction.postings.filter { it.subAccountEntity.parentAccountEntity.type == AccountType.PRISONER }
+      assertThat(logs).hasSize(prisonerPostings.size)
 
       val errorLog = logs.find { it.level == Level.ERROR }
         ?: throw AssertionError("Expected an ERROR level log but none was found")

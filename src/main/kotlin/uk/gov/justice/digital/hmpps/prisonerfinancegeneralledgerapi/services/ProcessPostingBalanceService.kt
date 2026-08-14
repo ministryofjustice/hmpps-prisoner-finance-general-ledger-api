@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.TELEMETRY_PREFIX
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import java.time.Instant
 import java.util.UUID
@@ -21,6 +22,8 @@ class ProcessPostingBalanceService(
   @Transactional(rollbackFor = [Exception::class, Error::class])
   fun processBalance(accountId: UUID) {
     var posting: PostingEntity? = postingsDataRepository.getFirstMissingPostingBalanceByAccountId(accountId)
+
+    if (posting?.subAccountEntity?.parentAccountEntity?.type == AccountType.PRISON) return
 
     log.debug("Processing posting: ${posting?.id}")
 

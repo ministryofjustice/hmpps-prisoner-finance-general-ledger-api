@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.CustomException
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.StatementBalanceEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.StatementBalanceDataRepository
@@ -62,6 +63,8 @@ class SubAccountService(
   fun createStatementBalance(subAccountID: UUID, amount: Long, balanceDateTime: Instant): StatementBalanceEntity? {
     val subAccount = subAccountDataRepository.getSubAccountEntityById(subAccountID)
     if (subAccount == null) return null
+    if (subAccount.parentAccountEntity.type == AccountType.PRISON) throw CustomException(status = HttpStatus.BAD_REQUEST, message = "Cannot create statement balance for prison account")
+
     val entity = StatementBalanceEntity(subAccountEntity = subAccount, amount = amount, balanceDateTime = balanceDateTime)
     return statementBalanceDataRepository.save(entity)
   }

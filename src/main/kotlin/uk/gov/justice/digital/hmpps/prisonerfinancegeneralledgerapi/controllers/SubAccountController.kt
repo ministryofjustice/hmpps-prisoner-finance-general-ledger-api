@@ -298,9 +298,10 @@ class SubAccountController(
       ),
       ApiResponse(
         responseCode = "400",
-        description = "Bad Request",
+        description = "Bad Request - Malformed Body / Only available for Prisoner Accounts",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
+
       ApiResponse(
         responseCode = "401",
         description = "Unauthorized - requires a valid OAuth2 token",
