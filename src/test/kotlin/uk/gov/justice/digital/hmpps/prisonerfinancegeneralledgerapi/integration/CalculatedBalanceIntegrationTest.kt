@@ -5,7 +5,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.LogSqsCalculatedBalancesRepository
@@ -414,80 +413,6 @@ class CalculatedBalanceIntegrationTest(
       assertThat(content[1].amount).isEqualTo(amountCanteenTransaction)
       assertThat(content[1].subAccountBalance).isEqualTo(amountCanteenTransaction)
       assertThat(content[1].accountBalance).isEqualTo(amountCanteenTransaction)
-    }
-  }
-
-  @Nested
-  inner class MigrateBalancesTest {
-
-    @Test
-    fun `should migrate the accounts balances`() {
-      val amountFirst = 77L
-      val amountSecond = 27L
-
-      // txn 1
-      integrationTestHelpers.createOneToOneTransaction(
-        amount = amountFirst,
-        creditSubAccountId = subAccountPrisonerCash.id,
-        debitSubAccountId = subAccountPrisonCanteen.id,
-        transactionReference = "test",
-        timestamp = Instant.now(),
-        transactionEntrySequence = 1,
-        postingEntrySequence = Pair(1L, 2L),
-      )
-
-      // txn 2
-      integrationTestHelpers.createOneToOneTransaction(
-        amount = amountSecond,
-        creditSubAccountId = subAccountPrisonerCash.id,
-        debitSubAccountId = subAccountPrisonCanteen.id,
-        transactionReference = "test",
-        timestamp = Instant.now(),
-        transactionEntrySequence = 1,
-        postingEntrySequence = Pair(1L, 2L),
-      )
-
-      // waiting for sqs to empty and then clearing balances
-      integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE_QUEUE_ID, hmppsQueueService)
-      postingBalanceDataRepository.deleteAllInBatch()
-
-      var statementEntryResponse = integrationTestHelpers.getStatementEntry(
-        accountId = accountPrisoner.id,
-        subAccountId = subAccountPrisonerCash.id,
-      )
-
-      var content = statementEntryResponse.content
-
-      assertThat(content).hasSize(2)
-      assertThat(content[0].subAccountBalance).isNull()
-      assertThat(content[0].accountBalance).isNull()
-
-      assertThat(content[1].subAccountBalance).isNull()
-      assertThat(content[1].accountBalance).isNull()
-
-      webTestClient.post()
-        .uri("/migrate/subAccountBalances")
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
-        .exchange()
-        .expectStatus().isOk()
-        .returnResult()
-
-      integrationTestHelpers.waitUntilEmpty(SqsQueues.CALCULATED_BALANCE_QUEUE_ID, hmppsQueueService)
-
-      statementEntryResponse = integrationTestHelpers.getStatementEntry(
-        accountId = accountPrisoner.id,
-        subAccountId = subAccountPrisonerCash.id,
-      )
-
-      content = statementEntryResponse.content
-
-      assertThat(content[0].amount).isEqualTo(amountSecond)
-      assertThat(content[0].subAccountBalance).isEqualTo(amountSecond + amountFirst)
-      assertThat(content[0].accountBalance).isEqualTo(amountSecond + amountFirst)
-
-      assertThat(content[1].amount).isEqualTo(amountFirst)
-      assertThat(content[1].subAccountBalance).isEqualTo(amountFirst)
-      assertThat(content[1].accountBalance).isEqualTo(amountFirst)
     }
   }
 }

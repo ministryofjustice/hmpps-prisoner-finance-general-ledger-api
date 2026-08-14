@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.StatementBalanceEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.TransactionEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingBalanceDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.ProcessBalanceRequest
@@ -19,7 +20,9 @@ class CalculatedBalanceEventPublisher(
 
   @Transactional(rollbackFor = [Exception::class, Error::class])
   fun requestCalculatedBalanceForTransaction(transactionEntity: TransactionEntity) {
-    transactionEntity.postings.forEach { posting ->
+    val prisonerPostings = transactionEntity.postings.filter { it.subAccountEntity.parentAccountEntity.type == AccountType.PRISONER }
+
+    prisonerPostings.forEach { posting ->
       val accountId = posting.subAccountEntity.parentAccountEntity.id
       try {
         val payload = ProcessBalanceRequest.fromPostingEntity(posting, source = "requestCalculatedBalanceForTransaction", chainPosition = 0)

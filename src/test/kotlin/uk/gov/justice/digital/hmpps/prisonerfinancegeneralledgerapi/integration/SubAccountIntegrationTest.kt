@@ -590,6 +590,21 @@ class SubAccountIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `Should return 400 Bad Request if the sub account is a Prison account`() {
+      val prisonAccount = integrationTestHelpers.createAccount("TEST_PRISON", AccountType.PRISON)
+      val prisonSubAccount = integrationTestHelpers.createSubAccount(prisonAccount.id, "TEST_SUB_ACCOUNT_REF_1")
+
+      val balanceDateTime = Instant.now()
+      webTestClient.post()
+        .uri("/sub-accounts/${prisonSubAccount.id}/balance")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateStatementBalanceRequest(amount = 10, balanceDateTime = balanceDateTime))
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
     fun `Should return 400 when given a malformed body`() {
       webTestClient.post()
         .uri("/sub-accounts/${dummySubAccountOne.id}/balance")

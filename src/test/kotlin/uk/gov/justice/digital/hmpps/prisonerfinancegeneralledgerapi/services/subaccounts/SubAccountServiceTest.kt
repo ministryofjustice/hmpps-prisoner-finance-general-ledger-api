@@ -17,6 +17,7 @@ import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.StatementBalanceEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.StatementBalanceDataRepository
@@ -56,7 +57,7 @@ class SubAccountServiceTest {
   @BeforeEach
   fun setupDummySubAccount() {
     val dummyDate = LocalDateTime.of(2025, 12, 25, 0, 0, 0).toInstant(java.time.ZoneOffset.UTC)
-    dummyParentAccountEntity = AccountEntity(reference = TEST_ACCOUNT_REF, id = dummyParentAccountUUID)
+    dummyParentAccountEntity = AccountEntity(reference = TEST_ACCOUNT_REF, id = dummyParentAccountUUID, type = AccountType.PRISONER)
     dummySubAccountEntity = SubAccountEntity(
       reference = TEST_SUB_ACCOUNT_REF,
       createdBy = TEST_USERNAME,
