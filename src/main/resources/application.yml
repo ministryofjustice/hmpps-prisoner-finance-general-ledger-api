@@ -20,6 +20,8 @@ spring:
     enabled: true
     locations: classpath:/db/migrations/common
 
+#  This jackson configuration is only applied for java.util.Date.
+#  It is ignored for LocalDateTime, and therefore unnecessary for most projects
   jackson:
     date-format: "yyyy-MM-dd HH:mm:ss"
 
@@ -84,7 +86,6 @@ springdoc:
   api-docs:
     enabled: false
   swagger-ui:
-    version: 5.32.11
     enabled: false
 
 hmpps.sqs:
