@@ -155,7 +155,7 @@ will run the application and HMPPS Auth within a local docker instance.
 ### Running the application in Intellij
 
 ```bash
-docker compose pull && docker compose up --scale hmpps-template-kotlin=0
+docker compose pull && docker compose up --scale hmpps-prisoner-finance-general-ledger-api=0
 ```
 
 will just start a docker instance of HMPPS Auth. The application should then be started with a `dev` active profile

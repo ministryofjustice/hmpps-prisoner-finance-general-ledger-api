@@ -13,7 +13,7 @@
       "matchManagers": ["github-actions"],
       "matchFileNames": ["**/.github/workflows/**/*.ya?ml"],
       "matchUpdateTypes": ["minor", "patch"],
-      "enabled": false
+      "enabled": true
     }
   ],
   "platformCommit": "enabled"
