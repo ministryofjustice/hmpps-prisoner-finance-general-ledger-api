@@ -20,7 +20,6 @@ springdoc:
   api-docs:
     enabled: true
   swagger-ui:
-    version: 5.32.11
     enabled: true
 
 hmpps.sqs:
