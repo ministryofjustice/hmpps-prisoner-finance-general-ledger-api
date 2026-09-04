@@ -23,8 +23,6 @@ export default function verify_health() {
     check(res, {
         'status is 200': r => r.status === 200,
         'body is defined': r => r.body !== undefined,
-        'pipeline should fail': _r => false
-    //     this is just to check the pipeline fails properly - will remove after
     })
 
     const body = res.json()
