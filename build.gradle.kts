@@ -3,7 +3,7 @@ plugins {
   kotlin("plugin.spring") version "2.4.20"
   id("org.jetbrains.kotlin.plugin.noarg") version "2.4.20"
   id("jacoco")
-  kotlin("plugin.jpa") version "2.4.10"
+  kotlin("plugin.jpa") version "2.4.20"
 }
 
 configure<JacocoPluginExtension> {
