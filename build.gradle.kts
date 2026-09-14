@@ -1,6 +1,6 @@
 plugins {
   id("uk.gov.justice.hmpps.gradle-spring-boot") version "11.0.8"
-  kotlin("plugin.spring") version "2.4.10"
+  kotlin("plugin.spring") version "2.4.20"
   id("org.jetbrains.kotlin.plugin.noarg") version "2.4.10"
   id("jacoco")
   kotlin("plugin.jpa") version "2.4.10"
@@ -11,6 +11,13 @@ configure<JacocoPluginExtension> {
 }
 configurations {
   testImplementation { exclude(group = "org.junit.vintage") }
+  named("ktlint") {
+    resolutionStrategy.eachDependency {
+      if (requested.group == "org.jetbrains.kotlin") {
+        useVersion("2.2.0")
+      }
+    }
+  }
 }
 
 dependencies {
