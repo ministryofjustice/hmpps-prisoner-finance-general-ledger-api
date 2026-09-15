@@ -10,5 +10,5 @@ class ContainersConfig {
 
   @Bean
   @ServiceConnection
-  fun postgres(): PostgreSQLContainer<*> = PostgreSQLContainer("postgres:18.6")
+  fun postgres(): PostgreSQLContainer<*> = PostgreSQLContainer("postgres:16.15")
 }

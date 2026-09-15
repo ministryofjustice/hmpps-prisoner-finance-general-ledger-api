@@ -40,7 +40,7 @@ services:
 
   hmpps-prisoner-finance-general-ledger-db:
     container_name: hmpps-prisoner-finance-general-ledger-db
-    image: postgres:16
+    image: postgres:16.15
     restart: always
     networks:
       - hmpps
