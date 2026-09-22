@@ -727,6 +727,74 @@ class PostingDataRepositoryTest @Autowired constructor(
       assertThat(postingsSubTwo).hasSize(2)
       assertThat(postingsSubTwo.all { posting -> posting.subAccountEntity.id == accountOneSubAccountTwo.id }).isTrue()
     }
+
+    // add test to check if description is null
+
+    // add test to check if description lowercase
+
+    // add test to check description with special characters
+
+    // add test to check description with spaces? eg trim? question for design
+
+    @Test
+    fun `should return all postings filtered by description for prisoner`() {
+      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
+      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
+      accountOneSubAccountTwo = repoTestHelpers.createSubAccount(ref = "SPENDS", account = accountOne)
+
+      repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionTimeStamp = Instant.now(),
+        postingCreatedAt = Instant.now(),
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+        description = "A subscription spend",
+      )
+
+      repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionTimeStamp = Instant.now(),
+        postingCreatedAt = Instant.now(),
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+        description = "A canteen spend",
+      )
+
+      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, description = "Cant", page = pageReq).content
+
+      assertThat(postings).hasSize(2)
+    }
+
+    @Test
+    fun `should return all postings filtered by description for prison`() {
+      val prisonAccount = repoTestHelpers.createAccount(ref = "LEI")
+      val prisonCanteenSubAccount = repoTestHelpers.createSubAccount(ref = "1001:CANT", account = prisonAccount)
+
+      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
+      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
+
+      repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionTimeStamp = Instant.now(),
+        postingCreatedAt = Instant.now(),
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = prisonCanteenSubAccount,
+        description = "A Canteen spend - MARS Bar",
+      )
+
+      repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionTimeStamp = Instant.now(),
+        postingCreatedAt = Instant.now(),
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = prisonCanteenSubAccount,
+        description = "A Canteen spend - Can of Coke",
+      )
+
+      val postings = postingsDataRepository.getPostingsByAccountId(accountId = prisonAccount.id, description = "MARS", page = pageReq).content
+
+      assertThat(postings).hasSize(1)
+    }
   }
 
   @Nested

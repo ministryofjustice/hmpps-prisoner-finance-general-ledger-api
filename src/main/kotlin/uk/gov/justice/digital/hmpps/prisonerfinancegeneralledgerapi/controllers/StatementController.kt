@@ -98,6 +98,7 @@ class StatementController(
     @RequestParam subAccountId: UUID? = null,
     @RequestParam credit: Boolean = false,
     @RequestParam debit: Boolean = false,
+    @RequestParam description: String?,
   ): ResponseEntity<PagedResponse<StatementEntryResponse>> {
     val pagedStatementEntryResponses = statementService.listStatementEntries(
       accountId = accountId,
@@ -108,6 +109,7 @@ class StatementController(
       pageSize = pageSize,
       credit = credit,
       debit = debit,
+      description = description
     )
 
     if (pagedStatementEntryResponses == null) {

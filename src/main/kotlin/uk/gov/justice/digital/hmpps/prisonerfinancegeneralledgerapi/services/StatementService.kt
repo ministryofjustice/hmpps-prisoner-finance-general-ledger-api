@@ -29,6 +29,7 @@ class StatementService(
     pageSize: Int = 25,
     credit: Boolean = false,
     debit: Boolean = false,
+    description: String? = null,
   ): PagedResponse<StatementEntryResponse>? {
     accountService.readAccount(accountId) ?: return null
 

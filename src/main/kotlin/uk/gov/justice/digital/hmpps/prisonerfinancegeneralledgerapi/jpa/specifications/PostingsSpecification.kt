@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.specifi
 
 import jakarta.persistence.criteria.CriteriaQuery
 import jakarta.persistence.criteria.JoinType
+import org.springframework.context.annotation.Description
 import org.springframework.data.jpa.domain.Specification
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
@@ -70,4 +71,18 @@ object PostingsSpecification {
       else -> null
     }
   }
+
+  fun byDescription(description: String?): Specification<PostingEntity> =
+    Specification { root, _, cb ->
+      description?.takeIf { it.isNotBlank() }?.let {
+        val transaction = root.join<PostingEntity, TransactionEntity>("transactionEntity")
+
+        cb.like(
+          cb.lower(transaction.get<String>("description")),
+          "%${it.lowercase()}%"
+        )
+      }
+    }
+
+
 }
