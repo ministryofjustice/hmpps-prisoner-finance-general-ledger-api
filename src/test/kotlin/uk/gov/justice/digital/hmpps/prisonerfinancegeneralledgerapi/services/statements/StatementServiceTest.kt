@@ -360,6 +360,7 @@ class StatementServiceTest {
         endDate = endDate,
         credit = true,
         debit = false,
+        description = null,
       )
 
       val pageCapture = argumentCaptor<Pageable>()
@@ -371,6 +372,7 @@ class StatementServiceTest {
         endDate = eq(endDate.toUtcEndOfDay()),
         credit = eq(true),
         debit = eq(false),
+        description = eq(null),
       )
       assertThat(pageCapture.firstValue.pageNumber).isEqualTo(0)
       assertThat(pageCapture.firstValue.pageSize).isEqualTo(pageSize)

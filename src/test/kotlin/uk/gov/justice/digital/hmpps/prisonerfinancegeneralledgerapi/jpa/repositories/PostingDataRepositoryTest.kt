@@ -816,7 +816,7 @@ class PostingDataRepositoryTest @Autowired constructor(
     }
 
     @Test
-    fun `should return all postings filtered by description for prisoner when description appending spaces`() {
+    fun `should return all postings filtered by description for prisoner when description has surrounding whitespace`() {
       accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
       accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
       accountOneSubAccountTwo = repoTestHelpers.createSubAccount(ref = "SPENDS", account = accountOne)
