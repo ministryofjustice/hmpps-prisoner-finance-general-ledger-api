@@ -293,6 +293,7 @@ class StatementServiceTest {
           anyOrNull<Instant>(),
           anyOrNull<Boolean>(),
           anyOrNull<Boolean>(),
+          anyOrNull<String>(),
         )
       }.thenReturn(PageImpl(emptyList()))
 
@@ -322,6 +323,7 @@ class StatementServiceTest {
         endDate = eq(endDate.toUtcEndOfDay()),
         credit = eq(true),
         debit = eq(false),
+        description = eq(null),
       )
       assertThat(pageCapture.firstValue.pageNumber).isEqualTo(0)
       assertThat(pageCapture.firstValue.pageSize).isEqualTo(pageSize)
@@ -392,6 +394,7 @@ class StatementServiceTest {
           anyOrNull<Instant>(),
           anyOrNull<Boolean>(),
           anyOrNull<Boolean>(),
+          description = anyOrNull<String>(),
         )
       }.thenReturn(PageImpl(emptyList()))
 
@@ -408,6 +411,7 @@ class StatementServiceTest {
         endDate = eq(null),
         credit = eq(false),
         debit = eq(false),
+        description = eq(null),
       )
       assertThat(pageCapture.firstValue.pageNumber).isEqualTo(0)
       assertThat(pageCapture.firstValue.pageSize).isEqualTo(25)
