@@ -53,6 +53,7 @@ class StatementService(
       endDate = endDate?.toUtcEndOfDay(),
       credit = credit,
       debit = debit,
+      description = description,
     )
 
     return page.toPageResponse { content -> content.map { StatementEntryResponse.fromEntity(it) } }

@@ -47,7 +47,7 @@ class RepoTestHelpers(
     return subAccountEntity
   }
 
-  fun createOneToOneTransaction(transactionAmount: Long, postingCreatedAt: Instant, debitSubAccount: SubAccountEntity, creditSubAccount: SubAccountEntity, debitEntrySequence: Long = 1, creditEntrySequence: Long = 2, transactionEntrySequence: Long = 1, transactionTimeStamp: Instant, legacyTransactionId: Long? = null, description : String = "TEST_DESCRIPTION_PAST"): TransactionEntity {
+  fun createOneToOneTransaction(transactionAmount: Long, postingCreatedAt: Instant, debitSubAccount: SubAccountEntity, creditSubAccount: SubAccountEntity, debitEntrySequence: Long = 1, creditEntrySequence: Long = 2, transactionEntrySequence: Long = 1, transactionTimeStamp: Instant, legacyTransactionId: Long? = null, description: String = "TEST_DESCRIPTION_PAST"): TransactionEntity {
     val txInThePast = TransactionEntity(
       reference = UUID.randomUUID().toString(),
       description = description,

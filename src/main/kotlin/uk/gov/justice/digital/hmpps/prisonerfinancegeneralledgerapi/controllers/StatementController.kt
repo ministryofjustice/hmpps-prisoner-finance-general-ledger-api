@@ -43,6 +43,7 @@ class StatementController(
       Parameter(name = "subAccountId", description = "Filter statements by sub-account id (UUID format)"),
       Parameter(name = "credit", description = "Filter statements using the PostingType CR"),
       Parameter(name = "debit", description = "Filter statements using the PostingType DR"),
+      Parameter(name = "description", description = "Filter statements using the transaction description"),
     ],
   )
   @ApiResponses(
@@ -109,7 +110,7 @@ class StatementController(
       pageSize = pageSize,
       credit = credit,
       debit = debit,
-      description = description
+      description = description,
     )
 
     if (pagedStatementEntryResponses == null) {

@@ -968,7 +968,7 @@ class StatementIntegrationTest : IntegrationTestBase() {
       )
 
       val statementEntryResponse = webTestClient.get()
-        .uri("/accounts/${prisonAccount.id}/statement?description=${descriptionSearchTerms}")
+        .uri("/accounts/${prisonAccount.id}/statement?description=$descriptionSearchTerms")
         .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
         .exchange()
         .expectStatus().isOk()
@@ -982,7 +982,6 @@ class StatementIntegrationTest : IntegrationTestBase() {
 
       assertThat(content.all { posting -> posting.description == "Transaction Cant" }).isTrue()
     }
-
 
     @Test
     fun `should return 400 if subAccountId is not valid`() {

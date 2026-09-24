@@ -728,13 +728,121 @@ class PostingDataRepositoryTest @Autowired constructor(
       assertThat(postingsSubTwo.all { posting -> posting.subAccountEntity.id == accountOneSubAccountTwo.id }).isTrue()
     }
 
-    // add test to check if description is null
+    @Test
+    fun `should return all postings filtered by description for prisoner when description is null`() {
+      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
+      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
+      accountOneSubAccountTwo = repoTestHelpers.createSubAccount(ref = "SPENDS", account = accountOne)
 
-    // add test to check if description lowercase
+      repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionTimeStamp = Instant.now(),
+        postingCreatedAt = Instant.now(),
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+        description = "A subscription spend",
+      )
 
-    // add test to check description with special characters
+      repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionTimeStamp = Instant.now(),
+        postingCreatedAt = Instant.now(),
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+        description = "A canteen spend",
+      )
 
-    // add test to check description with spaces? eg trim? question for design
+      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, description = null, page = pageReq).content
+
+      assertThat(postings).hasSize(4)
+    }
+
+    @Test
+    fun `should return all postings filtered by description for prisoner when description is lowercase`() {
+      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
+      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
+      accountOneSubAccountTwo = repoTestHelpers.createSubAccount(ref = "SPENDS", account = accountOne)
+
+      repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionTimeStamp = Instant.now(),
+        postingCreatedAt = Instant.now(),
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+        description = "A subscription spend",
+      )
+
+      repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionTimeStamp = Instant.now(),
+        postingCreatedAt = Instant.now(),
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+        description = "A canteen MARS BAR",
+      )
+
+      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, description = "mars bar", page = pageReq).content
+
+      assertThat(postings).hasSize(2)
+    }
+
+    @Test
+    fun `should return all postings filtered by description for prisoner when description contains special characters`() {
+      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
+      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
+      accountOneSubAccountTwo = repoTestHelpers.createSubAccount(ref = "SPENDS", account = accountOne)
+
+      repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionTimeStamp = Instant.now(),
+        postingCreatedAt = Instant.now(),
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+        description = "A subscription spend",
+      )
+
+      repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionTimeStamp = Instant.now(),
+        postingCreatedAt = Instant.now(),
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+        description = "A canteen @MARS BAR",
+      )
+
+      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, description = "@MARS BAR", page = pageReq).content
+
+      assertThat(postings).hasSize(2)
+    }
+
+    @Test
+    fun `should return all postings filtered by description for prisoner when description appending spaces`() {
+      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
+      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
+      accountOneSubAccountTwo = repoTestHelpers.createSubAccount(ref = "SPENDS", account = accountOne)
+
+      repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionTimeStamp = Instant.now(),
+        postingCreatedAt = Instant.now(),
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+        description = "A subscription spend",
+      )
+
+      repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 1,
+        transactionTimeStamp = Instant.now(),
+        postingCreatedAt = Instant.now(),
+        debitSubAccount = accountOneSubAccountOne,
+        creditSubAccount = accountOneSubAccountTwo,
+        description = "A canteen MARS BAR",
+      )
+
+      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, description = " MARS BAR ", page = pageReq).content
+
+      assertThat(postings).hasSize(2)
+    }
 
     @Test
     fun `should return all postings filtered by description for prisoner`() {
