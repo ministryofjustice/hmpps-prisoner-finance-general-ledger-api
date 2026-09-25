@@ -10,6 +10,7 @@ import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.description
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
@@ -292,6 +293,7 @@ class StatementServiceTest {
           anyOrNull<Instant>(),
           anyOrNull<Boolean>(),
           anyOrNull<Boolean>(),
+          anyOrNull<String>(),
         )
       }.thenReturn(PageImpl(emptyList()))
 
@@ -321,6 +323,58 @@ class StatementServiceTest {
         endDate = eq(endDate.toUtcEndOfDay()),
         credit = eq(true),
         debit = eq(false),
+        description = eq(null),
+      )
+      assertThat(pageCapture.firstValue.pageNumber).isEqualTo(0)
+      assertThat(pageCapture.firstValue.pageSize).isEqualTo(pageSize)
+    }
+
+    @Test
+    fun `should call the repository when the description is provided and return correct results`() {
+      val prisonerId = UUID.randomUUID()
+
+      whenever { accountService.readAccount(accountUUID = prisonerId) }.thenReturn(AccountEntity(id = prisonerId))
+      whenever {
+        postingsDataRepository.getPostingsByAccountId(
+          any<UUID>(),
+          any<Pageable>(),
+          anyOrNull<UUID>(),
+          anyOrNull<Instant>(),
+          anyOrNull<Instant>(),
+          anyOrNull<Boolean>(),
+          anyOrNull<Boolean>(),
+          description = anyOrNull<String>(),
+        )
+      }.thenReturn(PageImpl(emptyList()))
+
+      val subAccountId = UUID.randomUUID()
+      val startDate = LocalDate.now()
+      val endDate = LocalDate.now()
+      val pageNumber = 1
+      val pageSize = 25
+
+      statementService.listStatementEntries(
+        accountId = prisonerId,
+        subAccountId = subAccountId,
+        pageNumber = pageNumber,
+        pageSize = pageSize,
+        startDate = startDate,
+        endDate = endDate,
+        credit = true,
+        debit = false,
+        description = null,
+      )
+
+      val pageCapture = argumentCaptor<Pageable>()
+      verify(postingsDataRepository, times(1)).getPostingsByAccountId(
+        accountId = eq(prisonerId),
+        page = pageCapture.capture(),
+        subAccountId = eq(subAccountId),
+        startDate = eq(startDate.toUtcStartOfDay()),
+        endDate = eq(endDate.toUtcEndOfDay()),
+        credit = eq(true),
+        debit = eq(false),
+        description = eq(null),
       )
       assertThat(pageCapture.firstValue.pageNumber).isEqualTo(0)
       assertThat(pageCapture.firstValue.pageSize).isEqualTo(pageSize)
@@ -340,6 +394,7 @@ class StatementServiceTest {
           anyOrNull<Instant>(),
           anyOrNull<Boolean>(),
           anyOrNull<Boolean>(),
+          description = anyOrNull<String>(),
         )
       }.thenReturn(PageImpl(emptyList()))
 
@@ -356,6 +411,7 @@ class StatementServiceTest {
         endDate = eq(null),
         credit = eq(false),
         debit = eq(false),
+        description = eq(null),
       )
       assertThat(pageCapture.firstValue.pageNumber).isEqualTo(0)
       assertThat(pageCapture.firstValue.pageSize).isEqualTo(25)

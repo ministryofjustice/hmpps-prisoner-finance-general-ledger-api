@@ -936,6 +936,54 @@ class StatementIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `return a list of statements filtered by description search for prisoner`() {
+      val prisonerOneAccount = integrationTestHelpers.createAccount("A1234BC", AccountType.PRISONER)
+      val cashSubAccountOne = integrationTestHelpers.createSubAccount(prisonerOneAccount.id, "CASH")
+
+      val prisonerTwoAccount = integrationTestHelpers.createAccount("Z9234BC", AccountType.PRISONER)
+      val cashSubAccountTwo = integrationTestHelpers.createSubAccount(prisonerTwoAccount.id, "CASH")
+
+      val prisonAccount = integrationTestHelpers.createAccount("LEI", AccountType.PRISON)
+      val canteenSubAccount = integrationTestHelpers.createSubAccount(prisonAccount.id, "1001:CANT")
+      val advanceSubAccount = integrationTestHelpers.createSubAccount(prisonAccount.id, "1502:ADV")
+
+      val descriptionSearchTerms = "Cant"
+
+      integrationTestHelpers.createOneToManyTransaction(
+        amountPerAccount = 1L,
+        oneToManySubAccountId = canteenSubAccount.id,
+        manyToOneSubAccountIds = listOf(cashSubAccountOne.id, cashSubAccountTwo.id),
+        transactionReference = "TX",
+        description = "Transaction Cant",
+        oneToManyPostingType = PostingType.DR,
+      )
+
+      integrationTestHelpers.createOneToManyTransaction(
+        amountPerAccount = 1L,
+        oneToManySubAccountId = advanceSubAccount.id,
+        manyToOneSubAccountIds = listOf(cashSubAccountOne.id, cashSubAccountTwo.id),
+        transactionReference = "TX",
+        description = "Transaction Adv",
+        oneToManyPostingType = PostingType.DR,
+      )
+
+      val statementEntryResponse = webTestClient.get()
+        .uri("/accounts/${prisonAccount.id}/statement?description=$descriptionSearchTerms")
+        .headers(setAuthorisation(roles = listOf(ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW)))
+        .exchange()
+        .expectStatus().isOk()
+        .expectBody<PagedResponse<StatementEntryResponse>>()
+        .returnResult()
+        .responseBody!!
+
+      val content = statementEntryResponse.content
+
+      assertThat(content).hasSize(1)
+
+      assertThat(content.all { posting -> posting.description == "Transaction Cant" }).isTrue()
+    }
+
+    @Test
     fun `should return 400 if subAccountId is not valid`() {
       webTestClient.get()
         .uri("/accounts/${UUID.randomUUID()}/statement?subAccountId=0")

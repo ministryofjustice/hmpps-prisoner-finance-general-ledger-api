@@ -27,6 +27,7 @@ interface PostingsDataRepository :
     endDate: Instant? = null,
     credit: Boolean = false,
     debit: Boolean = false,
+    description: String? = null,
   ): Page<PostingEntity> {
     val spec = Specification
       .where(PostingsSpecification.fetchFullGraph())
@@ -34,6 +35,7 @@ interface PostingsDataRepository :
       .and(PostingsSpecification.bySubAccountId(subAccountId))
       .and(PostingsSpecification.createdBetween(startDate, endDate))
       .and(PostingsSpecification.byPostingType(credit, debit))
+      .and(PostingsSpecification.byDescription(description))
 
     return this.findAll(spec, page)
   }

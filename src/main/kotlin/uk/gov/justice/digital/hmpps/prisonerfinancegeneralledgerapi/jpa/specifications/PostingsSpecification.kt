@@ -70,4 +70,14 @@ object PostingsSpecification {
       else -> null
     }
   }
+
+  fun byDescription(description: String?): Specification<PostingEntity> = Specification { root, _, cb ->
+    description?.trim()?.takeIf { it.isNotBlank() }?.let { trimmedDescription ->
+      val transaction = root.join<PostingEntity, TransactionEntity>("transactionEntity")
+      cb.like(
+        cb.lower(transaction.get<String>("description")),
+        "%${trimmedDescription.lowercase()}%",
+      )
+    }
+  }
 }

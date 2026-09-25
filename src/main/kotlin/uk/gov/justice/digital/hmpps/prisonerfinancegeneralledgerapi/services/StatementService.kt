@@ -29,6 +29,7 @@ class StatementService(
     pageSize: Int = 25,
     credit: Boolean = false,
     debit: Boolean = false,
+    description: String? = null,
   ): PagedResponse<StatementEntryResponse>? {
     accountService.readAccount(accountId) ?: return null
 
@@ -52,6 +53,7 @@ class StatementService(
       endDate = endDate?.toUtcEndOfDay(),
       credit = credit,
       debit = debit,
+      description = description,
     )
 
     return page.toPageResponse { content -> content.map { StatementEntryResponse.fromEntity(it) } }
