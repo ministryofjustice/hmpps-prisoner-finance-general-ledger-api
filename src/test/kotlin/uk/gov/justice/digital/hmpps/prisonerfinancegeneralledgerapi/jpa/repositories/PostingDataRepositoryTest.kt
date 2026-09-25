@@ -807,10 +807,10 @@ class PostingDataRepositoryTest @Autowired constructor(
         postingCreatedAt = Instant.now(),
         debitSubAccount = accountOneSubAccountOne,
         creditSubAccount = accountOneSubAccountTwo,
-        description = "A canteen @MARS BAR",
+        description = "A canteen @MARS, BAR!()-=|[]`<>&^%£$,'",
       )
 
-      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, description = "@MARS BAR", page = pageReq).content
+      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, description = "@MARS, BAR!()-=|[]`<>&^%£$,'", page = pageReq).content
 
       assertThat(postings).hasSize(2)
     }
