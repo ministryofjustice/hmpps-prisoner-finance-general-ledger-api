@@ -10,12 +10,10 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.microsoft.applicationinsights.TelemetryClient
 import io.awspring.cloud.sqs.listener.acknowledgement.AcknowledgementCallback
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.Spy
 import org.mockito.junit.jupiter.MockitoExtension
@@ -28,6 +26,7 @@ import org.springframework.messaging.support.MessageBuilder
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.ProcessPostingBalanceService
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Executor
 
 @ExtendWith(MockitoExtension::class)
 class CalculatedBalanceEventListenerTest {
@@ -42,7 +41,8 @@ class CalculatedBalanceEventListenerTest {
   @Mock
   lateinit var telemetryClient: TelemetryClient
 
-  @InjectMocks
+  private var dedicatedTaskExecutor: Executor = Executor { command -> command.run() }
+
   lateinit var calculatedBalanceEventListener: CalculatedBalanceEventListener
 
   private lateinit var listAppender: ListAppender<ILoggingEvent>
@@ -52,6 +52,16 @@ class CalculatedBalanceEventListenerTest {
     override fun onAcknowledge(message: Message<String>): CompletableFuture<Void> = CompletableFuture.completedFuture(null)
 
     override fun onAcknowledge(messages: Collection<Message<String>>): CompletableFuture<Void> = CompletableFuture.completedFuture(null)
+  }
+
+  @BeforeEach
+  fun setup() {
+    calculatedBalanceEventListener = CalculatedBalanceEventListener(
+      objectMapper,
+      processPostingBalanceService,
+      telemetryClient,
+      dedicatedTaskExecutor,
+    )
   }
 
   @BeforeEach
@@ -117,18 +127,14 @@ class CalculatedBalanceEventListenerTest {
       .setHeader("AcknowledgementCallback", fakeAckCallback)
       .build()
 
-    assertThatThrownBy {
-      calculatedBalanceEventListener.handleEvents(
-        listOf(message),
-      )
-    }.isInstanceOf(RuntimeException::class.java)
+    calculatedBalanceEventListener.handleEvents(listOf(message))
 
     verify(processPostingBalanceService).processBalance(accountId)
 
     val logList = listAppender.list.filter { it.level == Level.ERROR }
     assertThat(logList).hasSize(1)
 
-    val logEvent = logList[0]
+    val logEvent = logList.first()
     assertThat(logEvent.level).isEqualTo(Level.ERROR)
     assertThat(logEvent.formattedMessage).contains("Failed to process balance calculation")
     assertThat(logEvent.formattedMessage).contains(exceptionMessage)

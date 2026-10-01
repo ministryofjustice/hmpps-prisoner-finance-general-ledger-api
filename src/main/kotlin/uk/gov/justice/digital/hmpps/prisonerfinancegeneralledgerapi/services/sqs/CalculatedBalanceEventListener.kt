@@ -6,6 +6,7 @@ import io.awspring.cloud.sqs.annotation.SqsListener
 import io.awspring.cloud.sqs.listener.acknowledgement.Acknowledgement
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.messaging.Message
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.TELEMETRY_PREFIX
@@ -13,12 +14,14 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.reque
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.ProcessPostingBalanceService
 import java.time.Instant
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Executor
 
 @Service
 class CalculatedBalanceEventListener(
   private val objectMapper: ObjectMapper,
   private val processPostingBalanceService: ProcessPostingBalanceService,
   private val telemetryClient: TelemetryClient,
+  @Qualifier("balanceProcessingExecutor") private val dedicatedTaskExecutor: Executor,
 ) {
 
   @SqsListener(
@@ -47,33 +50,36 @@ class CalculatedBalanceEventListener(
       Acknowledgement.acknowledge(it)
     }
 
-    val futures = uniqueRequests.map { (message, processBalanceRequest) ->
-      CompletableFuture.runAsync {
-        processMessage(processBalanceRequest)
-        Acknowledgement.acknowledge(message)
-      }
+    val futures = uniqueRequests.map { (message, request) ->
+      CompletableFuture.runAsync(
+        {
+          try {
+            processMessage(request)
+            Acknowledgement.acknowledge(message)
+          } catch (e: Exception) {
+            log.error("Failed to process balance calculation for account ID ${request.accountId}. Message will be retried. ${e.message}", e)
+          }
+        },
+        dedicatedTaskExecutor,
+      )
     }
+
     CompletableFuture.allOf(*futures.toTypedArray()).join()
   }
 
   private fun processMessage(processBalanceRequest: ProcessBalanceRequest) {
-    try {
-      val startTime = Instant.now()
-      processPostingBalanceService.processBalance(processBalanceRequest.accountId)
-      telemetryClient.trackEvent(
-        "$TELEMETRY_PREFIX-calculated-balance-queue-account-creation-time",
-        mapOf(
-          "postingId" to processBalanceRequest.postingId.toString(),
-          "accountId" to processBalanceRequest.accountId.toString(),
-          "timeTaken" to "${Instant.now().toEpochMilli() - startTime.toEpochMilli()}ms",
-        ),
-        null,
-      )
-      log.debug("Successfully processed balance calculation in ${Instant.now().toEpochMilli() - startTime.toEpochMilli()}ms. Payload: $processBalanceRequest")
-    } catch (e: Exception) {
-      log.error("Failed to process balance calculation.\n${e.message}\nMessage will be retried. Payload: $processBalanceRequest", e)
-      throw e
-    }
+    val startTime = Instant.now()
+    processPostingBalanceService.processBalance(processBalanceRequest.accountId)
+    telemetryClient.trackEvent(
+      "$TELEMETRY_PREFIX-calculated-balance-queue-account-creation-time",
+      mapOf(
+        "postingId" to processBalanceRequest.postingId.toString(),
+        "accountId" to processBalanceRequest.accountId.toString(),
+        "timeTaken" to "${Instant.now().toEpochMilli() - startTime.toEpochMilli()}ms",
+      ),
+      null,
+    )
+    log.debug("Successfully processed balance calculation in ${Instant.now().toEpochMilli() - startTime.toEpochMilli()}ms. Payload: $processBalanceRequest")
   }
 
   companion object {
