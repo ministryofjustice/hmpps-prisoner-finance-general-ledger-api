@@ -26,7 +26,6 @@ import org.springframework.messaging.support.MessageBuilder
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.ProcessPostingBalanceService
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.Executor
 
 @ExtendWith(MockitoExtension::class)
 class CalculatedBalanceEventListenerTest {
@@ -40,8 +39,6 @@ class CalculatedBalanceEventListenerTest {
 
   @Mock
   lateinit var telemetryClient: TelemetryClient
-
-  private var dedicatedTaskExecutor: Executor = Executor { command -> command.run() }
 
   lateinit var calculatedBalanceEventListener: CalculatedBalanceEventListener
 
@@ -60,7 +57,6 @@ class CalculatedBalanceEventListenerTest {
       objectMapper,
       processPostingBalanceService,
       telemetryClient,
-      dedicatedTaskExecutor,
     )
   }
 
