@@ -6,7 +6,6 @@ import io.awspring.cloud.sqs.annotation.SqsListener
 import io.awspring.cloud.sqs.listener.acknowledgement.Acknowledgement
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.messaging.Message
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.TELEMETRY_PREFIX
@@ -14,14 +13,12 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.reque
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.ProcessPostingBalanceService
 import java.time.Instant
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.Executor
 
 @Service
 class CalculatedBalanceEventListener(
   private val objectMapper: ObjectMapper,
   private val processPostingBalanceService: ProcessPostingBalanceService,
   private val telemetryClient: TelemetryClient,
-  @Qualifier("balanceProcessingExecutor") private val dedicatedTaskExecutor: Executor,
 ) {
 
   @SqsListener(
@@ -51,17 +48,14 @@ class CalculatedBalanceEventListener(
     }
 
     val futures = uniqueRequests.map { (message, request) ->
-      CompletableFuture.runAsync(
-        {
-          try {
-            processMessage(request)
-            Acknowledgement.acknowledge(message)
-          } catch (e: Exception) {
-            log.error("Failed to process balance calculation for account ID ${request.accountId}. Message will be retried. ${e.message}", e)
-          }
-        },
-        dedicatedTaskExecutor,
-      )
+      CompletableFuture.runAsync {
+        try {
+          processMessage(request)
+          Acknowledgement.acknowledge(message)
+        } catch (e: Exception) {
+          log.error("Failed to process balance calculation for account ID ${request.accountId}. Message will be retried. ${e.message}", e)
+        }
+      }
     }
 
     CompletableFuture.allOf(*futures.toTypedArray()).join()
