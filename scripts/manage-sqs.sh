@@ -18,10 +18,16 @@ done
 
 # ---- Command selection ----
 echo "Select command to run:"
-select ACTION in "get-attributes" "receive-message" "purge-queue"; do
+select ACTION in "get-attributes" "receive-message" "purge-queue" "redrive-dlq"; do
   [[ -n "$ACTION" ]] && break
   echo "Invalid selection"
 done
+
+# ---- Validation ----
+if [[ "$ACTION" == "redrive-dlq" && "$QUEUE_TYPE" != "dlq" ]]; then
+  echo "❌ Error: Redrive tasks can only be initiated from a DLQ. You selected queue type: '$QUEUE_TYPE'."
+  exit 1
+fi
 
 # ---- Config ----
 NAMESPACE="hmpps-prisoner-finance-general-ledger-${ENV}"
@@ -65,6 +71,8 @@ echo "⚠️  WARNING: This may be destructive. Please check this information ca
 
 if [[ "$ACTION" == "purge-queue" ]]; then
   CONFIRM_WORD="PURGE"
+elif [[ "$ACTION" == "redrive-dlq" ]]; then
+  CONFIRM_WORD="REDRIVE"
 else
   CONFIRM_WORD="YES"
 fi
@@ -76,13 +84,22 @@ if [[ "$CONFIRM" != "$CONFIRM_WORD" ]]; then
   exit 1
 fi
 
-# GUARD FOR ACCIDENTAL PROD PURGES
-
+# GUARD FOR ACCIDENTAL PROD PURGES/REDRIVES
 if [[ "$ACTION" == "purge-queue" && "$ENV" == "prod" ]]; then
-  echo "⚠️  You are about to PURGE a PROD queue."
+  echo "⚠️️  You are about to PURGE a PROD queue."
   read -rp "Type PURGE-PROD to confirm: " CONFIRM
 
   if [[ "$CONFIRM" != "PURGE-PROD" ]]; then
+    echo "Aborted."
+    exit 1
+  fi
+fi
+
+if [[ "$ACTION" == "redrive-dlq" && "$ENV" == "prod" ]]; then
+  echo "⚠️  You are about to REDRIVE a PROD DLQ."
+  read -rp "Type REDRIVE-PROD to confirm: " CONFIRM
+
+  if [[ "$CONFIRM" != "REDRIVE-PROD" ]]; then
     echo "Aborted."
     exit 1
   fi
@@ -126,6 +143,26 @@ elif [[ "$ACTION" == "purge-queue" ]]; then
   kubectl exec -it "$POD_NAME" -n "$NAMESPACE" -- \
     aws sqs purge-queue \
       --queue-url "$QUEUE_URL"
+
+elif [[ "$ACTION" == "redrive-dlq" ]]; then
+  echo "Fetching Queue ARN for redrive..."
+
+  # Notice: we use -i (not -it) here so pseudo-TTY carriage returns don't break the JSON output
+  QUEUE_ARN=$(kubectl exec -i "$POD_NAME" -n "$NAMESPACE" -- \
+    aws sqs get-queue-attributes \
+      --queue-url "$QUEUE_URL" \
+      --attribute-names QueueArn \
+      --output json | jq -r '.Attributes.QueueArn')
+
+  if [[ -z "$QUEUE_ARN" || "$QUEUE_ARN" == "null" ]]; then
+    echo "❌ Failed to retrieve QueueArn for $QUEUE_URL"
+    exit 1
+  fi
+
+  echo "🚨 Starting message move task (DLQ Redrive) for $QUEUE_ARN..."
+  kubectl exec -it "$POD_NAME" -n "$NAMESPACE" -- \
+    aws sqs start-message-move-task \
+      --source-arn "$QUEUE_ARN"
 fi
 
 echo "Done."
