@@ -11,8 +11,8 @@ class AsyncConfig {
   @Bean(name = ["balanceProcessingExecutor"])
   fun balanceProcessingExecutor(): Executor {
     val executor = ThreadPoolTaskExecutor()
-    executor.corePoolSize = 10 // Minimum number of threads to keep alive
-    executor.maxPoolSize = 20 // Maximum number of threads to spawn
+    executor.corePoolSize = 3 // Minimum number of threads to keep alive
+    executor.maxPoolSize = 5 // Maximum number of threads to spawn
     executor.queueCapacity = 50 // How many tasks to queue before rejecting
     executor.setThreadNamePrefix("BalanceExec-")
     executor.initialize()
