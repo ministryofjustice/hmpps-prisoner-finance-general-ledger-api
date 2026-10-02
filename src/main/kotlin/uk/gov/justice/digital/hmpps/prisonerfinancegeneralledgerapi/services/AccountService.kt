@@ -46,16 +46,4 @@ class AccountService(
 
     return AccountBalanceResponse(accountId, Instant.now(), balance)
   }
-
-  fun calculatePrisonerBalanceAtAPrison(prisonerId: UUID, prisonReference: String): AccountBalanceResponse? {
-    val prisonerAccount = accountDataRepository.findAccountById(prisonerId)
-    if (prisonerAccount == null) return null
-
-    val prisonAccount = accountDataRepository.findAccountByReference(prisonReference)
-    if (prisonAccount == null) return AccountBalanceResponse(prisonerId, Instant.now(), 0)
-
-    val balance = postingsDataRepository.getBalanceForAPrisonerAtAPrison(prisonerId = prisonerAccount.id, prisonId = prisonAccount.id)
-
-    return AccountBalanceResponse(prisonerId, Instant.now(), balance)
-  }
 }

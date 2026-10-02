@@ -283,13 +283,9 @@ class AccountController(
   @SecurityRequirement(name = "bearer-jwt", scopes = [ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO, ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW])
   @PreAuthorize("hasAnyAuthority('$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RO','$ROLE_PRISONER_FINANCE__GENERAL_LEDGER__RW')")
   @GetMapping("/accounts/{accountId}/balance")
-  fun getAccountBalance(@PathVariable accountId: UUID, @ValidReferenceString @RequestParam prisonRef: String?): ResponseEntity<AccountBalanceResponse> {
+  fun getAccountBalance(@PathVariable accountId: UUID): ResponseEntity<AccountBalanceResponse> {
     var accountBalanceResponse: AccountBalanceResponse?
-    if (prisonRef == null) {
-      accountBalanceResponse = accountService.calculateAccountBalance(accountId)
-    } else {
-      accountBalanceResponse = accountService.calculatePrisonerBalanceAtAPrison(accountId, prisonRef)
-    }
+    accountBalanceResponse = accountService.calculateAccountBalance(accountId)
     if (accountBalanceResponse == null) {
       throw CustomException(message = "Account not found", status = HttpStatus.NOT_FOUND)
     }
