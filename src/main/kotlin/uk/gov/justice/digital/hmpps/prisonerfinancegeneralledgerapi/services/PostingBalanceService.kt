@@ -4,15 +4,19 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingBalanceEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.StatementBalanceEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingBalanceDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.StatementBalanceDataRepository
 import java.time.Instant
+import java.util.UUID
 
 @Service
 class PostingBalanceService(
   private val postingBalanceDataRepository: PostingBalanceDataRepository,
   private val statementBalanceDataRepository: StatementBalanceDataRepository,
+  private val postingsDataRepository: PostingsDataRepository,
 ) {
   enum class BalanceCalculationStrategy {
     FirstPosting,
@@ -97,9 +101,74 @@ class PostingBalanceService(
     postingBalanceDataRepository.save(postingBalanceToSave)
   }
 
+
+  private fun getBalanceMap(posting: PostingEntity): MutableMap<UUID, Long> {
+    val accountId = posting.subAccountEntity.parentAccountEntity.id
+
+    val previousPostingBalances = postingBalanceDataRepository.getPreviousPostingBalancesByAccount(
+      postingId = posting.id,
+      accountId = accountId,
+      transactionTimestamp = posting.transactionEntity.timestamp,
+      transactionEntrySequence = posting.transactionEntity.entrySequence,
+      postingEntrySequence = posting.entrySequence,
+    )
+
+    val statementBalances = statementBalanceDataRepository.getStatementBalancesByAccount(
+      accountId = accountId,
+    )
+
+    return posting.subAccountEntity.parentAccountEntity.subAccounts.associate { sa ->
+      sa.id to SubAccountBalanceCalculator(
+        latestPostingBalance = previousPostingBalances.filter {pb -> pb.postingEntity.subAccountEntity.id == sa.id }.firstOrNull(),
+        // todo review if this requires filtering and ordering
+        latestStatementBalance = statementBalances.filter { sb -> sb.subAccountEntity.id == sa.id }.firstOrNull(),
+      ).calculate()
+    }.toMutableMap()
+  }
+
   fun calculatePostingBalances(
-    posting: PostingEntity,
+    startingPosting: PostingEntity
   ) {
+    val accountId = startingPosting.subAccountEntity.parentAccountEntity.id
+
+    val balanceMap = getBalanceMap(startingPosting)
+
+    val postings = postingsDataRepository.findAllPostingsFrom(
+      accountId = accountId,
+      timestamp = startingPosting.transactionEntity.timestamp,
+      transSeq = startingPosting.transactionEntity.entrySequence,
+      postSeq = startingPosting.entrySequence,
+      id = startingPosting.id
+    )
+
+    val postingBalances = mutableListOf<PostingBalanceEntity>()
+    buildList {
+      add(startingPosting)
+      addAll(postings)
+    }.forEach { posting ->
+      val subAccountBalance = balanceMap.getValue(posting.subAccountEntity.id)
+      val accountBalance = balanceMap.values.sum()
+
+      val updatedPostingBalance = posting.postingBalanceEntity ?: PostingBalanceEntity(
+        postingEntity = posting,
+        totalSubAccountBalance = 0,
+        totalAccountBalance = 0,
+      )
+
+      updatedPostingBalance.totalSubAccountBalance = subAccountBalance + applyPostingType(posting.amount, posting.type)
+      updatedPostingBalance.totalAccountBalance = accountBalance + applyPostingType(posting.amount, posting.type)
+
+      balanceMap[posting.subAccountEntity.id] = updatedPostingBalance.totalSubAccountBalance
+      postingBalances.add(updatedPostingBalance)
+    }
+
+    postingBalanceDataRepository.saveAll(postingBalances)
+  }
+
+  fun calculatePostingBalancesOld(
+    postings: List<PostingEntity>,
+  ) {
+    /*
     val parentAccountId = posting.subAccountEntity.parentAccountEntity.id
 
     val postingSubAccount = posting.subAccountEntity
@@ -109,10 +178,6 @@ class PostingBalanceService(
       transactionTimestamp = posting.transactionEntity.timestamp,
       transactionEntrySequence = posting.transactionEntity.entrySequence,
       postingEntrySequence = posting.entrySequence,
-    )
-    val previousStatementBalances = statementBalanceDataRepository.getLatestStatementBalancesForAccountId(
-      accountId = parentAccountId,
-      fromTimestamp = posting.transactionEntity.timestamp,
     )
 
     val subAccountBalanceCalculators = postingSubAccount.parentAccountEntity.subAccounts.associateWith {
@@ -135,5 +200,7 @@ class PostingBalanceService(
       newSubAccountBalance = newSubAccountBalance,
       newTotalBalance = newTotalBalance,
     )
+
+     */
   }
 }

@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.StatementBalanceEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.TransactionEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.oppositePostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
@@ -30,9 +31,10 @@ class RepoTestHelpers(
   private val accountDataRepository: AccountDataRepository,
   private val idempotencyKeyDataRepository: IdempotencyKeyDataRepository,
 ) {
-  fun createAccount(ref: String): AccountEntity {
+  fun createAccount(ref: String, type: AccountType = AccountType.PRISON): AccountEntity {
     val account = AccountEntity(
       reference = ref,
+      type = type,
     )
     entityManager.persist(account)
     return account

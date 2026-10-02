@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.StatementBalanceEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.TransactionEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.helpers.RepoTestHelpers
 import java.time.Instant
@@ -1857,5 +1858,268 @@ class PostingDataRepositoryTest @Autowired constructor(
 
       assertThat(firstPosting).isEqualTo(firstPostingPrisoner)
     }
+  }
+
+  @Nested
+  inner class FindAllPostingsFrom {
+    lateinit var accountPrisoner : AccountEntity
+    lateinit var cashAccount : SubAccountEntity
+    lateinit var accountPrison : AccountEntity
+    lateinit var canteenAccount : SubAccountEntity
+
+    @BeforeEach
+    fun setup(){
+      accountPrisoner = repoTestHelpers.createAccount(ref = "ABC123XX", type = AccountType.PRISONER)
+      cashAccount = repoTestHelpers.createSubAccount(ref = "CASH", account = accountPrisoner)
+
+      accountPrison = repoTestHelpers.createAccount(ref = "LEI")
+      canteenAccount = repoTestHelpers.createSubAccount(ref = "CANT:1001", account = accountPrison)
+    }
+    @Test
+    fun `Should return all posting for a give subAccount, ordered by timestamp`(){
+      val firstTransactionTime = Instant.now()
+      val transactionOne = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = firstTransactionTime,
+        transactionTimeStamp = firstTransactionTime,
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        description = "first"
+      )
+
+      val prisonerPosting = transactionOne.postings.first {
+        it.subAccountEntity.parentAccountEntity.id == accountPrisoner.id }
+
+      val transactionTwo = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = firstTransactionTime.plusSeconds(1),
+        transactionTimeStamp = firstTransactionTime.plusSeconds(1),
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        description = "second"
+
+      )
+
+      val transactionThree = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = firstTransactionTime.plusSeconds(2),
+        transactionTimeStamp = firstTransactionTime.plusSeconds(2),
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        description = "third"
+      )
+
+      val transactionInThePast = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = firstTransactionTime.minusSeconds(1),
+        transactionTimeStamp = firstTransactionTime.minusSeconds(1),
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        description = "past"
+      )
+
+
+      val postings = postingsDataRepository.findAllPostingsFrom(
+        accountId =  accountPrisoner.id ,
+        timestamp = prisonerPosting.transactionEntity.timestamp,
+        transSeq = prisonerPosting.transactionEntity.entrySequence,
+        postSeq = prisonerPosting.entrySequence,
+        id = prisonerPosting.id,
+      )
+
+      assertThat(postings).hasSize(2)
+      assertThat(postings[0].id).isEqualTo(transactionTwo.postings.first().id)
+      assertThat(postings[1].id).isEqualTo(transactionThree.postings.first().id)
+    }
+
+    @Test
+    fun `Should return all posting for a give subAccount, ordered by timestamp, transaction entrySequence`(){
+      val firstTransactionTime = Instant.now()
+      val transactionOne = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = firstTransactionTime,
+        transactionTimeStamp = firstTransactionTime,
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        description = "first",
+        transactionEntrySequence = 1
+      )
+
+      val prisonerPosting = transactionOne.postings.first {
+        it.subAccountEntity.parentAccountEntity.id == accountPrisoner.id }
+
+      val transactionTwo = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = firstTransactionTime,
+        transactionTimeStamp = firstTransactionTime,
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        description = "second",
+        transactionEntrySequence = 2
+      )
+
+      val transactionThree = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = firstTransactionTime.plusSeconds(2),
+        transactionTimeStamp = firstTransactionTime.plusSeconds(2),
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        description = "third"
+      )
+
+      val transactionInThePast = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = firstTransactionTime.minusSeconds(1),
+        transactionTimeStamp = firstTransactionTime.minusSeconds(1),
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        description = "past"
+      )
+
+
+      val postings = postingsDataRepository.findAllPostingsFrom(
+        accountId =  accountPrisoner.id ,
+        timestamp = prisonerPosting.transactionEntity.timestamp,
+        transSeq = prisonerPosting.transactionEntity.entrySequence,
+        postSeq = prisonerPosting.entrySequence,
+        id = prisonerPosting.id,
+      )
+
+      assertThat(postings).hasSize(2)
+      assertThat(postings[0].id).isEqualTo(transactionTwo.postings.first().id)
+      assertThat(postings[1].id).isEqualTo(transactionThree.postings.first().id)
+    }
+
+    @Test
+    fun `Should return all posting for a give subAccount, ordered by timestamp, transaction entrySequence, posting EntrySequence`(){
+      val firstTransactionTime = Instant.now()
+      val transactionOne = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = firstTransactionTime,
+        transactionTimeStamp = firstTransactionTime,
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        description = "first",
+        transactionEntrySequence = 1,
+        debitEntrySequence = 1,
+        creditEntrySequence = 2,
+      )
+
+      val prisonerPosting = transactionOne.postings.first {
+        it.subAccountEntity.parentAccountEntity.id == accountPrisoner.id }
+
+      val transactionTwo = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = firstTransactionTime,
+        transactionTimeStamp = firstTransactionTime,
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        description = "second",
+        transactionEntrySequence = 1,
+        debitEntrySequence = 2,
+        creditEntrySequence = 3,
+      )
+
+      val transactionThree = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = firstTransactionTime.plusSeconds(2),
+        transactionTimeStamp = firstTransactionTime.plusSeconds(2),
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        description = "third"
+      )
+
+      val transactionInThePast = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = firstTransactionTime.minusSeconds(1),
+        transactionTimeStamp = firstTransactionTime.minusSeconds(1),
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        description = "past"
+      )
+
+
+      val postings = postingsDataRepository.findAllPostingsFrom(
+        accountId =  accountPrisoner.id ,
+        timestamp = prisonerPosting.transactionEntity.timestamp,
+        transSeq = prisonerPosting.transactionEntity.entrySequence,
+        postSeq = prisonerPosting.entrySequence,
+        id = prisonerPosting.id,
+      )
+
+      assertThat(postings).hasSize(2)
+      assertThat(postings[0].id).isEqualTo(transactionTwo.postings.first().id)
+      assertThat(postings[1].id).isEqualTo(transactionThree.postings.first().id)
+    }
+
+    @Test
+    fun `Should return all posting for a give subAccount, ordered by timestamp, transaction entrySequence, posting EntrySequence, postingId`(){
+      val firstTransactionTime = Instant.now()
+      val transactionOne = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = firstTransactionTime,
+        transactionTimeStamp = firstTransactionTime,
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        description = "first",
+        transactionEntrySequence = 0,
+        debitEntrySequence = 0,
+        creditEntrySequence = 0,
+      )
+
+      val transactionTwo = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = firstTransactionTime,
+        transactionTimeStamp = firstTransactionTime,
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        description = "second",
+        transactionEntrySequence = 0,
+        debitEntrySequence = 0,
+        creditEntrySequence = 0,
+      )
+
+      val transactionThree = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = firstTransactionTime.plusSeconds(2),
+        transactionTimeStamp = firstTransactionTime.plusSeconds(2),
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        description = "third"
+      )
+
+      val transactionInThePast = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = firstTransactionTime.minusSeconds(1),
+        transactionTimeStamp = firstTransactionTime.minusSeconds(1),
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        description = "past"
+      )
+
+
+      val transactionOnePrisonerPosting = transactionOne.postings.first {
+        it.subAccountEntity.parentAccountEntity.id == accountPrisoner.id }
+      val transactionTwoPrisonerPosting = transactionTwo.postings.first {
+        it.subAccountEntity.parentAccountEntity.id == accountPrisoner.id }
+
+      val prisonerFirstPostingById = listOf(transactionOnePrisonerPosting, transactionTwoPrisonerPosting)
+        .minBy { it.id.toString() }
+      val prisonerSecondPostingById = listOf(transactionOnePrisonerPosting, transactionTwoPrisonerPosting)
+        .maxBy { it.id.toString() }
+
+      val postings = postingsDataRepository.findAllPostingsFrom(
+        accountId =  accountPrisoner.id ,
+        timestamp = prisonerFirstPostingById.transactionEntity.timestamp,
+        transSeq = prisonerFirstPostingById.transactionEntity.entrySequence,
+        postSeq = prisonerFirstPostingById.entrySequence,
+        id = prisonerFirstPostingById.id,
+      )
+
+      assertThat(postings).hasSize(2)
+      assertThat(postings[0].id).isEqualTo(prisonerSecondPostingById.id)
+      assertThat(postings[1].id).isEqualTo(transactionThree.postings.first().id)
+    }
+
   }
 }

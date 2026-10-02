@@ -56,4 +56,13 @@ interface StatementBalanceDataRepository : JpaRepository<StatementBalanceEntity,
     nativeQuery = true,
   )
   fun getStatementBalancesBySubAccountId(subAccountId: UUID): List<StatementBalanceEntity>
+
+  @Query(
+    """
+    SELECT sb
+    FROM StatementBalanceEntity sb
+    WHERE sb.subAccountEntity.parentAccountEntity.id = :accountId
+    """,
+  )
+  fun getStatementBalancesByAccount(accountId: UUID): List<StatementBalanceEntity>
 }

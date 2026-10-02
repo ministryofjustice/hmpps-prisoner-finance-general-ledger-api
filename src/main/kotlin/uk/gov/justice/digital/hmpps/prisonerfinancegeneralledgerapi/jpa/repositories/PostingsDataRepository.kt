@@ -62,6 +62,31 @@ interface PostingsDataRepository :
   )
   fun getFirstMissingPostingBalanceByAccountId(accountId: UUID): PostingEntity?
 
+  @Query(
+    """
+        SELECT p
+        FROM PostingEntity p
+        WHERE p.subAccountEntity.parentAccountEntity.id = :accountId
+          AND (
+            p.transactionEntity.timestamp > :timestamp OR
+            (p.transactionEntity.timestamp = :timestamp AND p.transactionEntity.entrySequence > :transSeq) OR
+            (p.transactionEntity.timestamp = :timestamp AND p.transactionEntity.entrySequence = :transSeq AND p.entrySequence > :postSeq) OR
+            (p.transactionEntity.timestamp = :timestamp AND p.transactionEntity.entrySequence = :transSeq AND p.entrySequence = :postSeq AND p.id > :id)
+          )
+        ORDER BY p.transactionEntity.timestamp ASC, 
+                 p.transactionEntity.entrySequence ASC, 
+                 p.entrySequence ASC, 
+                 p.id ASC
+        """
+  )
+  fun findAllPostingsFrom(
+    @Param("accountId") accountId: UUID,
+    @Param("timestamp") timestamp: Instant,
+    @Param("transSeq") transSeq: Long,
+    @Param("postSeq") postSeq: Long,
+    @Param("id") id: UUID
+  ): List<PostingEntity>
+
   @Query("SELECT p FROM PostingEntity p WHERE p.subAccountEntity.id = :subAccountId")
   fun getPostingsForSubAccountId(@Param("subAccountId") subAccountId: UUID): List<PostingEntity>
 

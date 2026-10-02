@@ -31,7 +31,7 @@ class ProcessPostingBalanceService(
     while (posting != null) {
       val startTime = Instant.now()
 
-      postingBalanceService.calculatePostingBalances(posting = posting)
+      postingBalanceService.calculatePostingBalances(startingPosting = posting)
 
       log.debug("Successfully processed posting: ${posting.id} for accountId: $accountId in ${Instant.now().toEpochMilli() - startTime.toEpochMilli()}ms")
       telemetryClient.trackEvent(

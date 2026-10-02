@@ -9,6 +9,7 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest
 import org.springframework.context.annotation.Import
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.helpers.RepoTestHelpers
 import java.time.Instant
 import java.time.LocalDateTime
@@ -283,6 +284,32 @@ class StatementBalanceDataRepositoryTest @Autowired constructor(
       val statementBalances = statementBalanceDataRepository.getStatementBalancesBySubAccountId(UUID.randomUUID())
 
       assertThat(statementBalances).hasSize(0)
+    }
+  }
+
+  @Nested
+  inner class GetStatementBalancesByAccount {
+    @Test
+    fun `Should return statement balances for the account`() {
+      val parentAccount = repoTestHelpers.createAccount("ABX123XZ", type=AccountType.PRISONER)
+      val cashSubAccount = repoTestHelpers.createSubAccount("CASH", parentAccount)
+      val savingsSubAccount = repoTestHelpers.createSubAccount("SAVINGS", parentAccount)
+
+      val otherParentAccount = repoTestHelpers.createAccount("ZBX1XXX", type=AccountType.PRISONER)
+      val otherCashSubAccount = repoTestHelpers.createSubAccount("CASH", otherParentAccount)
+
+      repoTestHelpers.createStatementBalance(amount = 500, balanceDateTime = Instant.now(), subAccount = cashSubAccount)
+      repoTestHelpers.createStatementBalance(amount = 700, balanceDateTime = Instant.now().plusSeconds(10), subAccount = savingsSubAccount)
+      repoTestHelpers.createStatementBalance(amount = 1000, balanceDateTime = Instant.now().minusSeconds(10), subAccount = otherCashSubAccount)
+      val statementBalances = statementBalanceDataRepository.getStatementBalancesByAccount(
+        parentAccount.id)
+
+      assertThat(statementBalances).hasSize(2)
+      assertThat(statementBalances[0].subAccountEntity).isEqualTo(cashSubAccount)
+      assertThat(statementBalances[0].amount).isEqualTo(500)
+
+      assertThat(statementBalances[1].subAccountEntity).isEqualTo(savingsSubAccount)
+      assertThat(statementBalances[1].amount).isEqualTo(700)
     }
   }
 }
