@@ -10,11 +10,13 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.StatementBalanceEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.TransactionEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.oppositePostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.AccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.IdempotencyKeyDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.StatementBalanceDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.SubAccountDataRepository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.TransactionDataRepository
 import java.time.Instant
@@ -29,10 +31,12 @@ class RepoTestHelpers(
   private val subAccountDataRepository: SubAccountDataRepository,
   private val accountDataRepository: AccountDataRepository,
   private val idempotencyKeyDataRepository: IdempotencyKeyDataRepository,
+  private val statementBalanceDataRepository: StatementBalanceDataRepository,
 ) {
-  fun createAccount(ref: String): AccountEntity {
+  fun createAccount(ref: String, type: AccountType = AccountType.PRISON): AccountEntity {
     val account = AccountEntity(
       reference = ref,
+      type = type,
     )
     entityManager.persist(account)
     return account
@@ -204,6 +208,7 @@ class RepoTestHelpers(
   }
 
   fun clearDb() {
+    statementBalanceDataRepository.deleteAll()
     idempotencyKeyDataRepository.deleteAll()
     postingsDataRepository.deleteAll()
     transactionDataRepository.deleteAll()

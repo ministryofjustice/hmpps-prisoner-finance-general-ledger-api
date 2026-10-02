@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.StatementBalanceEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.TransactionEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.helpers.RepoTestHelpers
 import java.time.Instant
@@ -1100,332 +1101,6 @@ class PostingDataRepositoryTest @Autowired constructor(
   }
 
   @Nested
-  inner class GetTheNextAccountPostingOrNull {
-    @Test
-    fun `Should default to null when there is not a next posting`() {
-      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
-      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
-
-      accountTwo = repoTestHelpers.createAccount(ref = "LEI")
-      accountTwoSubAccountOne = repoTestHelpers.createSubAccount(ref = "1001:CANT", account = accountTwo)
-
-      val transaction = repoTestHelpers.createOneToOneTransaction(
-        transactionAmount = 1,
-        postingCreatedAt = Instant.now().minusSeconds(60),
-        transactionTimeStamp = Instant.now().minusSeconds(60),
-        debitSubAccount = accountOneSubAccountOne,
-        creditSubAccount = accountTwoSubAccountOne,
-      )
-
-      val posting = transaction.postings.first()
-      val nextPosting = postingsDataRepository.getTheNextAccountPostingOrNull(
-        postingId = posting.id,
-        accountId = posting.subAccountEntity.parentAccountEntity.id,
-        transactionTimestamp = posting.transactionEntity.timestamp,
-        transactionEntrySequence = posting.transactionEntity.entrySequence,
-        postingEntrySequence = posting.entrySequence,
-      )
-
-      assertThat(nextPosting).isNull()
-    }
-
-    @Test
-    fun `Should return the next account Posting from the next transaction when the initial transaction contains no more postings for that account`() {
-      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
-      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
-
-      accountTwo = repoTestHelpers.createAccount(ref = "LEI")
-      accountTwoSubAccountOne = repoTestHelpers.createSubAccount(ref = "1001:CANT", account = accountTwo)
-
-      val transactionOne = repoTestHelpers.createOneToOneTransaction(
-        transactionAmount = 1,
-        postingCreatedAt = Instant.now().minusSeconds(60),
-        transactionTimeStamp = Instant.now().minusSeconds(60),
-        debitSubAccount = accountOneSubAccountOne,
-        creditSubAccount = accountTwoSubAccountOne,
-      )
-
-      val transactionTwo = repoTestHelpers.createOneToOneTransaction(
-        transactionAmount = 1,
-        postingCreatedAt = Instant.now(),
-        transactionTimeStamp = Instant.now(),
-        debitSubAccount = accountOneSubAccountOne,
-        creditSubAccount = accountTwoSubAccountOne,
-      )
-
-      val posting = transactionOne.postings.first()
-      val nextPosting = postingsDataRepository.getTheNextAccountPostingOrNull(
-        postingId = posting.id,
-        accountId = posting.subAccountEntity.parentAccountEntity.id,
-        transactionTimestamp = posting.transactionEntity.timestamp,
-        transactionEntrySequence = posting.transactionEntity.entrySequence,
-        postingEntrySequence = posting.entrySequence,
-      )
-
-      assertThat(nextPosting).isEqualTo(transactionTwo.postings.first())
-    }
-
-    @Test
-    fun `Should return the next posting from another transaction when the next posting has a lower entry sequence than the initial posting`() {
-      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
-      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
-
-      accountTwo = repoTestHelpers.createAccount(ref = "LEI")
-      accountTwoSubAccountOne = repoTestHelpers.createSubAccount(ref = "1001:CANT", account = accountTwo)
-      val transactionTimestamp = Instant.now()
-
-      val initialTransaction = repoTestHelpers.createOneToOneTransaction(
-        transactionAmount = 1,
-        postingCreatedAt = transactionTimestamp,
-        transactionTimeStamp = transactionTimestamp,
-        debitSubAccount = accountOneSubAccountOne,
-        creditSubAccount = accountTwoSubAccountOne,
-        debitEntrySequence = 2,
-        creditEntrySequence = 1,
-        transactionEntrySequence = 1,
-      )
-
-      val nextTransaction = repoTestHelpers.createOneToOneTransaction(
-        transactionAmount = 1,
-        postingCreatedAt = transactionTimestamp.plusSeconds(60),
-        transactionTimeStamp = transactionTimestamp.plusSeconds(60),
-        debitSubAccount = accountOneSubAccountOne,
-        creditSubAccount = accountTwoSubAccountOne,
-        debitEntrySequence = 1,
-        creditEntrySequence = 2,
-        transactionEntrySequence = 1,
-      )
-
-      val initialPosting = initialTransaction.postings.first()
-
-      assertThat(initialPosting.entrySequence).isEqualTo(2)
-      assertThat(initialPosting.subAccountEntity.id).isEqualTo(accountOneSubAccountOne.id)
-
-      val nextPosting = postingsDataRepository.getTheNextAccountPostingOrNull(
-        postingId = initialPosting.id,
-        accountId = initialPosting.subAccountEntity.parentAccountEntity.id,
-        transactionTimestamp = initialPosting.transactionEntity.timestamp,
-        transactionEntrySequence = initialPosting.transactionEntity.entrySequence,
-        postingEntrySequence = initialPosting.entrySequence,
-      )
-
-      assertThat(nextPosting?.entrySequence).isEqualTo(1)
-      assertThat(nextPosting?.subAccountEntity?.id).isEqualTo(accountOneSubAccountOne.id)
-      assertThat(nextPosting?.transactionEntity?.id).isEqualTo(nextTransaction.id)
-    }
-
-    @Test
-    fun `Should return the next posting from the a one to many transaction when the transaction contains multiple postings for the same account`() {
-      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
-      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
-
-      accountTwo = repoTestHelpers.createAccount(ref = "DEF456YY")
-      accountTwoSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountTwo)
-
-      accountThree = repoTestHelpers.createAccount(ref = "LEI")
-      accountThreeSubAccountOne = repoTestHelpers.createSubAccount(ref = "1001:CANT", account = accountThree)
-
-      val transaction = repoTestHelpers.createOneToManyTransaction(
-        ref = "PAYROLL",
-        oneToManySubAccount = accountThreeSubAccountOne,
-        manyToOneSubAccounts = listOf(
-//          we need postings before and after the posting we want to find the next posting to prove posting entry sequence
-          accountOneSubAccountOne, // This should be ignored
-          accountTwoSubAccountOne,
-          accountOneSubAccountOne, // This is the initial posting
-          accountTwoSubAccountOne,
-          accountOneSubAccountOne, // This is the next posting
-          accountTwoSubAccountOne,
-        ),
-        amountPerSubAccount = 1,
-        oneToManyPostingType = PostingType.CR,
-      )
-
-      val initialPosting = transaction.postings[3]
-      assertThat(initialPosting.entrySequence).isEqualTo(4)
-      assertThat(initialPosting.subAccountEntity.id).isEqualTo(accountOneSubAccountOne.id)
-
-      val nextPosting = postingsDataRepository.getTheNextAccountPostingOrNull(
-        postingId = initialPosting.id,
-        accountId = initialPosting.subAccountEntity.parentAccountEntity.id,
-        transactionTimestamp = initialPosting.transactionEntity.timestamp,
-        transactionEntrySequence = initialPosting.transactionEntity.entrySequence,
-        postingEntrySequence = initialPosting.entrySequence,
-      )
-
-      assertThat(nextPosting?.entrySequence).isEqualTo(6)
-      assertThat(nextPosting?.subAccountEntity?.id).isEqualTo(accountOneSubAccountOne.id)
-      assertThat(nextPosting?.transactionEntity?.id).isEqualTo(transaction.id)
-    }
-
-    @Test
-    fun `Should return the next posting from a batch transaction split across 2 transactions`() {
-      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
-      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
-
-      accountTwo = repoTestHelpers.createAccount(ref = "LEI")
-      accountTwoSubAccountOne = repoTestHelpers.createSubAccount(ref = "1001:CANT", account = accountTwo)
-      val transactionTimestamp = Instant.now()
-
-//      2 part transaction with the same timestamp as
-//      Batch transactions will be ordered by transactionEntrySequence
-      val batchTransactionPart1 = repoTestHelpers.createOneToOneTransaction(
-        transactionAmount = 1,
-        postingCreatedAt = transactionTimestamp,
-        transactionTimeStamp = transactionTimestamp,
-        debitSubAccount = accountOneSubAccountOne,
-        debitEntrySequence = 1,
-        creditSubAccount = accountTwoSubAccountOne,
-        creditEntrySequence = 2,
-        transactionEntrySequence = 1,
-      )
-
-      val batchTransactionPart2 = repoTestHelpers.createOneToOneTransaction(
-        transactionAmount = 1,
-        postingCreatedAt = transactionTimestamp,
-        transactionTimeStamp = transactionTimestamp,
-        debitSubAccount = accountOneSubAccountOne,
-        debitEntrySequence = 3,
-        creditSubAccount = accountTwoSubAccountOne,
-        creditEntrySequence = 4,
-        transactionEntrySequence = 2,
-      )
-
-      val initialPosting = batchTransactionPart1.postings.first()
-      assertThat(initialPosting.transactionEntity.entrySequence).isEqualTo(1)
-      assertThat(initialPosting.entrySequence).isEqualTo(1)
-
-      val nextPosting = postingsDataRepository.getTheNextAccountPostingOrNull(
-        postingId = initialPosting.id,
-        accountId = initialPosting.subAccountEntity.parentAccountEntity.id,
-        transactionTimestamp = initialPosting.transactionEntity.timestamp,
-        transactionEntrySequence = initialPosting.transactionEntity.entrySequence,
-        postingEntrySequence = initialPosting.entrySequence,
-      )
-
-      assertThat(nextPosting?.transactionEntity?.id).isEqualTo(batchTransactionPart2.id)
-      assertThat(nextPosting?.entrySequence).isEqualTo(3)
-      assertThat(nextPosting?.transactionEntity?.entrySequence).isEqualTo(2)
-    }
-
-    @Test
-    fun `Should return the next posting by id when transaction entrySequence and postingEntry sequence are zero`() {
-      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
-      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
-
-      accountTwo = repoTestHelpers.createAccount(ref = "LEI")
-      accountTwoSubAccountOne = repoTestHelpers.createSubAccount(ref = "1001:CANT", account = accountTwo)
-      val transactionTimestamp = Instant.now()
-
-      //      2 part transaction with the same timestamp as
-      //      Batch transactions will be ordered by transactionEntrySequence
-      //      For old data we need to be able to find the next posting by id
-      //      because we migrated entrySequences as zeros
-      val postingOne = repoTestHelpers.createOneToOneTransaction(
-        transactionAmount = 1,
-        postingCreatedAt = transactionTimestamp,
-        transactionTimeStamp = transactionTimestamp,
-        debitSubAccount = accountOneSubAccountOne,
-        debitEntrySequence = 0,
-        creditSubAccount = accountTwoSubAccountOne,
-        creditEntrySequence = 0,
-        transactionEntrySequence = 0,
-      ).postings.first()
-
-      val postingTwo = repoTestHelpers.createOneToOneTransaction(
-        transactionAmount = 1,
-        postingCreatedAt = transactionTimestamp,
-        transactionTimeStamp = transactionTimestamp,
-        debitSubAccount = accountOneSubAccountOne,
-        debitEntrySequence = 0,
-        creditSubAccount = accountTwoSubAccountOne,
-        creditEntrySequence = 0,
-        transactionEntrySequence = 0,
-      ).postings.first()
-
-      val firstPostingId = UUID.fromString(listOf(postingOne.id, postingTwo.id).minOf { it.toString() })
-      val lastPostingId = UUID.fromString(listOf(postingOne.id, postingTwo.id).maxOf { it.toString() })
-
-      val nextPosting = postingsDataRepository.getTheNextAccountPostingOrNull(
-        postingId = firstPostingId,
-        accountId = accountOne.id,
-        transactionTimestamp = transactionTimestamp,
-        transactionEntrySequence = 0,
-        postingEntrySequence = 0,
-      )
-
-      assertThat(nextPosting?.subAccountEntity?.parentAccountEntity).isEqualTo(accountOne)
-      assertThat(nextPosting?.id).isEqualTo(lastPostingId)
-    }
-
-    @Test
-    fun `Should return the next posting when it is for a different sub account in a different transaction`() {
-      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
-      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
-      accountOneSubAccountTwo = repoTestHelpers.createSubAccount(ref = "SAVINGS", account = accountOne)
-
-      accountTwo = repoTestHelpers.createAccount(ref = "LEI")
-      accountTwoSubAccountOne = repoTestHelpers.createSubAccount(ref = "1001:CANT", account = accountTwo)
-
-      val transactionOne = repoTestHelpers.createOneToOneTransaction(
-        transactionAmount = 1,
-        postingCreatedAt = Instant.now().minusSeconds(60),
-        transactionTimeStamp = Instant.now().minusSeconds(60),
-        debitSubAccount = accountOneSubAccountOne,
-        creditSubAccount = accountTwoSubAccountOne,
-      )
-
-      val transactionTwo = repoTestHelpers.createOneToOneTransaction(
-        transactionAmount = 1,
-        postingCreatedAt = Instant.now(),
-        transactionTimeStamp = Instant.now(),
-        debitSubAccount = accountOneSubAccountTwo,
-        creditSubAccount = accountTwoSubAccountOne,
-      )
-
-      val posting = transactionOne.postings.first()
-      val nextPosting = postingsDataRepository.getTheNextAccountPostingOrNull(
-        postingId = posting.id,
-        accountId = posting.subAccountEntity.parentAccountEntity.id,
-        transactionTimestamp = posting.transactionEntity.timestamp,
-        transactionEntrySequence = posting.transactionEntity.entrySequence,
-        postingEntrySequence = posting.entrySequence,
-      )
-
-      assertThat(nextPosting).isEqualTo(transactionTwo.postings.first())
-    }
-
-    @Test
-    fun `Should return the next posting when it is for a different sub account in the same transaction`() {
-      accountOne = repoTestHelpers.createAccount(ref = "ABC123XX")
-      accountOneSubAccountOne = repoTestHelpers.createSubAccount(ref = "CASH", account = accountOne)
-      accountOneSubAccountTwo = repoTestHelpers.createSubAccount(ref = "SAVINGS", account = accountOne)
-
-      val transaction = repoTestHelpers.createOneToOneTransaction(
-        transactionAmount = 1,
-        postingCreatedAt = Instant.now().minusSeconds(60),
-        transactionTimeStamp = Instant.now().minusSeconds(60),
-        debitSubAccount = accountOneSubAccountOne,
-        creditSubAccount = accountOneSubAccountTwo,
-        debitEntrySequence = 1,
-        creditEntrySequence = 2,
-      )
-
-      val posting = transaction.postings.first()
-      val nextPosting = postingsDataRepository.getTheNextAccountPostingOrNull(
-        postingId = posting.id,
-        accountId = posting.subAccountEntity.parentAccountEntity.id,
-        transactionTimestamp = posting.transactionEntity.timestamp,
-        transactionEntrySequence = posting.transactionEntity.entrySequence,
-        postingEntrySequence = posting.entrySequence,
-      )
-
-      assertThat(nextPosting).isEqualTo(transaction.postings[1])
-      assertThat(nextPosting?.entrySequence).isEqualTo(2)
-    }
-  }
-
-  @Nested
   inner class GetFirstPostingForAccountIdAfterDateTime {
 
     @Test
@@ -1856,6 +1531,270 @@ class PostingDataRepositoryTest @Autowired constructor(
       val firstPosting = postingsDataRepository.getFirstMissingPostingBalanceByAccountId(firstPostingPrisoner.subAccountEntity.parentAccountEntity.id)
 
       assertThat(firstPosting).isEqualTo(firstPostingPrisoner)
+    }
+  }
+
+  @Nested
+  inner class FindAllPostingsAfter {
+    lateinit var accountPrisoner: AccountEntity
+    lateinit var cashAccount: SubAccountEntity
+    lateinit var accountPrison: AccountEntity
+    lateinit var canteenAccount: SubAccountEntity
+
+    @BeforeEach
+    fun setup() {
+      accountPrisoner = repoTestHelpers.createAccount(ref = "ABC123XX", type = AccountType.PRISONER)
+      cashAccount = repoTestHelpers.createSubAccount(ref = "CASH", account = accountPrisoner)
+
+      accountPrison = repoTestHelpers.createAccount(ref = "LEI")
+      canteenAccount = repoTestHelpers.createSubAccount(ref = "CANT:1001", account = accountPrison)
+    }
+
+    @Test
+    fun `Should return all posting for a give subAccount, ordered by timestamp`() {
+      val firstTransactionTime = Instant.now()
+      val transactionOne = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = firstTransactionTime,
+        transactionTimeStamp = firstTransactionTime,
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        description = "first",
+      )
+
+      val prisonerPosting = transactionOne.postings.first {
+        it.subAccountEntity.parentAccountEntity.id == accountPrisoner.id
+      }
+
+      val transactionTwo = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = firstTransactionTime.plusSeconds(1),
+        transactionTimeStamp = firstTransactionTime.plusSeconds(1),
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        description = "second",
+
+      )
+
+      val transactionThree = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = firstTransactionTime.plusSeconds(2),
+        transactionTimeStamp = firstTransactionTime.plusSeconds(2),
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        description = "third",
+      )
+
+      val transactionInThePast = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = firstTransactionTime.minusSeconds(1),
+        transactionTimeStamp = firstTransactionTime.minusSeconds(1),
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        description = "past",
+      )
+
+      val postings = postingsDataRepository.findAllPostingsAfter(
+        accountId = accountPrisoner.id,
+        timestamp = prisonerPosting.transactionEntity.timestamp,
+        transSeq = prisonerPosting.transactionEntity.entrySequence,
+        postSeq = prisonerPosting.entrySequence,
+        id = prisonerPosting.id,
+      )
+
+      assertThat(postings).hasSize(2)
+      assertThat(postings[0].id).isEqualTo(transactionTwo.postings.first().id)
+      assertThat(postings[1].id).isEqualTo(transactionThree.postings.first().id)
+    }
+
+    @Test
+    fun `Should return all posting for a give subAccount, ordered by timestamp, transaction entrySequence`() {
+      val firstTransactionTime = Instant.now()
+      val transactionOne = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = firstTransactionTime,
+        transactionTimeStamp = firstTransactionTime,
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        description = "first",
+        transactionEntrySequence = 1,
+      )
+
+      val prisonerPosting = transactionOne.postings.first {
+        it.subAccountEntity.parentAccountEntity.id == accountPrisoner.id
+      }
+
+      val transactionTwo = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = firstTransactionTime,
+        transactionTimeStamp = firstTransactionTime,
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        description = "second",
+        transactionEntrySequence = 2,
+      )
+
+      val transactionThree = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = firstTransactionTime.plusSeconds(2),
+        transactionTimeStamp = firstTransactionTime.plusSeconds(2),
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        description = "third",
+      )
+
+      val transactionInThePast = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = firstTransactionTime.minusSeconds(1),
+        transactionTimeStamp = firstTransactionTime.minusSeconds(1),
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        description = "past",
+      )
+
+      val postings = postingsDataRepository.findAllPostingsAfter(
+        accountId = accountPrisoner.id,
+        timestamp = prisonerPosting.transactionEntity.timestamp,
+        transSeq = prisonerPosting.transactionEntity.entrySequence,
+        postSeq = prisonerPosting.entrySequence,
+        id = prisonerPosting.id,
+      )
+
+      assertThat(postings).hasSize(2)
+      assertThat(postings[0].id).isEqualTo(transactionTwo.postings.first().id)
+      assertThat(postings[1].id).isEqualTo(transactionThree.postings.first().id)
+    }
+
+    @Test
+    fun `Should return all posting for a give subAccount, ordered by timestamp, transaction entrySequence, posting EntrySequence`() {
+      val firstTransactionTime = Instant.now()
+      val transactionOne = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = firstTransactionTime,
+        transactionTimeStamp = firstTransactionTime,
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        description = "first",
+        transactionEntrySequence = 1,
+        debitEntrySequence = 1,
+        creditEntrySequence = 2,
+      )
+
+      val prisonerPosting = transactionOne.postings.first {
+        it.subAccountEntity.parentAccountEntity.id == accountPrisoner.id
+      }
+
+      val transactionTwo = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = firstTransactionTime,
+        transactionTimeStamp = firstTransactionTime,
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        description = "second",
+        transactionEntrySequence = 1,
+        debitEntrySequence = 2,
+        creditEntrySequence = 3,
+      )
+
+      val transactionThree = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = firstTransactionTime.plusSeconds(2),
+        transactionTimeStamp = firstTransactionTime.plusSeconds(2),
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        description = "third",
+      )
+
+      val transactionInThePast = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = firstTransactionTime.minusSeconds(1),
+        transactionTimeStamp = firstTransactionTime.minusSeconds(1),
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        description = "past",
+      )
+
+      val postings = postingsDataRepository.findAllPostingsAfter(
+        accountId = accountPrisoner.id,
+        timestamp = prisonerPosting.transactionEntity.timestamp,
+        transSeq = prisonerPosting.transactionEntity.entrySequence,
+        postSeq = prisonerPosting.entrySequence,
+        id = prisonerPosting.id,
+      )
+
+      assertThat(postings).hasSize(2)
+      assertThat(postings[0].id).isEqualTo(transactionTwo.postings.first().id)
+      assertThat(postings[1].id).isEqualTo(transactionThree.postings.first().id)
+    }
+
+    @Test
+    fun `Should return all posting for a give subAccount, ordered by timestamp, transaction entrySequence, posting EntrySequence, postingId`() {
+      val firstTransactionTime = Instant.now()
+      val transactionOne = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = firstTransactionTime,
+        transactionTimeStamp = firstTransactionTime,
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        description = "first",
+        transactionEntrySequence = 0,
+        debitEntrySequence = 0,
+        creditEntrySequence = 0,
+      )
+
+      val transactionTwo = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = firstTransactionTime,
+        transactionTimeStamp = firstTransactionTime,
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        description = "second",
+        transactionEntrySequence = 0,
+        debitEntrySequence = 0,
+        creditEntrySequence = 0,
+      )
+
+      val transactionThree = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = firstTransactionTime.plusSeconds(2),
+        transactionTimeStamp = firstTransactionTime.plusSeconds(2),
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        description = "third",
+      )
+
+      val transactionInThePast = repoTestHelpers.createOneToOneTransaction(
+        transactionAmount = 2,
+        postingCreatedAt = firstTransactionTime.minusSeconds(1),
+        transactionTimeStamp = firstTransactionTime.minusSeconds(1),
+        debitSubAccount = cashAccount,
+        creditSubAccount = canteenAccount,
+        description = "past",
+      )
+
+      val transactionOnePrisonerPosting = transactionOne.postings.first {
+        it.subAccountEntity.parentAccountEntity.id == accountPrisoner.id
+      }
+      val transactionTwoPrisonerPosting = transactionTwo.postings.first {
+        it.subAccountEntity.parentAccountEntity.id == accountPrisoner.id
+      }
+
+      val prisonerFirstPostingById = listOf(transactionOnePrisonerPosting, transactionTwoPrisonerPosting)
+        .minBy { it.id.toString() }
+      val prisonerSecondPostingById = listOf(transactionOnePrisonerPosting, transactionTwoPrisonerPosting)
+        .maxBy { it.id.toString() }
+
+      val postings = postingsDataRepository.findAllPostingsAfter(
+        accountId = accountPrisoner.id,
+        timestamp = prisonerFirstPostingById.transactionEntity.timestamp,
+        transSeq = prisonerFirstPostingById.transactionEntity.entrySequence,
+        postSeq = prisonerFirstPostingById.entrySequence,
+        id = prisonerFirstPostingById.id,
+      )
+
+      assertThat(postings).hasSize(2)
+      assertThat(postings[0].id).isEqualTo(prisonerSecondPostingById.id)
+      assertThat(postings[1].id).isEqualTo(transactionThree.postings.first().id)
     }
   }
 }

@@ -23,7 +23,7 @@ import org.mockito.kotlin.whenever
 import org.slf4j.LoggerFactory
 import org.springframework.messaging.Message
 import org.springframework.messaging.support.MessageBuilder
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.ProcessPostingBalanceService
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.balances.PostingBalanceService
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 
@@ -35,7 +35,7 @@ class CalculatedBalanceEventListenerTest {
     .registerModule(JavaTimeModule())
 
   @Mock
-  lateinit var processPostingBalanceService: ProcessPostingBalanceService
+  lateinit var postingBalanceService: PostingBalanceService
 
   @Mock
   lateinit var telemetryClient: TelemetryClient
@@ -55,7 +55,7 @@ class CalculatedBalanceEventListenerTest {
   fun setup() {
     calculatedBalanceEventListener = CalculatedBalanceEventListener(
       objectMapper,
-      processPostingBalanceService,
+      postingBalanceService,
       telemetryClient,
     )
   }
@@ -97,7 +97,7 @@ class CalculatedBalanceEventListenerTest {
 
     calculatedBalanceEventListener.handleEvents(listOf(message))
 
-    verify(processPostingBalanceService).processBalance(accountId)
+    verify(postingBalanceService).processBalance(accountId)
   }
 
   @Test
@@ -116,7 +116,7 @@ class CalculatedBalanceEventListenerTest {
     """.trimIndent()
 
     val exceptionMessage = "Test error"
-    whenever { processPostingBalanceService.processBalance(accountId) }.thenThrow(RuntimeException(exceptionMessage))
+    whenever { postingBalanceService.processBalance(accountId) }.thenThrow(RuntimeException(exceptionMessage))
 
     val message = MessageBuilder
       .withPayload(payload)
@@ -125,7 +125,7 @@ class CalculatedBalanceEventListenerTest {
 
     calculatedBalanceEventListener.handleEvents(listOf(message))
 
-    verify(processPostingBalanceService).processBalance(accountId)
+    verify(postingBalanceService).processBalance(accountId)
 
     val logList = listAppender.list.filter { it.level == Level.ERROR }
     assertThat(logList).hasSize(1)
@@ -175,7 +175,7 @@ class CalculatedBalanceEventListenerTest {
 
     calculatedBalanceEventListener.handleEvents(listOf(messageOne, messageTwo, messageThree))
 
-    verify(processPostingBalanceService, times(1)).processBalance(accountIdOne)
-    verify(processPostingBalanceService, times(1)).processBalance(accountIdTwo)
+    verify(postingBalanceService, times(1)).processBalance(accountIdOne)
+    verify(postingBalanceService, times(1)).processBalance(accountIdTwo)
   }
 }
