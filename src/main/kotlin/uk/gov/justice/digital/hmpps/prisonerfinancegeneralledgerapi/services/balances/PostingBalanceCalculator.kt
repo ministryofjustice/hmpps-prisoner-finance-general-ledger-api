@@ -135,7 +135,7 @@ class PostingBalanceCalculator(
       strategy == BalanceCalculationStrategy.FromPreviousPostingBalance && previousPostingTimestamp != null && previousPostingBalanceAmount != null ->
         PostingBalanceData(previousPostingBalanceAmount, previousPostingTimestamp)
 
-      else -> throw Exception("Unexpected pathway in calculateNewBalance")
+      else -> throw Exception("Unexpected pathway in calculatePostingBalanceMapData")
     }
   }
 
