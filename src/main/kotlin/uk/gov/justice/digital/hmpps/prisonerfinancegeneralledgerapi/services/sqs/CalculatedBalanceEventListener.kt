@@ -10,14 +10,14 @@ import org.springframework.messaging.Message
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.config.TELEMETRY_PREFIX
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.requests.ProcessBalanceRequest
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.ProcessPostingBalanceService
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.balances.PostingBalanceService
 import java.time.Instant
 import java.util.concurrent.CompletableFuture
 
 @Service
 class CalculatedBalanceEventListener(
   private val objectMapper: ObjectMapper,
-  private val processPostingBalanceService: ProcessPostingBalanceService,
+  private val postingBalanceService: PostingBalanceService,
   private val telemetryClient: TelemetryClient,
 ) {
 
@@ -63,7 +63,7 @@ class CalculatedBalanceEventListener(
 
   private fun processMessage(processBalanceRequest: ProcessBalanceRequest) {
     val startTime = Instant.now()
-    processPostingBalanceService.processBalance(processBalanceRequest.accountId)
+    postingBalanceService.processBalance(processBalanceRequest.accountId)
     telemetryClient.trackEvent(
       "$TELEMETRY_PREFIX-calculated-balance-queue-account-creation-time",
       mapOf(

@@ -4,7 +4,6 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingBalanceEntity
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
 import java.time.Instant
 import java.util.UUID
 
@@ -57,6 +56,4 @@ interface PostingBalanceDataRepository : JpaRepository<PostingBalanceEntity, Lon
     transactionEntrySequence: Long,
     postingEntrySequence: Long,
   ): List<PostingBalanceEntity>
-
-  fun findByPostingEntity(posting: PostingEntity): PostingBalanceEntity?
 }

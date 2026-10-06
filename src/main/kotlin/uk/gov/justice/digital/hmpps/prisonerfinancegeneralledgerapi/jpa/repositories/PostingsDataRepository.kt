@@ -62,6 +62,31 @@ interface PostingsDataRepository :
   )
   fun getFirstMissingPostingBalanceByAccountId(accountId: UUID): PostingEntity?
 
+  @Query(
+    """
+        SELECT p
+        FROM PostingEntity p
+        WHERE p.subAccountEntity.parentAccountEntity.id = :accountId
+          AND (
+            p.transactionEntity.timestamp > :timestamp OR
+            (p.transactionEntity.timestamp = :timestamp AND p.transactionEntity.entrySequence > :transSeq) OR
+            (p.transactionEntity.timestamp = :timestamp AND p.transactionEntity.entrySequence = :transSeq AND p.entrySequence > :postSeq) OR
+            (p.transactionEntity.timestamp = :timestamp AND p.transactionEntity.entrySequence = :transSeq AND p.entrySequence = :postSeq AND p.id > :id)
+          )
+        ORDER BY p.transactionEntity.timestamp ASC, 
+                 p.transactionEntity.entrySequence ASC, 
+                 p.entrySequence ASC, 
+                 p.id ASC
+        """,
+  )
+  fun findAllPostingsAfter(
+    @Param("accountId") accountId: UUID,
+    @Param("timestamp") timestamp: Instant,
+    @Param("transSeq") transSeq: Long,
+    @Param("postSeq") postSeq: Long,
+    @Param("id") id: UUID,
+  ): List<PostingEntity>
+
   @Query("SELECT p FROM PostingEntity p WHERE p.subAccountEntity.id = :subAccountId")
   fun getPostingsForSubAccountId(@Param("subAccountId") subAccountId: UUID): List<PostingEntity>
 
@@ -123,53 +148,4 @@ WHERE sa.account_id = :prisonerId
     nativeQuery = true,
   )
   fun getBalanceForAPrisonerAtAPrison(@Param("prisonId") prisonId: UUID, @Param("prisonerId") prisonerId: UUID): Long
-
-  @EntityGraph(
-    attributePaths = [
-      "transactionEntity",
-      "subAccountEntity",
-      "subAccountEntity.parentAccountEntity",
-      "subAccountEntity.parentAccountEntity.subAccounts",
-      "postingBalanceEntity",
-    ],
-  )
-  // the last OR is a workaround entrySequences that zero due to old data in dev
-  @Query(
-    """
-    SELECT p
-    FROM PostingEntity p
-    WHERE p.subAccountEntity.parentAccountEntity.id = :accountId
-      AND (
-          p.transactionEntity.timestamp > :transactionTimestamp
-          OR (
-              p.transactionEntity.timestamp = :transactionTimestamp
-              AND p.transactionEntity.entrySequence > :transactionEntrySequence
-          )
-          OR (
-              p.transactionEntity.timestamp = :transactionTimestamp
-              AND p.transactionEntity.entrySequence = :transactionEntrySequence
-              AND p.entrySequence > :postingEntrySequence
-          )
-          OR (
-              p.transactionEntity.timestamp = :transactionTimestamp
-              AND p.transactionEntity.entrySequence = :transactionEntrySequence
-              AND p.entrySequence = :postingEntrySequence
-              AND p.id > :postingId
-        )
-      )
-    ORDER BY
-        p.transactionEntity.timestamp ASC,
-        p.transactionEntity.entrySequence ASC,
-        p.entrySequence ASC,
-        p.id ASC
-    LIMIT 1
-  """,
-  )
-  fun getTheNextAccountPostingOrNull(
-    postingId: UUID,
-    accountId: UUID,
-    transactionTimestamp: Instant,
-    transactionEntrySequence: Long,
-    postingEntrySequence: Long,
-  ): PostingEntity?
 }
