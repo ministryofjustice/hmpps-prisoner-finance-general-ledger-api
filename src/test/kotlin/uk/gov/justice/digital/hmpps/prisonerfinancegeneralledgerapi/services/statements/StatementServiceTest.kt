@@ -55,6 +55,7 @@ class StatementServiceTest {
       Sort.Order.desc("transactionEntity.timestamp"),
       Sort.Order.desc("transactionEntity.entrySequence"),
       Sort.Order.desc("entrySequence"),
+      Sort.Order.desc("id"),
     ),
   )
 
