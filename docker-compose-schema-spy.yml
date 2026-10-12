@@ -10,16 +10,22 @@ services:
       test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/8080"]
     environment:
       - SERVER_PORT=8080
-      - HMPPS_AUTH_URL=http://hmpps-auth:8080/auth
       - SPRING_PROFILES_ACTIVE=dev
+      - HMPPS_AUTH_URL=http://hmpps-auth:8080/auth
       - DB_SERVER=hmpps-prisoner-finance-general-ledger-db
       - DB_NAME=general-ledger
       - DB_USER=postgres
       - DB_PASS=postgres
+      - CALC_BALANCE_QUEUE_NAME=calculated_balance_queue.fifo
+      - CALC_BALANCE_DLQ_NAME=calculated_balance_queue_dlq.fifo
+      - SQS_PROVIDER=localstack
+      - SQS_LOCALSTACK_URL=http://localstack:4566
     depends_on:
       hmpps-prisoner-finance-general-ledger-db:
         condition: service_healthy
         restart: true
+      localstack:
+        condition: service_healthy
 
   hmpps-prisoner-finance-general-ledger-db:
     container_name: hmpps-prisoner-finance-general-ledger-db
@@ -35,8 +41,8 @@ services:
       - POSTGRES_DB=general-ledger
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
-      interval: 5s
-      timeout: 5s
+      interval: 1s
+      timeout: 10s
       retries: 5
 
   localstack:
