@@ -1,0 +1,106 @@
+name: SchemaSpy report
+
+on:
+  workflow_call:
+    inputs:
+      java_version:
+        description: Java version
+        type: string
+        default: '25'
+      java_options:
+        description: Java options
+        type: string
+        default: '-Xmx512m -XX:ParallelGCThreads=2 -XX:ConcGCThreads=2 -Djava.util.concurrent.ForkJoinPool.common.parallelism=2 -Dorg.gradle.daemon=false -Dkotlin.compiler.execution.strategy=in-process'
+      schemaspy_version:
+        description: SchemaSpy version
+        type: string
+        default: '7.0.2'
+      postgres_driver_version:
+        description: Postgres version
+        type: string
+        default: '42.7.13'
+      exclude:
+        description: Regex of tables to be excluded
+        type: string
+        default: 'flyway_schema_history'
+      docker_compose_file:
+        description: Path to Docker Compose file to start localstack and postgres containers
+        type: string
+        required: true
+      database_name:
+        description: Database name
+        type: string
+        required: true
+      database_user:
+        description: Database user name
+        type: string
+        required: true
+      database_password:
+        description: Database user password
+        type: string
+        required: true
+      database_schema:
+        description: Database schema name
+        type: string
+        default: public
+      database_type:
+        description: Database type
+        type: string
+        default: pgsql
+
+jobs:
+  schema-spy:
+    name: Generate SchemaSpy report
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Refresh cache
+        id: initial-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        env:
+          cache-name: kotlin-cache
+        with:
+          path: |
+            - gradle-{{ checksum "build.gradle.kts" }}
+            - gradle-
+          key: ${{ runner.os }}-gradle-${{ env.cache-name }}-${{ hashFiles('build.gradle.kts') }}
+
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: 'temurin'
+          java-version: '${{ inputs.java_version }}'
+          cache: 'gradle'
+          cache-dependency-path: |
+            *.gradle*
+            **/gradle-wrapper.properties
+
+      - name: Initialise database and generate SchemaSpy report
+        shell: bash
+        run: |
+          docker compose -f ${{ inputs.docker_compose_file }} up -d --wait
+          curl -L https://github.com/schemaspy/schemaspy/releases/download/v${{ inputs.schemaspy_version }}/schemaspy-app.jar --output /tmp/schemaspy.jar
+          curl -L https://jdbc.postgresql.org/download/postgresql-${{ inputs.postgres_driver_version }}.jar --output /tmp/postgres-driver.jar
+          export JAVA_OPTS="${{ inputs.java_options }}"
+          java -jar /tmp/schemaspy.jar -t ${{ inputs.database_type }} -dp /tmp/postgres-driver.jar -db ${{ inputs.database_name }} -host localhost -port 5432 -s ${{ inputs.database_schema }} -vizjs -u ${{ inputs.database_user }} -p ${{ inputs.database_password }} -I ${{ inputs.exclude }} -norows -o /tmp/schema-spy-report
+
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      - name: Publish HTML report
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: /tmp/schema-spy-report/
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+
+      - name: Link workflow summary to report
+        shell: bash
+        run: |
+          echo '[SchemaSpy report]('https://$GITHUB_REPOSITORY_OWNER.github.io/$(basename $GITHUB_REPOSITORY)'/)' >> $GITHUB_STEP_SUMMARY

@@ -79,3 +79,5 @@ sonar-project.properties
 
 #Everything else:
 .DS_Store
+/volume/
+data-dictionary.csv
