@@ -21,10 +21,10 @@ object PostingsSpecification {
     query.distinct(true)
 
     root.fetch<Any, Any>("postingBalanceEntity", JoinType.LEFT)
-    root.fetch<Any, Any>("transactionEntity", JoinType.LEFT)
+    root.fetch<Any, Any>("transactionEntity", JoinType.INNER)
 
-    val subAccountFetch = root.fetch<Any, Any>("subAccountEntity", JoinType.LEFT)
-    subAccountFetch.fetch<Any, Any>("parentAccountEntity", JoinType.LEFT)
+    val subAccountFetch = root.fetch<Any, Any>("subAccountEntity", JoinType.INNER)
+    subAccountFetch.fetch<Any, Any>("parentAccountEntity", JoinType.INNER)
 
     return@Specification null
   }
