@@ -8,6 +8,7 @@ import java.util.UUID
 
 @Repository
 interface SubAccountDataRepository : JpaRepository<SubAccountEntity, UUID> {
+  @EntityGraph(attributePaths = ["parentAccountEntity"])
   fun findByParentAccountEntityReferenceAndReference(
     accountReference: String,
     subAccountReference: String,

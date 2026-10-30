@@ -18,8 +18,8 @@ data class StatementEntryResponse(
   val transactionTimestamp: Instant,
   @field:Schema(description = "The description of the transaction")
   val description: String,
-  @field:Schema(description = "This is the opposite postings from the statement entry")
-  val oppositePostings: List<StatementEntryOppositePostingsResponse>,
+  @field:Schema(description = "Transaction type: [SubAccountTransfer, PrisonerToPrisonTransaction]")
+  val transactionType: StatementEntryTransactionType,
   @field:Schema(description = "This is amount of the statement entry")
   val amount: Long,
   @field:Schema(description = "The posting type of the statement entry")
@@ -34,13 +34,10 @@ data class StatementEntryResponse(
   val legacyTransactionId: Long? = null,
 ) {
   companion object {
-    fun fromEntity(sourcePostingEntity: PostingEntity) = StatementEntryResponse(
+    fun fromEntity(sourcePostingEntity: PostingEntity, transactionType: StatementEntryTransactionType) = StatementEntryResponse(
       transactionId = sourcePostingEntity.transactionEntity.id,
       postingCreatedAt = sourcePostingEntity.createdAt,
       description = sourcePostingEntity.transactionEntity.description,
-      oppositePostings = sourcePostingEntity.transactionEntity.postings
-        .filter { posting -> posting.type != sourcePostingEntity.type }
-        .map { posting -> StatementEntryOppositePostingsResponse.fromEntity(posting) },
       amount = sourcePostingEntity.amount,
       postingType = sourcePostingEntity.type,
       transactionTimestamp = sourcePostingEntity.transactionEntity.timestamp,
@@ -48,9 +45,20 @@ data class StatementEntryResponse(
       subAccountBalance = sourcePostingEntity.postingBalanceEntity?.totalSubAccountBalance,
       accountBalance = sourcePostingEntity.postingBalanceEntity?.totalAccountBalance,
       legacyTransactionId = sourcePostingEntity.transactionEntity.legacyTransactionId,
+      transactionType = transactionType,
     )
   }
 }
+
+enum class StatementEntryTransactionType {
+  SubAccountTransfer,
+  PrisonerToPrison,
+}
+
+data class StatementEntryPostingToTransactionType(
+  val posting: PostingEntity,
+  val transactionType: StatementEntryTransactionType,
+)
 
 @Schema(description = "An account within the general ledger")
 data class StatementEntryAccountResponse(

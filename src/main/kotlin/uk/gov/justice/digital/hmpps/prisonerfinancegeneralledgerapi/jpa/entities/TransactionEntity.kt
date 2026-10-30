@@ -42,7 +42,7 @@ class TransactionEntity(
   @Column(name = "legacy_transaction_id", nullable = true)
   val legacyTransactionId: Long?,
 
-  @OneToMany(mappedBy = "transactionEntity", fetch = jakarta.persistence.FetchType.EAGER)
+  @OneToMany(mappedBy = "transactionEntity", fetch = jakarta.persistence.FetchType.LAZY)
   @OrderBy("entrySequence DESC")
   val postings: MutableList<PostingEntity> = mutableListOf(),
 )
