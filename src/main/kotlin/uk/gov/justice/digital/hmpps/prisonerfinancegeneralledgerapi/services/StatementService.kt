@@ -31,7 +31,7 @@ class StatementService(
     debit: Boolean = false,
     description: String? = null,
   ): PagedResponse<StatementEntryResponse>? {
-    accountService.readAccount(accountId) ?: return null
+    val parentAccount = accountService.readAccount(accountId) ?: return null
 
     val zeroIndexedPage = pageNumber - 1
 
@@ -46,10 +46,17 @@ class StatementService(
       ),
     )
 
-    val page = postingsDataRepository.getPostingsByAccountId(
+    val subAccountIds: List<UUID> =
+      if (subAccountId == null) {
+        parentAccount.subAccounts.map { it.id }.toList()
+      } else {
+        listOf(subAccountId)
+      }
+
+    val page = postingsDataRepository.getPostingsBySubAccounts(
       accountId,
       page = pageReq,
-      subAccountId = subAccountId,
+      subAccounts = subAccountIds,
       startDate = startDate?.toUtcStartOfDay(),
       endDate = endDate?.toUtcEndOfDay(),
       credit = credit,
@@ -57,6 +64,17 @@ class StatementService(
       description = description,
     )
 
-    return page.toPageResponse { content -> content.map { StatementEntryResponse.fromEntity(it) } }
+    val oppositePostings = postingsDataRepository.findOppositePostings(
+      page.content.map { it.id },
+    )
+
+    return page.toPageResponse { content ->
+      content.map {
+        StatementEntryResponse.fromEntity(
+          sourcePostingEntity = it,
+          oppositePostings = oppositePostings.filter { op -> it.id == op.sourcePostingId },
+        )
+      }
+    }
   }
 }

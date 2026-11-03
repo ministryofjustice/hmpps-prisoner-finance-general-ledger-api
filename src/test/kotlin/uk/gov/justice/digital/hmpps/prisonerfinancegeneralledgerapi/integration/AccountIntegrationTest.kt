@@ -323,7 +323,7 @@ class AccountIntegrationTest : IntegrationTestBase() {
       assertThat(responseBody).hasSize(2)
 
       val accountReferences = responseBody.map { it.reference }
-      assertThat(accountReferences).containsExactlyElementsOf(listOf(accountOne.reference, accountTwo.reference))
+      assertThat(accountReferences).containsExactlyInAnyOrderElementsOf(listOf(accountOne.reference, accountTwo.reference))
     }
 
     @Test

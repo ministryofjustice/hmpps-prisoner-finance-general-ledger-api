@@ -62,7 +62,7 @@ class PostingDataRepositoryTest @Autowired constructor(
     @Test
     fun `Should return an empty list when an account has no postings`() {
       val parentAccountId = UUID.randomUUID()
-      val postings = postingsDataRepository.getPostingsByAccountId(parentAccountId, pageReq)
+      val postings = postingsDataRepository.getPostingsBySubAccounts(parentAccountId, pageReq, subAccounts = listOf(UUID.randomUUID()))
       assertThat(postings).isEmpty()
     }
 
@@ -82,7 +82,11 @@ class PostingDataRepositoryTest @Autowired constructor(
         creditSubAccount = accountTwoSubAccountOne,
       )
 
-      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, pageReq)
+      val postings = postingsDataRepository.getPostingsBySubAccounts(
+        accountId = accountOne.id,
+        pageReq,
+        subAccounts = listOf(accountOneSubAccountOne.id),
+      )
       assertThat(postings).hasSize(1)
     }
 
@@ -100,7 +104,11 @@ class PostingDataRepositoryTest @Autowired constructor(
         creditSubAccount = accountOneSubAccountTwo,
       )
 
-      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, pageReq)
+      val postings = postingsDataRepository.getPostingsBySubAccounts(
+        accountId = accountOne.id,
+        pageReq,
+        subAccounts = listOf(accountOneSubAccountOne.id, accountOneSubAccountTwo.id),
+      )
       assertThat(postings).hasSize(2)
     }
 
@@ -141,7 +149,12 @@ class PostingDataRepositoryTest @Autowired constructor(
         creditSubAccount = accountOneSubAccountTwo,
       )
 
-      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, pageReq, startDate = timeTodayAtMidnight).content
+      val postings = postingsDataRepository.getPostingsBySubAccounts(
+        accountId = accountOne.id,
+        pageReq,
+        startDate = timeTodayAtMidnight,
+        subAccounts = listOf(accountOneSubAccountOne.id, accountOneSubAccountTwo.id),
+      ).content
 
       // two tx today with 4 postings for the account/subaccount transfer == 4 posting
       assertThat(postings).hasSize(4)
@@ -187,7 +200,12 @@ class PostingDataRepositoryTest @Autowired constructor(
         creditSubAccount = accountOneSubAccountTwo,
       )
 
-      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, pageReq, endDate = timeTodayAtMidnight).content
+      val postings = postingsDataRepository.getPostingsBySubAccounts(
+        accountId = accountOne.id,
+        pageReq,
+        endDate = timeTodayAtMidnight,
+        subAccounts = listOf(accountOneSubAccountOne.id, accountOneSubAccountTwo.id),
+      ).content
 
       // two tx today with 4 postings for the account/subaccount transfer == 4 posting
       assertThat(postings).hasSize(4)
@@ -244,7 +262,13 @@ class PostingDataRepositoryTest @Autowired constructor(
         creditSubAccount = accountOneSubAccountTwo,
       )
 
-      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, pageReq, startDate = timeTodayAtMidnight, endDate = timeTomorrowAtMidnight).content
+      val postings = postingsDataRepository.getPostingsBySubAccounts(
+        accountId = accountOne.id,
+        pageReq,
+        startDate = timeTodayAtMidnight,
+        endDate = timeTomorrowAtMidnight,
+        subAccounts = listOf(accountOneSubAccountOne.id, accountOneSubAccountTwo.id),
+      ).content
 
       // two tx today with 4 postings for the account/subaccount transfer == 4 posting
       assertThat(postings).hasSize(4)
@@ -301,7 +325,13 @@ class PostingDataRepositoryTest @Autowired constructor(
         creditSubAccount = accountOneSubAccountTwo,
       )
 
-      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, pageReq, startDate = timeTomorrowAtMidnight, endDate = timeTodayAtMidnight).content
+      val postings = postingsDataRepository.getPostingsBySubAccounts(
+        accountId = accountOne.id,
+        pageReq,
+        startDate = timeTomorrowAtMidnight,
+        endDate = timeTodayAtMidnight,
+        subAccounts = accountOne.subAccounts.map { it.id }.toList(),
+      ).content
 
       assertThat(postings).hasSize(0)
     }
@@ -363,7 +393,11 @@ class PostingDataRepositoryTest @Autowired constructor(
         ),
       )
 
-      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, pageReq)
+      val postings = postingsDataRepository.getPostingsBySubAccounts(
+        accountId = accountOne.id,
+        pageReq,
+        subAccounts = listOf(accountOneSubAccountOne.id, accountOneSubAccountTwo.id),
+      )
 
       assertThat(postings.content).hasSize(12)
 
@@ -396,7 +430,7 @@ class PostingDataRepositoryTest @Autowired constructor(
         )
       }
 
-      val postings = postingsDataRepository.getPostingsByAccountId(
+      val postings = postingsDataRepository.getPostingsBySubAccounts(
         accountId = accountOne.id,
         page = PageRequest.of(
           0,
@@ -407,6 +441,7 @@ class PostingDataRepositoryTest @Autowired constructor(
             Sort.Order.desc("entrySequence"),
           ),
         ),
+        subAccounts = listOf(subAccountOne.id),
       )
 
       assertThat(postings.content).hasSize(pageSize)
@@ -440,12 +475,25 @@ class PostingDataRepositoryTest @Autowired constructor(
         )
       }
 
-      val pageZero = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, pageReq)
+      val pageZero = postingsDataRepository.getPostingsBySubAccounts(
+        accountId = accountOne.id,
+        pageReq,
+        subAccounts = accountOne.subAccounts.map { it.id }.toList(),
+      )
       assertThat(pageZero.size).isEqualTo(25)
       val feb28 = LocalDate.of(2026, 2, 28).atStartOfDay().toInstant(ZoneOffset.UTC)
       assertThat(pageZero.content.all { it.transactionEntity.timestamp.isAfter(feb28) }).isTrue
 
-      val pageOne = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, PageRequest.of(1, 25, Sort.Direction.DESC, "transactionEntity.timestamp"))
+      val pageOne = postingsDataRepository.getPostingsBySubAccounts(
+        accountId = accountOne.id,
+        PageRequest.of(
+          1,
+          25,
+          Sort.Direction.DESC,
+          "transactionEntity.timestamp",
+        ),
+        subAccounts = accountOne.subAccounts.map { it.id }.toList(),
+      )
       assertThat(pageOne.size).isEqualTo(25)
       val march1 = LocalDate.of(2026, 3, 1).atStartOfDay().toInstant(ZoneOffset.UTC)
       assertThat(pageOne.content.all { it.transactionEntity.timestamp.isBefore(march1) }).isTrue
@@ -468,7 +516,7 @@ class PostingDataRepositoryTest @Autowired constructor(
         )
       }
 
-      val pageTen = postingsDataRepository.getPostingsByAccountId(
+      val pageTen = postingsDataRepository.getPostingsBySubAccounts(
         accountId = accountOne.id,
         PageRequest.of(
           10,
@@ -479,6 +527,7 @@ class PostingDataRepositoryTest @Autowired constructor(
             Sort.Order.desc("entrySequence"),
           ),
         ),
+        subAccounts = accountOne.subAccounts.map { it.id }.toList(),
       )
 
       assertThat(pageTen.content.size).isEqualTo(0)
@@ -506,7 +555,12 @@ class PostingDataRepositoryTest @Autowired constructor(
         creditSubAccount = accountOneSubAccountTwo,
       )
 
-      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, pageReq, credit = true).content
+      val postings = postingsDataRepository.getPostingsBySubAccounts(
+        accountId = accountOne.id,
+        pageReq,
+        credit = true,
+        subAccounts = listOf(accountOneSubAccountOne.id, accountOneSubAccountTwo.id),
+      ).content
 
       assertThat(postings).hasSize(2)
 
@@ -532,7 +586,12 @@ class PostingDataRepositoryTest @Autowired constructor(
         oneToManyPostingType = PostingType.CR,
       )
 
-      val postings = postingsDataRepository.getPostingsByAccountId(accountId = prisonAccount.id, pageReq, credit = true).content
+      val postings = postingsDataRepository.getPostingsBySubAccounts(
+        accountId = prisonAccount.id,
+        pageReq,
+        credit = true,
+        subAccounts = listOf(prisonCanteenSubAccount.id),
+      ).content
 
       assertThat(postings).hasSize(1)
 
@@ -561,7 +620,12 @@ class PostingDataRepositoryTest @Autowired constructor(
         creditSubAccount = accountOneSubAccountTwo,
       )
 
-      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, pageReq, debit = true).content
+      val postings = postingsDataRepository.getPostingsBySubAccounts(
+        accountId = accountOne.id,
+        pageReq,
+        debit = true,
+        subAccounts = listOf(accountOneSubAccountOne.id, accountOneSubAccountTwo.id),
+      ).content
 
       assertThat(postings).hasSize(2)
 
@@ -586,7 +650,12 @@ class PostingDataRepositoryTest @Autowired constructor(
         amountPerSubAccount = 1,
       )
 
-      val postings = postingsDataRepository.getPostingsByAccountId(accountId = prisonAccount.id, pageReq, debit = true).content
+      val postings = postingsDataRepository.getPostingsBySubAccounts(
+        accountId = prisonAccount.id,
+        pageReq,
+        debit = true,
+        subAccounts = listOf(prisonCanteenSubAccount.id),
+      ).content
 
       assertThat(postings).hasSize(1)
 
@@ -615,11 +684,23 @@ class PostingDataRepositoryTest @Autowired constructor(
         creditSubAccount = accountOneSubAccountTwo,
       )
 
-      val postingsBothFilteredIn = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, pageReq, credit = true, debit = true).content
+      val postingsBothFilteredIn = postingsDataRepository.getPostingsBySubAccounts(
+        accountId = accountOne.id,
+        pageReq,
+        credit = true,
+        debit = true,
+        subAccounts = listOf(accountOneSubAccountOne.id, accountOneSubAccountTwo.id),
+      ).content
 
       assertThat(postingsBothFilteredIn).hasSize(4)
 
-      val postingsBothFilteredOut = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, pageReq, credit = false, debit = false).content
+      val postingsBothFilteredOut = postingsDataRepository.getPostingsBySubAccounts(
+        accountId = accountOne.id,
+        pageReq,
+        credit = false,
+        debit = false,
+        subAccounts = listOf(accountOneSubAccountOne.id, accountOneSubAccountTwo.id),
+      ).content
 
       assertThat(postingsBothFilteredOut).hasSize(4)
     }
@@ -650,11 +731,23 @@ class PostingDataRepositoryTest @Autowired constructor(
         oneToManyPostingType = PostingType.DR,
       )
 
-      val postingsBothFilteredIn = postingsDataRepository.getPostingsByAccountId(accountId = prisonAccount.id, pageReq, debit = true, credit = true).content
+      val postingsBothFilteredIn = postingsDataRepository.getPostingsBySubAccounts(
+        accountId = prisonAccount.id,
+        pageReq,
+        debit = true,
+        credit = true,
+        subAccounts = listOf(prisonerAccountOneSubAccount.id),
+      ).content
 
       assertThat(postingsBothFilteredIn).hasSize(2)
 
-      val postingsBothFilteredOut = postingsDataRepository.getPostingsByAccountId(accountId = prisonAccount.id, pageReq, debit = false, credit = false).content
+      val postingsBothFilteredOut = postingsDataRepository.getPostingsBySubAccounts(
+        accountId = prisonAccount.id,
+        pageReq,
+        debit = false,
+        credit = false,
+        subAccounts = listOf(prisonerAccountOneSubAccount.id),
+      ).content
 
       assertThat(postingsBothFilteredOut).hasSize(2)
     }
@@ -685,12 +778,20 @@ class PostingDataRepositoryTest @Autowired constructor(
         amountPerSubAccount = 1,
       )
 
-      val postingsCanteen = postingsDataRepository.getPostingsByAccountId(accountId = prisonAccount.id, subAccountId = prisonCanteenSubAccount.id, page = pageReq).content
+      val postingsCanteen = postingsDataRepository.getPostingsBySubAccounts(
+        accountId = prisonAccount.id,
+        subAccounts = listOf(prisonCanteenSubAccount.id),
+        page = pageReq,
+      ).content
 
       assertThat(postingsCanteen).hasSize(1)
       assertThat(postingsCanteen.all { posting -> posting.subAccountEntity.id == prisonCanteenSubAccount.id }).isTrue()
 
-      val postingsAdvance = postingsDataRepository.getPostingsByAccountId(accountId = prisonAccount.id, subAccountId = prisonAdvanceSubAccount.id, page = pageReq).content
+      val postingsAdvance = postingsDataRepository.getPostingsBySubAccounts(
+        accountId = prisonAccount.id,
+        subAccounts = listOf(prisonAdvanceSubAccount.id),
+        page = pageReq,
+      ).content
 
       assertThat(postingsAdvance).hasSize(1)
       assertThat(postingsAdvance.all { posting -> posting.subAccountEntity.id == prisonAdvanceSubAccount.id }).isTrue()
@@ -718,12 +819,20 @@ class PostingDataRepositoryTest @Autowired constructor(
         creditSubAccount = accountOneSubAccountTwo,
       )
 
-      val postingsSubOne = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, subAccountId = accountOneSubAccountOne.id, page = pageReq).content
+      val postingsSubOne = postingsDataRepository.getPostingsBySubAccounts(
+        accountId = accountOne.id,
+        subAccounts = listOf(accountOneSubAccountOne.id),
+        page = pageReq,
+      ).content
 
       assertThat(postingsSubOne).hasSize(2)
       assertThat(postingsSubOne.all { posting -> posting.subAccountEntity.id == accountOneSubAccountOne.id }).isTrue()
 
-      val postingsSubTwo = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, subAccountId = accountOneSubAccountTwo.id, page = pageReq).content
+      val postingsSubTwo = postingsDataRepository.getPostingsBySubAccounts(
+        accountId = accountOne.id,
+        subAccounts = listOf(accountOneSubAccountTwo.id),
+        page = pageReq,
+      ).content
 
       assertThat(postingsSubTwo).hasSize(2)
       assertThat(postingsSubTwo.all { posting -> posting.subAccountEntity.id == accountOneSubAccountTwo.id }).isTrue()
@@ -753,7 +862,12 @@ class PostingDataRepositoryTest @Autowired constructor(
         description = "A canteen spend",
       )
 
-      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, description = null, page = pageReq).content
+      val postings = postingsDataRepository.getPostingsBySubAccounts(
+        accountId = accountOne.id,
+        description = null,
+        page = pageReq,
+        subAccounts = listOf(accountOneSubAccountOne.id, accountOneSubAccountTwo.id),
+      ).content
 
       assertThat(postings).hasSize(4)
     }
@@ -782,7 +896,12 @@ class PostingDataRepositoryTest @Autowired constructor(
         description = "A canteen MARS BAR",
       )
 
-      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, description = "mars bar", page = pageReq).content
+      val postings = postingsDataRepository.getPostingsBySubAccounts(
+        accountId = accountOne.id,
+        description = "mars bar",
+        page = pageReq,
+        subAccounts = listOf(accountOneSubAccountOne.id, accountOneSubAccountTwo.id),
+      ).content
 
       assertThat(postings).hasSize(2)
     }
@@ -811,7 +930,12 @@ class PostingDataRepositoryTest @Autowired constructor(
         description = "A canteen @MARS, BAR!()-=|[]`<>&^%£$,'",
       )
 
-      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, description = "@MARS, BAR!()-=|[]`<>&^%£$,'", page = pageReq).content
+      val postings = postingsDataRepository.getPostingsBySubAccounts(
+        accountId = accountOne.id,
+        description = "@MARS, BAR!()-=|[]`<>&^%£$,'",
+        page = pageReq,
+        subAccounts = listOf(accountOneSubAccountOne.id, accountOneSubAccountTwo.id),
+      ).content
 
       assertThat(postings).hasSize(2)
     }
@@ -840,7 +964,12 @@ class PostingDataRepositoryTest @Autowired constructor(
         description = "A canteen MARS BAR",
       )
 
-      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, description = " MARS BAR ", page = pageReq).content
+      val postings = postingsDataRepository.getPostingsBySubAccounts(
+        accountId = accountOne.id,
+        description = " MARS BAR ",
+        page = pageReq,
+        subAccounts = listOf(accountOneSubAccountOne.id, accountOneSubAccountTwo.id),
+      ).content
 
       assertThat(postings).hasSize(2)
     }
@@ -869,7 +998,12 @@ class PostingDataRepositoryTest @Autowired constructor(
         description = "A canteen spend",
       )
 
-      val postings = postingsDataRepository.getPostingsByAccountId(accountId = accountOne.id, description = "Cant", page = pageReq).content
+      val postings = postingsDataRepository.getPostingsBySubAccounts(
+        accountId = accountOne.id,
+        description = "Cant",
+        page = pageReq,
+        subAccounts = listOf(accountOneSubAccountOne.id, accountOneSubAccountTwo.id),
+      ).content
 
       assertThat(postings).hasSize(2)
     }
@@ -900,7 +1034,12 @@ class PostingDataRepositoryTest @Autowired constructor(
         description = "A Canteen spend - Can of Coke",
       )
 
-      val postings = postingsDataRepository.getPostingsByAccountId(accountId = prisonAccount.id, description = "MARS", page = pageReq).content
+      val postings = postingsDataRepository.getPostingsBySubAccounts(
+        accountId = prisonAccount.id,
+        description = "MARS",
+        page = pageReq,
+        subAccounts = listOf(accountOneSubAccountOne.id),
+      ).content
 
       assertThat(postings).hasSize(1)
     }

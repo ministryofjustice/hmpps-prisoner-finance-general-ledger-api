@@ -19,7 +19,7 @@ data class StatementEntryResponse(
   @field:Schema(description = "The description of the transaction")
   val description: String,
   @field:Schema(description = "This is the opposite postings from the statement entry")
-  val oppositePostings: List<StatementEntryOppositePostingsResponse>,
+  val oppositePostings: List<StatementEntryOppositePostingResponse>,
   @field:Schema(description = "This is amount of the statement entry")
   val amount: Long,
   @field:Schema(description = "The posting type of the statement entry")
@@ -34,13 +34,11 @@ data class StatementEntryResponse(
   val legacyTransactionId: Long? = null,
 ) {
   companion object {
-    fun fromEntity(sourcePostingEntity: PostingEntity) = StatementEntryResponse(
+    fun fromEntity(sourcePostingEntity: PostingEntity, oppositePostings: List<StatementEntryOppositePostingResponse>) = StatementEntryResponse(
       transactionId = sourcePostingEntity.transactionEntity.id,
       postingCreatedAt = sourcePostingEntity.createdAt,
       description = sourcePostingEntity.transactionEntity.description,
-      oppositePostings = sourcePostingEntity.transactionEntity.postings
-        .filter { posting -> posting.type != sourcePostingEntity.type }
-        .map { posting -> StatementEntryOppositePostingsResponse.fromEntity(posting) },
+      oppositePostings = oppositePostings,
       amount = sourcePostingEntity.amount,
       postingType = sourcePostingEntity.type,
       transactionTimestamp = sourcePostingEntity.transactionEntity.timestamp,
@@ -77,7 +75,9 @@ data class StatementEntryAccountResponse(
 }
 
 @Schema(description = "Posting response of statement entry")
-data class StatementEntryOppositePostingsResponse(
+data class StatementEntryOppositePostingResponse(
+  @field:Schema(description = "The original posting id")
+  val sourcePostingId: UUID,
   @field:Schema(description = "A unique ID for the posting")
   val id: UUID,
   @field:Schema(description = "The user who created the transaction")
@@ -88,20 +88,11 @@ data class StatementEntryOppositePostingsResponse(
   val type: PostingType,
   @field:Schema(description = "The posting monetary amount in pence")
   val amount: Long,
-  @field:Schema(description = "The sub-account with parent associated with the posting")
-  val subAccount: SubAccountWithParentResponse,
-) {
-  companion object {
-    fun fromEntity(postingEntity: PostingEntity): StatementEntryOppositePostingsResponse = StatementEntryOppositePostingsResponse(
-      id = postingEntity.id,
-      createdBy = postingEntity.createdBy,
-      createdAt = postingEntity.createdAt,
-      type = postingEntity.type,
-      amount = postingEntity.amount,
-      subAccount = SubAccountWithParentResponse.fromEntity(postingEntity.subAccountEntity),
-    )
-  }
-}
+  @field:Schema(description = "The reference of the parent account")
+  val parentAccountReference: String,
+  @field:Schema(description = "The type of the parent account")
+  val parentAccountType: AccountType,
+)
 
 @Schema(description = "A sub-account of an account")
 data class SubAccountWithParentResponse(
@@ -116,7 +107,6 @@ data class SubAccountWithParentResponse(
   @field:Schema(description = "The date/time when the sub-account was created in UTC/Instant format")
   val createdAt: Instant,
 ) {
-
   companion object {
     fun fromEntity(subAccountEntity: SubAccountEntity): SubAccountWithParentResponse = SubAccountWithParentResponse(
       id = subAccountEntity.id,

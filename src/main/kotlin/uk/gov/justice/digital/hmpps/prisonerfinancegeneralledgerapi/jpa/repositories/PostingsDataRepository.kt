@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.specifications.PostingsSpecification
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.StatementEntryOppositePostingResponse
 import java.time.Instant
 import java.util.UUID
 
@@ -19,26 +20,57 @@ import java.util.UUID
 interface PostingsDataRepository :
   JpaRepository<PostingEntity, UUID>,
   JpaSpecificationExecutor<PostingEntity> {
-  fun getPostingsByAccountId(
+  fun getPostingsBySubAccounts(
     accountId: UUID,
     page: Pageable,
-    subAccountId: UUID? = null,
+    subAccounts: List<UUID>,
     startDate: Instant? = null,
     endDate: Instant? = null,
     credit: Boolean = false,
     debit: Boolean = false,
     description: String? = null,
   ): Page<PostingEntity> {
-    val spec = Specification
-      .where(PostingsSpecification.fetchFullGraph())
-      .and(PostingsSpecification.byParentAccountId(accountId))
-      .and(PostingsSpecification.bySubAccountId(subAccountId))
-      .and(PostingsSpecification.createdBetween(startDate, endDate))
-      .and(PostingsSpecification.byPostingType(credit, debit))
-      .and(PostingsSpecification.byDescription(description))
-
-    return this.findAll(spec, page)
+    val spec = Specification.allOf(
+      PostingsSpecification.bySubAccountIds(subAccounts),
+      PostingsSpecification.createdBetween(startDate, endDate),
+      PostingsSpecification.byPostingType(credit, debit),
+      PostingsSpecification.byDescription(description),
+    )
+    return findAll(spec, page)
   }
+
+  @EntityGraph(
+    attributePaths = [
+      "postingBalanceEntity",
+      "transactionEntity",
+      "subAccountEntity.parentAccountEntity",
+    ],
+  )
+  override fun findAll(spec: Specification<PostingEntity>, pageable: Pageable): Page<PostingEntity>
+
+  @EntityGraph(attributePaths = [])
+  @Query(
+    """
+      select
+         new uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses
+            .StatementEntryOppositePostingResponse(
+               p.id,
+               op.id,
+               op.createdBy,
+               op.createdAt,
+               op.type,
+               op.amount,
+               op.subAccountEntity.parentAccountEntity.reference,
+               op.subAccountEntity.parentAccountEntity.type
+            )
+        from PostingEntity p
+        join PostingEntity op
+            on p.type != op.type and
+               p.transactionEntity = op.transactionEntity
+        where p.id in :postingIds
+    """,
+  )
+  fun findOppositePostings(postingIds: List<UUID>): List<StatementEntryOppositePostingResponse>
 
   @EntityGraph(
     attributePaths = [

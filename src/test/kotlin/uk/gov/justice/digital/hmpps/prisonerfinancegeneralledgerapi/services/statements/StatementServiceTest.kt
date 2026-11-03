@@ -10,8 +10,8 @@ import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.description
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -21,8 +21,10 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.AccountEntity
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.StatementEntryOppositePostingResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.AccountService
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.StatementService
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.helpers.ServiceTestHelpers
@@ -75,8 +77,28 @@ class StatementServiceTest {
     @Test
     fun `should return empty list when no postings for an account`() {
       val prisonerId = UUID.randomUUID()
-      whenever { accountService.readAccount(prisonerId) }.thenReturn(AccountEntity(id = prisonerId))
-      whenever { postingsDataRepository.getPostingsByAccountId(prisonerId, pageReq) }.thenReturn(Page.empty())
+      val subAccountId = UUID.randomUUID()
+      whenever { accountService.readAccount(prisonerId) }.thenReturn(
+        AccountEntity(
+          id = prisonerId,
+          subAccounts = mutableListOf(
+            SubAccountEntity(
+              id = subAccountId,
+              parentAccountEntity = mock(),
+              reference = "",
+              createdBy = "",
+              createdAt = Instant.now(),
+            ),
+          ),
+        ),
+      )
+      whenever {
+        postingsDataRepository.getPostingsBySubAccounts(
+          prisonerId,
+          pageReq,
+          subAccounts = listOf(subAccountId),
+        )
+      }.thenReturn(Page.empty())
 
       val postings = statementService.listStatementEntries(prisonerId)
 
@@ -85,23 +107,59 @@ class StatementServiceTest {
 
     @Test
     fun `should return list of postings for a single account with one transaction between sub-accounts`() {
-      val prisonerId = UUID.randomUUID()
-      whenever { accountService.readAccount(prisonerId) }.thenReturn(AccountEntity(id = prisonerId))
-
       val accountEntity = serviceTestHelpers.createAccount("ABC123XX", AccountType.PRISONER)
       val subAccountCashEntity = serviceTestHelpers.createSubAccount("CASH", accountEntity)
       val subAccountSpendsEntity = serviceTestHelpers.createSubAccount("SPENDS", accountEntity)
+
+      val prisonerId = accountEntity.id
+
+      whenever { accountService.readAccount(prisonerId) }.thenReturn(
+        accountEntity,
+      )
 
       val transactionEntity =
         serviceTestHelpers.createOneToOneTransaction(1L, Instant.now(), subAccountCashEntity, subAccountSpendsEntity)
 
       val posting1 = transactionEntity.postings[0]
       val posting2 = transactionEntity.postings[1]
+      val postings = listOf(posting1, posting2)
 
-      val page = PageImpl(listOf(posting1, posting2))
+      val page = PageImpl(postings)
 
-      whenever { postingsDataRepository.getPostingsByAccountId(prisonerId, pageReq) }
+      whenever {
+        postingsDataRepository.getPostingsBySubAccounts(
+          prisonerId,
+          pageReq,
+          subAccounts = listOf(subAccountCashEntity.id, subAccountSpendsEntity.id),
+        )
+      }
         .thenReturn(page)
+
+      whenever { postingsDataRepository.findOppositePostings(eq(listOf(posting1.id, posting2.id))) }
+        .thenReturn(
+          listOf(
+            StatementEntryOppositePostingResponse(
+              sourcePostingId = posting1.id,
+              id = posting2.id,
+              createdBy = posting2.createdBy,
+              createdAt = posting2.createdAt,
+              type = posting2.type,
+              amount = posting2.amount,
+              parentAccountReference = accountEntity.reference,
+              parentAccountType = accountEntity.type,
+            ),
+            StatementEntryOppositePostingResponse(
+              sourcePostingId = posting2.id,
+              id = posting1.id,
+              createdBy = posting1.createdBy,
+              createdAt = posting1.createdAt,
+              type = posting1.type,
+              amount = posting1.amount,
+              parentAccountReference = accountEntity.reference,
+              parentAccountType = accountEntity.type,
+            ),
+          ),
+        )
 
       val statementEntries = statementService.listStatementEntries(prisonerId)?.content!!
 
@@ -120,10 +178,10 @@ class StatementServiceTest {
 
     @Test
     fun `should return list of postings for a one to one transaction between accounts`() {
-      val prisonerId = UUID.randomUUID()
-
       val accountEntity = serviceTestHelpers.createAccount("ABC123XX", AccountType.PRISONER)
-      whenever { accountService.readAccount(any<UUID>()) }.thenReturn(AccountEntity())
+      val prisonerId = accountEntity.id
+
+      whenever { accountService.readAccount(any<UUID>()) }.thenReturn(accountEntity)
 
       val subAccountCashEntity = serviceTestHelpers.createSubAccount("CASH", accountEntity)
 
@@ -138,8 +196,29 @@ class StatementServiceTest {
 
       val page = PageImpl(listOf(posting1))
 
-      whenever { postingsDataRepository.getPostingsByAccountId(prisonerId, pageReq) }
+      whenever {
+        postingsDataRepository.getPostingsBySubAccounts(
+          prisonerId,
+          pageReq,
+          subAccounts = listOf(subAccountCashEntity.id),
+        )
+      }
         .thenReturn(page)
+
+      whenever { postingsDataRepository.findOppositePostings(listOf(posting1.id)) }.thenReturn(
+        listOf(
+          StatementEntryOppositePostingResponse(
+            posting1.id,
+            id = posting2.id,
+            createdBy = posting2.createdBy,
+            createdAt = posting2.createdAt,
+            type = posting2.type,
+            amount = posting2.amount,
+            parentAccountReference = accountEntity.reference,
+            parentAccountType = accountEntity.type,
+          ),
+        ),
+      )
 
       val statementEntries = statementService.listStatementEntries(prisonerId)?.content!!
 
@@ -153,8 +232,6 @@ class StatementServiceTest {
 
     @Test
     fun `should return list of multiple postings for many to one transaction`() {
-      whenever { accountService.readAccount(any<UUID>()) }.thenReturn(AccountEntity())
-
       val accountEntityOne = serviceTestHelpers.createAccount("ABC123XX", AccountType.PRISONER)
       val accountEntityTwo = serviceTestHelpers.createAccount("ABC123DD", AccountType.PRISONER)
       val subAccountCashEntityOne = serviceTestHelpers.createSubAccount("CASH", accountEntityOne)
@@ -177,8 +254,39 @@ class StatementServiceTest {
 
       val page = PageImpl(listOf(prisonPosting))
 
-      whenever { postingsDataRepository.getPostingsByAccountId(accountId = prisonAccountEntity.id, pageReq) }
-        .thenReturn(page)
+      whenever { accountService.readAccount(prisonAccountEntity.id) }.thenReturn(prisonAccountEntity)
+      whenever {
+        postingsDataRepository.getPostingsBySubAccounts(
+          accountId = prisonAccountEntity.id,
+          pageReq,
+          subAccounts = listOf(subAccountPrisonEntity.id),
+        )
+      }.thenReturn(page)
+
+      whenever { postingsDataRepository.findOppositePostings(listOf(prisonPosting.id)) }.thenReturn(
+        listOf(
+          StatementEntryOppositePostingResponse(
+            sourcePostingId = prisonPosting.id,
+            id = posting1.id,
+            createdBy = posting1.createdBy,
+            createdAt = posting1.createdAt,
+            type = posting1.type,
+            amount = posting1.amount,
+            parentAccountReference = accountEntityOne.reference,
+            parentAccountType = accountEntityOne.type,
+          ),
+          StatementEntryOppositePostingResponse(
+            sourcePostingId = prisonPosting.id,
+            id = posting2.id,
+            createdBy = posting2.createdBy,
+            createdAt = posting2.createdAt,
+            type = posting2.type,
+            amount = posting2.amount,
+            parentAccountReference = accountEntityTwo.reference,
+            parentAccountType = accountEntityTwo.type,
+          ),
+        ),
+      )
 
       val statementEntries = statementService.listStatementEntries(accountId = prisonAccountEntity.id)?.content!!
 
@@ -187,14 +295,12 @@ class StatementServiceTest {
       assertThat(statementEntries[0].description).isEqualTo(transactionEntity.description)
       assertThat(statementEntries[0].postingCreatedAt).isEqualTo(prisonPosting.createdAt)
       assertThat(statementEntries[0].subAccount.id).isEqualTo(subAccountPrisonEntity.id)
-      assertThat(statementEntries[0].oppositePostings).hasSize(2)
-      assertThat(statementEntries[0].oppositePostings.map { posting -> posting.id }).isEqualTo(listOf(posting1.id, posting2.id))
+      assertThat(statementEntries[0].oppositePostings[0].id).isEqualTo(posting1.id)
+      assertThat(statementEntries[0].oppositePostings[1].id).isEqualTo(posting2.id)
     }
 
     @Test
     fun `should return list of multiple postings for many to one transaction for an account`() {
-      whenever { accountService.readAccount(any<UUID>()) }.thenReturn(AccountEntity())
-
       val accountEntityOne = serviceTestHelpers.createAccount("ABC123XX", AccountType.PRISONER)
       val accountEntityTwo = serviceTestHelpers.createAccount("ABC123DD", AccountType.PRISONER)
       val subAccountCashEntityOne = serviceTestHelpers.createSubAccount("CASH", accountEntityOne)
@@ -202,6 +308,8 @@ class StatementServiceTest {
 
       val prisonAccountEntity = serviceTestHelpers.createAccount("LEI", AccountType.PRISON)
       val subAccountPrisonEntity = serviceTestHelpers.createSubAccount("1001:CANT", prisonAccountEntity)
+
+      whenever { accountService.readAccount(accountEntityOne.id) }.thenReturn(accountEntityOne)
 
       val transactionEntity =
         serviceTestHelpers.createOneToManyTransaction(
@@ -216,8 +324,31 @@ class StatementServiceTest {
 
       val page = PageImpl(listOf(posting1))
 
-      whenever { postingsDataRepository.getPostingsByAccountId(accountId = accountEntityOne.id, pageReq) }
+      whenever {
+        postingsDataRepository.getPostingsBySubAccounts(
+          accountId = accountEntityOne.id,
+          pageReq,
+          subAccounts = listOf(subAccountCashEntityOne.id),
+        )
+      }
         .thenReturn(page)
+
+      whenever {
+        postingsDataRepository.findOppositePostings(listOf(posting1.id))
+      }.thenReturn(
+        listOf(
+          StatementEntryOppositePostingResponse(
+            sourcePostingId = posting1.id,
+            id = prisonPosting.id,
+            createdBy = prisonPosting.createdBy,
+            createdAt = prisonPosting.createdAt,
+            type = prisonPosting.type,
+            amount = prisonPosting.amount,
+            parentAccountReference = prisonAccountEntity.reference,
+            parentAccountType = prisonAccountEntity.type,
+          ),
+        ),
+      )
 
       val statementEntries = statementService.listStatementEntries(accountId = accountEntityOne.id)?.content!!
 
@@ -232,36 +363,77 @@ class StatementServiceTest {
     @Test
     fun `should pass midnight of start date to the repository if start date is provided`() {
       val prisonerId = UUID.randomUUID()
+      val subAccountId = UUID.randomUUID()
       val christmasEveTenAM = LocalDateTime.of(2025, 12, 24, 10, 30, 0).toLocalDate()
       val christmasEveMidnight = LocalDateTime.of(2025, 12, 24, 0, 0, 0).toInstant(ZoneOffset.UTC)
 
-      whenever { accountService.readAccount(accountUUID = prisonerId) }.thenReturn(AccountEntity(id = prisonerId))
-      whenever { postingsDataRepository.getPostingsByAccountId(accountId = prisonerId, pageReq, startDate = christmasEveMidnight) }.thenReturn(PageImpl(emptyList()))
+      whenever { accountService.readAccount(accountUUID = prisonerId) }.thenReturn(
+        AccountEntity(
+          id = prisonerId,
+          subAccounts = mutableListOf(
+            SubAccountEntity(
+              id = subAccountId,
+              parentAccountEntity = mock(),
+              reference = "",
+              createdBy = "",
+              createdAt = Instant.now(),
+            ),
+          ),
+        ),
+      )
+      whenever {
+        postingsDataRepository.getPostingsBySubAccounts(
+          accountId = prisonerId,
+          pageReq,
+          startDate = christmasEveMidnight,
+          subAccounts = listOf(subAccountId),
+        )
+      }.thenReturn(PageImpl(emptyList()))
 
       val postings = statementService.listStatementEntries(accountId = prisonerId, startDate = christmasEveTenAM)?.content!!
 
       assertThat(postings).isEmpty()
-      verify(postingsDataRepository, times(numInvocations = 1)).getPostingsByAccountId(
+      verify(postingsDataRepository, times(numInvocations = 1)).getPostingsBySubAccounts(
         accountId = prisonerId,
         pageReq,
         startDate = christmasEveMidnight,
         endDate = null,
+        subAccounts = listOf(subAccountId),
       )
     }
 
     @Test
     fun `should pass 11,59,59 of start date to the repository if end date is provided`() {
       val prisonerId = UUID.randomUUID()
+      val subAccountId = UUID.randomUUID()
       val christmasEveTenAM = LocalDateTime.of(2025, 12, 24, 10, 30, 0).toLocalDate()
       val christmasElevenFiftyNine = LocalDateTime.of(2025, 12, 24, 23, 59, 59).toInstant(ZoneOffset.UTC)
 
-      whenever { accountService.readAccount(accountUUID = prisonerId) }.thenReturn(AccountEntity(id = prisonerId))
       whenever {
-        postingsDataRepository.getPostingsByAccountId(
+        accountService.readAccount(
+          accountUUID = prisonerId,
+        )
+      }.thenReturn(
+        AccountEntity(
+          id = prisonerId,
+          subAccounts = mutableListOf(
+            SubAccountEntity(
+              id = subAccountId,
+              parentAccountEntity = mock(),
+              reference = "",
+              createdBy = "",
+              createdAt = Instant.now(),
+            ),
+          ),
+        ),
+      )
+      whenever {
+        postingsDataRepository.getPostingsBySubAccounts(
           accountId = prisonerId,
           page = pageReq,
           startDate = null,
           endDate = christmasElevenFiftyNine,
+          subAccounts = listOf(subAccountId),
         )
       }.thenReturn(PageImpl(emptyList()))
 
@@ -272,74 +444,39 @@ class StatementServiceTest {
       )
 
       assertThat(postings!!.content).isEmpty()
-      verify(postingsDataRepository, times(1)).getPostingsByAccountId(
+      verify(postingsDataRepository, times(1)).getPostingsBySubAccounts(
         accountId = prisonerId,
         page = pageReq,
         startDate = null,
         endDate = christmasElevenFiftyNine,
+        subAccounts = listOf(subAccountId),
       )
-    }
-
-    @Test
-    fun `should call the repository with the correct parameters`() {
-      val prisonerId = UUID.randomUUID()
-
-      whenever { accountService.readAccount(accountUUID = prisonerId) }.thenReturn(AccountEntity(id = prisonerId))
-      whenever {
-        postingsDataRepository.getPostingsByAccountId(
-          any<UUID>(),
-          any<Pageable>(),
-          anyOrNull<UUID>(),
-          anyOrNull<Instant>(),
-          anyOrNull<Instant>(),
-          anyOrNull<Boolean>(),
-          anyOrNull<Boolean>(),
-          anyOrNull<String>(),
-        )
-      }.thenReturn(PageImpl(emptyList()))
-
-      val subAccountId = UUID.randomUUID()
-      val startDate = LocalDate.now()
-      val endDate = LocalDate.now()
-      val pageNumber = 1
-      val pageSize = 25
-
-      statementService.listStatementEntries(
-        accountId = prisonerId,
-        subAccountId = subAccountId,
-        pageNumber = pageNumber,
-        pageSize = pageSize,
-        startDate = startDate,
-        endDate = endDate,
-        credit = true,
-        debit = false,
-      )
-
-      val pageCapture = argumentCaptor<Pageable>()
-      verify(postingsDataRepository, times(1)).getPostingsByAccountId(
-        accountId = eq(prisonerId),
-        page = pageCapture.capture(),
-        subAccountId = eq(subAccountId),
-        startDate = eq(startDate.toUtcStartOfDay()),
-        endDate = eq(endDate.toUtcEndOfDay()),
-        credit = eq(true),
-        debit = eq(false),
-        description = eq(null),
-      )
-      assertThat(pageCapture.firstValue.pageNumber).isEqualTo(0)
-      assertThat(pageCapture.firstValue.pageSize).isEqualTo(pageSize)
     }
 
     @Test
     fun `should call the repository when the description is provided and return correct results`() {
       val prisonerId = UUID.randomUUID()
+      val subAccountId = UUID.randomUUID()
 
-      whenever { accountService.readAccount(accountUUID = prisonerId) }.thenReturn(AccountEntity(id = prisonerId))
+      whenever { accountService.readAccount(accountUUID = prisonerId) }.thenReturn(
+        AccountEntity(
+          id = prisonerId,
+          subAccounts = mutableListOf(
+            SubAccountEntity(
+              id = subAccountId,
+              parentAccountEntity = mock(),
+              reference = "",
+              createdBy = "",
+              createdAt = Instant.now(),
+            ),
+          ),
+        ),
+      )
       whenever {
-        postingsDataRepository.getPostingsByAccountId(
+        postingsDataRepository.getPostingsBySubAccounts(
           any<UUID>(),
           any<Pageable>(),
-          anyOrNull<UUID>(),
+          anyOrNull<List<UUID>>(),
           anyOrNull<Instant>(),
           anyOrNull<Instant>(),
           anyOrNull<Boolean>(),
@@ -348,7 +485,6 @@ class StatementServiceTest {
         )
       }.thenReturn(PageImpl(emptyList()))
 
-      val subAccountId = UUID.randomUUID()
       val startDate = LocalDate.now()
       val endDate = LocalDate.now()
       val pageNumber = 1
@@ -367,10 +503,10 @@ class StatementServiceTest {
       )
 
       val pageCapture = argumentCaptor<Pageable>()
-      verify(postingsDataRepository, times(1)).getPostingsByAccountId(
+      verify(postingsDataRepository, times(1)).getPostingsBySubAccounts(
         accountId = eq(prisonerId),
         page = pageCapture.capture(),
-        subAccountId = eq(subAccountId),
+        subAccounts = eq(listOf(subAccountId)),
         startDate = eq(startDate.toUtcStartOfDay()),
         endDate = eq(endDate.toUtcEndOfDay()),
         credit = eq(true),
@@ -384,13 +520,27 @@ class StatementServiceTest {
     @Test
     fun `should call the repository with the correct parameters when default arguments are used`() {
       val prisonerId = UUID.randomUUID()
+      val subAccountId = UUID.randomUUID()
 
-      whenever { accountService.readAccount(accountUUID = prisonerId) }.thenReturn(AccountEntity(id = prisonerId))
+      whenever { accountService.readAccount(accountUUID = prisonerId) }.thenReturn(
+        AccountEntity(
+          id = prisonerId,
+          subAccounts = mutableListOf(
+            SubAccountEntity(
+              id = subAccountId,
+              parentAccountEntity = mock(),
+              reference = "",
+              createdBy = "",
+              createdAt = Instant.now(),
+            ),
+          ),
+        ),
+      )
       whenever {
-        postingsDataRepository.getPostingsByAccountId(
+        postingsDataRepository.getPostingsBySubAccounts(
           any<UUID>(),
           any<Pageable>(),
-          anyOrNull<UUID>(),
+          anyOrNull<List<UUID>>(),
           anyOrNull<Instant>(),
           anyOrNull<Instant>(),
           anyOrNull<Boolean>(),
@@ -404,10 +554,10 @@ class StatementServiceTest {
       )
 
       val pageCapture = argumentCaptor<Pageable>()
-      verify(postingsDataRepository, times(1)).getPostingsByAccountId(
+      verify(postingsDataRepository, times(1)).getPostingsBySubAccounts(
         accountId = eq(prisonerId),
         page = pageCapture.capture(),
-        subAccountId = eq(null),
+        subAccounts = eq(listOf(subAccountId)),
         startDate = eq(null),
         endDate = eq(null),
         credit = eq(false),
