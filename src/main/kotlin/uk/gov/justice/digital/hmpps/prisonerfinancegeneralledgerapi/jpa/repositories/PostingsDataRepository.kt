@@ -12,7 +12,7 @@ import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.PostingEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.specifications.PostingsSpecification
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.StatementEntryPostingToTransactionType
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.StatementEntryOppositePostingResponse
 import java.time.Instant
 import java.util.UUID
 
@@ -53,26 +53,24 @@ interface PostingsDataRepository :
     """
       select
          new uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses
-            .StatementEntryPostingToTransactionType(
-              p,
-              case when exists (
-                  select 1
-                  from PostingEntity op
-                  where op.transactionEntity = p.transactionEntity
-                    and op.id != p.id
-                  and op.type != p.type
-                  and op.subAccountEntity.parentAccountEntity.type != p.subAccountEntity.parentAccountEntity.type
-              ) then uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses
-                  .StatementEntryTransactionType.PrisonerToPrison
-              else uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses
-                  .StatementEntryTransactionType.SubAccountTransfer
-              end
-        )
+            .StatementEntryOppositePostingResponse(
+               p.id,
+               op.id,
+               op.createdBy,
+               op.createdAt,
+               op.type,
+               op.amount,
+               op.subAccountEntity.parentAccountEntity.reference,
+               op.subAccountEntity.parentAccountEntity.type
+            )
         from PostingEntity p
+        join PostingEntity op
+            on p.type != op.type and
+               p.transactionEntity = op.transactionEntity
         where p.id in :postingIds
     """,
   )
-  fun findTransactionTypeByPostingsId(postingIds: List<UUID>): List<StatementEntryPostingToTransactionType>
+  fun findOppositePostings(postingIds: List<UUID>): List<StatementEntryOppositePostingResponse>
 
   @EntityGraph(
     attributePaths = [

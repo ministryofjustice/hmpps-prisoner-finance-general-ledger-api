@@ -64,15 +64,15 @@ class StatementService(
       description = description,
     )
 
-    val postingsTransactionType = postingsDataRepository.findTransactionTypeByPostingsId(
+    val oppositePostings = postingsDataRepository.findOppositePostings(
       page.content.map { it.id },
-    ).associateBy { it.posting.id }
+    )
 
     return page.toPageResponse { content ->
       content.map {
         StatementEntryResponse.fromEntity(
           sourcePostingEntity = it,
-          transactionType = postingsTransactionType.getValue(it.id).transactionType,
+          oppositePostings = oppositePostings.filter { op -> it.id == op.sourcePostingId },
         )
       }
     }

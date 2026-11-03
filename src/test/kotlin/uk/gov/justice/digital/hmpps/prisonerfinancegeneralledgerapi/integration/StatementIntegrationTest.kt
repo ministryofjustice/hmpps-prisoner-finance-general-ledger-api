@@ -13,7 +13,6 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.PostingType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.PagedResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.StatementEntryResponse
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.StatementEntryTransactionType
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -81,7 +80,11 @@ class StatementIntegrationTest : IntegrationTestBase() {
       assertThat(content[0].subAccount.id).isEqualTo(prisonerSubAccount.id)
       assertThat(content[0].amount).isEqualTo(transaction.amount)
       assertThat(content[0].postingType).isEqualTo(PostingType.DR)
-      assertThat(content[0].transactionType).isEqualTo(StatementEntryTransactionType.PrisonerToPrison)
+      assertThat(content[0].oppositePostings).hasSize(1)
+      assertThat(content[0].oppositePostings[0].parentAccountReference).isEqualTo(prisonAccount.reference)
+      assertThat(content[0].oppositePostings[0].parentAccountType).isEqualTo(prisonAccount.type)
+      assertThat(content[0].oppositePostings[0].amount).isEqualTo(1L)
+      assertThat(content[0].oppositePostings[0].type).isEqualTo(PostingType.CR)
     }
 
     @Test
@@ -114,12 +117,20 @@ class StatementIntegrationTest : IntegrationTestBase() {
       assertThat(content[0].subAccount.id).isEqualTo(cashSubAccount.id)
       assertThat(content[0].amount).isEqualTo(transaction.amount)
       assertThat(content[0].postingType).isEqualTo(PostingType.DR)
-      assertThat(content[0].transactionType).isEqualTo(StatementEntryTransactionType.SubAccountTransfer)
+      assertThat(content[0].oppositePostings).hasSize(1)
+      assertThat(content[0].oppositePostings[0].parentAccountReference).isEqualTo(prisonerAccount.reference)
+      assertThat(content[0].oppositePostings[0].parentAccountType).isEqualTo(prisonerAccount.type)
+      assertThat(content[0].oppositePostings[0].amount).isEqualTo(1L)
+      assertThat(content[0].oppositePostings[0].type).isEqualTo(PostingType.CR)
 
       assertThat(content[1].subAccount.id).isEqualTo(spendsSubAccount.id)
       assertThat(content[1].amount).isEqualTo(transaction.amount)
       assertThat(content[1].postingType).isEqualTo(PostingType.CR)
-      assertThat(content[0].transactionType).isEqualTo(StatementEntryTransactionType.SubAccountTransfer)
+      assertThat(content[1].oppositePostings).hasSize(1)
+      assertThat(content[1].oppositePostings[0].parentAccountReference).isEqualTo(prisonerAccount.reference)
+      assertThat(content[1].oppositePostings[0].parentAccountType).isEqualTo(prisonerAccount.type)
+      assertThat(content[1].oppositePostings[0].amount).isEqualTo(1L)
+      assertThat(content[1].oppositePostings[0].type).isEqualTo(PostingType.DR)
     }
 
     @Test
@@ -245,7 +256,11 @@ class StatementIntegrationTest : IntegrationTestBase() {
       assertThat(content[0].subAccount.id).isEqualTo(cashSubAccountOne.id)
       assertThat(content[0].amount).isEqualTo(1L)
       assertThat(content[0].postingType).isEqualTo(PostingType.CR)
-      assertThat(content[0].transactionType).isEqualTo(StatementEntryTransactionType.PrisonerToPrison)
+      assertThat(content[0].oppositePostings).hasSize(1)
+      assertThat(content[0].oppositePostings[0].parentAccountReference).isEqualTo(prisonAccount.reference)
+      assertThat(content[0].oppositePostings[0].parentAccountType).isEqualTo(prisonAccount.type)
+      assertThat(content[0].oppositePostings[0].amount).isEqualTo(2L)
+      assertThat(content[0].oppositePostings[0].type).isEqualTo(PostingType.DR)
     }
 
     @Test
@@ -283,8 +298,17 @@ class StatementIntegrationTest : IntegrationTestBase() {
       assertThat(content[0].subAccount.id).isEqualTo(canteenAccount.id)
       assertThat(content[0].amount).isEqualTo(2L)
       assertThat(content[0].postingType).isEqualTo(PostingType.DR)
+      assertThat(content[0].oppositePostings).hasSize(2)
 
-      assertThat(content[0].transactionType).isEqualTo(StatementEntryTransactionType.PrisonerToPrison)
+      assertThat(content[0].oppositePostings[0].parentAccountReference).isEqualTo(prisonerOneAccount.reference)
+      assertThat(content[0].oppositePostings[0].parentAccountType).isEqualTo(prisonerOneAccount.type)
+      assertThat(content[0].oppositePostings[0].amount).isEqualTo(1L)
+      assertThat(content[0].oppositePostings[0].type).isEqualTo(PostingType.CR)
+
+      assertThat(content[0].oppositePostings[1].parentAccountReference).isEqualTo(prisonerTwoAccount.reference)
+      assertThat(content[0].oppositePostings[1].parentAccountType).isEqualTo(prisonerTwoAccount.type)
+      assertThat(content[0].oppositePostings[1].amount).isEqualTo(1L)
+      assertThat(content[0].oppositePostings[1].type).isEqualTo(PostingType.CR)
     }
 
     @Test

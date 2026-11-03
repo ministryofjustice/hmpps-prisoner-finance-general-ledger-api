@@ -24,8 +24,7 @@ import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.SubAccountEntity
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.entities.enums.AccountType
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.jpa.repositories.PostingsDataRepository
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.StatementEntryPostingToTransactionType
-import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.StatementEntryTransactionType
+import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.models.responses.StatementEntryOppositePostingResponse
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.AccountService
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.StatementService
 import uk.gov.justice.digital.hmpps.prisonerfinancegeneralledgerapi.services.helpers.ServiceTestHelpers
@@ -136,9 +135,30 @@ class StatementServiceTest {
       }
         .thenReturn(page)
 
-      whenever { postingsDataRepository.findTransactionTypeByPostingsId(eq(postings.map { it.id }.toList())) }
+      whenever { postingsDataRepository.findOppositePostings(eq(listOf(posting1.id, posting2.id))) }
         .thenReturn(
-          postings.map { StatementEntryPostingToTransactionType(it, StatementEntryTransactionType.SubAccountTransfer) },
+          listOf(
+            StatementEntryOppositePostingResponse(
+              sourcePostingId = posting1.id,
+              id = posting2.id,
+              createdBy = posting2.createdBy,
+              createdAt = posting2.createdAt,
+              type = posting2.type,
+              amount = posting2.amount,
+              parentAccountReference = accountEntity.reference,
+              parentAccountType = accountEntity.type,
+            ),
+            StatementEntryOppositePostingResponse(
+              sourcePostingId = posting2.id,
+              id = posting1.id,
+              createdBy = posting1.createdBy,
+              createdAt = posting1.createdAt,
+              type = posting1.type,
+              amount = posting1.amount,
+              parentAccountReference = accountEntity.reference,
+              parentAccountType = accountEntity.type,
+            ),
+          ),
         )
 
       val statementEntries = statementService.listStatementEntries(prisonerId)?.content!!
@@ -148,12 +168,12 @@ class StatementServiceTest {
       assertThat(statementEntries[0].description).isEqualTo(transactionEntity.description)
       assertThat(statementEntries[0].postingCreatedAt).isEqualTo(posting1.createdAt)
       assertThat(statementEntries[0].subAccount.id).isEqualTo(subAccountCashEntity.id)
-      assertThat(statementEntries[0].transactionType).isEqualTo(StatementEntryTransactionType.SubAccountTransfer)
+      assertThat(statementEntries[0].oppositePostings[0].id).isEqualTo(posting2.id)
       assertThat(statementEntries[1].transactionId).isEqualTo(transactionEntity.id)
       assertThat(statementEntries[1].description).isEqualTo(transactionEntity.description)
       assertThat(statementEntries[1].postingCreatedAt).isEqualTo(posting2.createdAt)
       assertThat(statementEntries[1].subAccount.id).isEqualTo(subAccountSpendsEntity.id)
-      assertThat(statementEntries[1].transactionType).isEqualTo(StatementEntryTransactionType.SubAccountTransfer)
+      assertThat(statementEntries[1].oppositePostings[0].id).isEqualTo(posting1.id)
     }
 
     @Test
@@ -185,8 +205,19 @@ class StatementServiceTest {
       }
         .thenReturn(page)
 
-      whenever { postingsDataRepository.findTransactionTypeByPostingsId(listOf(posting1.id)) }.thenReturn(
-        listOf(StatementEntryPostingToTransactionType(posting1, StatementEntryTransactionType.SubAccountTransfer)),
+      whenever { postingsDataRepository.findOppositePostings(listOf(posting1.id)) }.thenReturn(
+        listOf(
+          StatementEntryOppositePostingResponse(
+            posting1.id,
+            id = posting2.id,
+            createdBy = posting2.createdBy,
+            createdAt = posting2.createdAt,
+            type = posting2.type,
+            amount = posting2.amount,
+            parentAccountReference = accountEntity.reference,
+            parentAccountType = accountEntity.type,
+          ),
+        ),
       )
 
       val statementEntries = statementService.listStatementEntries(prisonerId)?.content!!
@@ -196,7 +227,7 @@ class StatementServiceTest {
       assertThat(statementEntries[0].description).isEqualTo(transactionEntity.description)
       assertThat(statementEntries[0].postingCreatedAt).isEqualTo(posting1.createdAt)
       assertThat(statementEntries[0].subAccount.id).isEqualTo(subAccountCashEntity.id)
-      assertThat(statementEntries[0].transactionType).isEqualTo(StatementEntryTransactionType.SubAccountTransfer)
+      assertThat(statementEntries[0].oppositePostings[0].id).isEqualTo(posting2.id)
     }
 
     @Test
@@ -232,9 +263,28 @@ class StatementServiceTest {
         )
       }.thenReturn(page)
 
-      whenever { postingsDataRepository.findTransactionTypeByPostingsId(listOf(prisonPosting.id)) }.thenReturn(
+      whenever { postingsDataRepository.findOppositePostings(listOf(prisonPosting.id)) }.thenReturn(
         listOf(
-          StatementEntryPostingToTransactionType(prisonPosting, StatementEntryTransactionType.PrisonerToPrison),
+          StatementEntryOppositePostingResponse(
+            sourcePostingId = prisonPosting.id,
+            id = posting1.id,
+            createdBy = posting1.createdBy,
+            createdAt = posting1.createdAt,
+            type = posting1.type,
+            amount = posting1.amount,
+            parentAccountReference = accountEntityOne.reference,
+            parentAccountType = accountEntityOne.type,
+          ),
+          StatementEntryOppositePostingResponse(
+            sourcePostingId = prisonPosting.id,
+            id = posting2.id,
+            createdBy = posting2.createdBy,
+            createdAt = posting2.createdAt,
+            type = posting2.type,
+            amount = posting2.amount,
+            parentAccountReference = accountEntityTwo.reference,
+            parentAccountType = accountEntityTwo.type,
+          ),
         ),
       )
 
@@ -245,7 +295,8 @@ class StatementServiceTest {
       assertThat(statementEntries[0].description).isEqualTo(transactionEntity.description)
       assertThat(statementEntries[0].postingCreatedAt).isEqualTo(prisonPosting.createdAt)
       assertThat(statementEntries[0].subAccount.id).isEqualTo(subAccountPrisonEntity.id)
-      assertThat(statementEntries[0].transactionType).isEqualTo(StatementEntryTransactionType.PrisonerToPrison)
+      assertThat(statementEntries[0].oppositePostings[0].id).isEqualTo(posting1.id)
+      assertThat(statementEntries[0].oppositePostings[1].id).isEqualTo(posting2.id)
     }
 
     @Test
@@ -283,10 +334,19 @@ class StatementServiceTest {
         .thenReturn(page)
 
       whenever {
-        postingsDataRepository.findTransactionTypeByPostingsId(listOf(posting1.id))
+        postingsDataRepository.findOppositePostings(listOf(posting1.id))
       }.thenReturn(
         listOf(
-          StatementEntryPostingToTransactionType(posting1, StatementEntryTransactionType.PrisonerToPrison),
+          StatementEntryOppositePostingResponse(
+            sourcePostingId = posting1.id,
+            id = prisonPosting.id,
+            createdBy = prisonPosting.createdBy,
+            createdAt = prisonPosting.createdAt,
+            type = prisonPosting.type,
+            amount = prisonPosting.amount,
+            parentAccountReference = prisonAccountEntity.reference,
+            parentAccountType = prisonAccountEntity.type,
+          ),
         ),
       )
 
@@ -297,7 +357,7 @@ class StatementServiceTest {
       assertThat(statementEntries[0].description).isEqualTo(transactionEntity.description)
       assertThat(statementEntries[0].postingCreatedAt).isEqualTo(posting1.createdAt)
       assertThat(statementEntries[0].subAccount.id).isEqualTo(subAccountCashEntityOne.id)
-      assertThat(statementEntries[0].transactionType).isEqualTo(StatementEntryTransactionType.PrisonerToPrison)
+      assertThat(statementEntries[0].oppositePostings[0].id).isEqualTo(prisonPosting.id)
     }
 
     @Test
