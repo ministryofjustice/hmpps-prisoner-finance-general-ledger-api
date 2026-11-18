@@ -15,7 +15,6 @@ generic-service:
     # modsecurity_enabled: true
 
   env:
-    JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=70.0"
     JAVA_OPTS: ""
     DB_POOL_SIZE: "20" # t4g.small instance - 171 total connections available, 4 pods
     HMPPS_AUTH_URL: "https://sign-in.hmpps.service.justice.gov.uk/auth"
