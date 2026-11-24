@@ -77,6 +77,7 @@ class TransactionIntegrationTest(@Autowired private val transactionDataRepositor
             postings = createPostingRequests,
             entrySequence = 1,
             legacyTransactionId = 999,
+            createdBy = "TEST_USER",
           ),
         )
         .exchange()
@@ -95,6 +96,7 @@ class TransactionIntegrationTest(@Autowired private val transactionDataRepositor
       assertThat(transactionResponseBody.postings[1].type).isEqualTo(PostingType.CR)
       assertThat(transactionResponseBody.postings[0].amount).isEqualTo(1L)
       assertThat(transactionResponseBody.postings[1].amount).isEqualTo(1L)
+      assertThat(transactionResponseBody.createdBy).isEqualTo("TEST_USER")
     }
 
     @Test
