@@ -51,7 +51,4 @@ data class CreateTransactionRequest(
   @field:Schema(description = "The legacy transaction ID from NOMIS")
   val legacyTransactionId: Long? = null,
 
-  @field:Schema(description = "The user who created the transaction")
-  val createdBy: String? = null,
-
 )

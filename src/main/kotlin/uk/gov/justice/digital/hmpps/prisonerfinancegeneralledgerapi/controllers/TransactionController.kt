@@ -116,7 +116,7 @@ class TransactionController(
     user: Principal,
   ): ResponseEntity<TransactionResponse> {
     try {
-      val transactionEntityCreated = transactionService.createTransaction(body, createdBy = body.createdBy ?: user.name, idempotencyKey = idempotencyKey)
+      val transactionEntityCreated = transactionService.createTransaction(body, createdBy = user.name, idempotencyKey = idempotencyKey)
 
       val transactionEntity = transactionService.getTransactionById(transactionEntityCreated.id)
         ?: throw IllegalStateException("Transaction not found after postTransaction service completed successfully: ${transactionEntityCreated.id}")
